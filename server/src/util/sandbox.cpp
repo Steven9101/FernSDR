@@ -37,7 +37,10 @@ constexpr uint64_t kReadDir = 1ull << 3;
 struct RulesetAttr {
     uint64_t handled_access_fs;
     uint64_t handled_access_net;
+    uint64_t scoped;  // ABI 6
 };
+constexpr uint64_t kScopeAbstractUnixSocket = 1ull << 0;
+constexpr uint64_t kScopeSignal = 1ull << 1;
 
 struct __attribute__((packed)) PathBeneathAttr {
     uint64_t allowed_access;
@@ -82,7 +85,7 @@ SandboxReport apply_decoder_sandbox(const std::string& executable) {
         return report;
     }
     report.landlock_abi = static_cast<int>(abi);
-    RulesetAttr attr{file_rights(report.landlock_abi), 0};
+    RulesetAttr attr{file_rights(report.landlock_abi), 0, 0};
     size_t size = sizeof(uint64_t);
     if (report.landlock_abi >= 4) {
         // TCP bind and connect, with no port allowed: no network at all over
@@ -90,6 +93,14 @@ SandboxReport apply_decoder_sandbox(const std::string& executable) {
         // use it, and PR_SET_NO_NEW_PRIVS already keeps it from gaining the
         // rights raw sockets would need.
         attr.handled_access_net = (1ull << 0) | (1ull << 1);
+        size = 2 * sizeof(uint64_t);
+    }
+    if (report.landlock_abi >= 6) {
+        // The decoder runs as the receiver's user, so without this it could
+        // stop or kill the receiver with a signal, or reach another program
+        // of that user's through an abstract UNIX socket. Its own threads
+        // and children are inside the same domain and unaffected.
+        attr.scoped = kScopeAbstractUnixSocket | kScopeSignal;
         size = sizeof(RulesetAttr);
     }
     const int ruleset = static_cast<int>(::syscall(kCreateRuleset, &attr, size, 0));
