@@ -200,11 +200,12 @@ case "$1" in
     exit 0 ;;
 esac
 [ -e "$state/crash" ] && exit 1
-echo "$(id -u) $$ $(pwd) $HOME $FERNSDR_UPDATE_URL" >> "$state/started"
 # Listed before any pipeline: while bash sets one up, the shell itself holds
-# the pipes' ends for a moment, and ls could see them.
+# the pipes' ends for a moment, and ls could see them. "started" comes last,
+# so that a test which sees it finds the list complete.
 ls /proc/$$/fd > "$state/fds.raw"
 awk '$1 < 10' "$state/fds.raw" | sort -n | tr '\n' ' ' > "$state/fds"
+echo "$(id -u) $$ $(pwd) $HOME $FERNSDR_UPDATE_URL" >> "$state/started"
 sh -c 'trap "" TERM; while :; do sleep 1; done' &
 echo $! > "$state/module"
 trap 'exit 0' TERM
