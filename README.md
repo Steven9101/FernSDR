@@ -11,6 +11,26 @@ the server's CPU and uplink determine how many can listen at once.
 
 ![The listener's page: spectrum and waterfall of the medium wave band, the receiver tuned to 909 kHz AM, and the station's widgets beside it](docs/images/listener.webp)
 
+## Measured
+
+Against ten other WebSDR servers (OpenWebRX, OpenWebRX+, UberSDR, NovaSDR,
+PhantomSDR, PhantomSDR-Plus and its sv1btl fork, VertexSDR, ka9q-web and
+PA3FWM's WebSDR), in one lab, on one generated band, with real browsers
+listening and each receiver on the same two CPU cores:
+
+| | FernSDR | Best of the others |
+|---|---|---|
+| From the antenna to the listener's ear | 227 ms | 261 ms, UberSDR |
+| Listeners on two CPU cores | 1,600 and more | 400, PA3FWM's WebSDR |
+| Memory with four listening | 8 MB | 30 MB, PhantomSDR |
+| Sound that still arrives through 24 kbit/s | 63 % | 10 %, VertexSDR |
+| Back on time after a 15 s outage | 0.9 s | 2.0 s, PhantomSDR-Plus (sv1btl) |
+| The listener's page on a first visit | 127 kB | 130 kB, VertexSDR |
+
+Others do better on the stream's size, on CPU with a handful of listeners,
+and on audio SNR. The method, the raw data and every figure, including those,
+are in [bench/](bench/).
+
 ## If none of that meant anything
 
 Radio signals arrive at an antenna all mixed together, across a wide range of
