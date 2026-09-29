@@ -1,4 +1,6 @@
 #include "../src/dsp/spectrum.h"
+#include "../src/dsp/fft_split.h"
+#include "../src/dsp/simd.h"
 #include "test_util.h"
 
 #include <algorithm>
@@ -372,4 +374,47 @@ TEST_CASE(pyramid_rebuild_shrinks_with_the_line) {
     std::vector<float> dst(16);
     pyramid.render(0.0, 1000.0, dst.data(), dst.size());
     for (float v : dst) CHECK_NEAR(v, -100.0, 1e-4);
+}
+
+// A line is what a windowed transform of those samples gives, whatever the
+// ring's wrap: checked against the transform done by hand, for windows that
+// start at the ring's beginning and ones that start a quarter, a half and
+// three quarters into it.
+TEST_CASE(spectrum_line_is_the_windowed_transform_of_its_samples) {
+    const size_t n = 1024;
+    const size_t hop = n / 4;
+    SpectrumAnalyzer analyzer(256000, n, 256000.0 / hop, 1, 0.0f);
+    CHECK_EQ(analyzer.averages(), 1);
+    std::vector<cfloat> x(n + 4 * hop);
+    uint32_t seed = 12345;
+    const auto next = [&] {
+        seed = seed * 1664525u + 1013904223u;
+        return static_cast<float>(seed >> 8) / 16777216.0f - 0.5f;
+    };
+    for (auto& s : x) s = cfloat(next(), next());
+    const auto window = fernsdr::make_blackman_harris_window(n);
+    double gain = 0.0;
+    for (float w : window) gain += w;
+    fernsdr::FftSplit fft(n);
+    std::vector<float> line;
+    int checked = 0;
+    for (size_t pushed = 0; pushed < x.size(); pushed++) {
+        analyzer.push(&x[pushed], 1);
+        if (!analyzer.take_line(line)) continue;
+        const size_t start = pushed + 1 - n;
+        std::vector<float> re(n), im(n), power(n), db(n);
+        for (size_t e = 0; e < n; e++) {
+            re[e] = x[start + e].real() * window[e];
+            im[e] = x[start + e].imag() * window[e];
+        }
+        fft.forward(re.data(), im.data());
+        for (size_t e = 0; e < n; e++) power[e] = re[e] * re[e] + im[e] * im[e];
+        fernsdr::simd::power_to_db(power.data(), n, 1.0f, static_cast<float>(20.0 * std::log10(gain)), db.data());
+        CHECK_EQ(line.size(), n);
+        float worst = 0.0f;
+        for (size_t i = 0; i < n; i++) worst = std::max(worst, std::fabs(line[i] - db[(i + n / 2) & (n - 1)]));
+        CHECK(worst < 1e-3f);
+        checked++;
+    }
+    CHECK_EQ(checked, 5);
 }

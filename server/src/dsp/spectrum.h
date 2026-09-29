@@ -79,8 +79,12 @@ private:
     DspVector<float> window_;
     float window_gain_db_ = 0.0f;
 
-    DspVector<float> history_re_;  // fft_size_ most recent samples, as a ring
-    DspVector<float> history_im_;
+    DspVector<float> history_re_;  // a real input's fft_size_ most recent samples, as a ring
+    // An IQ input's most recent samples as (re, im) pairs, the ring written
+    // twice, at write_pos_ and fft_size_ further on: any window of fft_size_
+    // samples then lies in one run, which the windowed transform reads as it
+    // is, with no unwrapping, splitting or windowing pass of its own.
+    DspVector<float> ring_;
     size_t write_pos_ = 0;
     size_t since_hop_ = 0;
     size_t primed_ = 0;

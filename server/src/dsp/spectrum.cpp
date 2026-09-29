@@ -54,8 +54,8 @@ SpectrumAnalyzer::SpectrumAnalyzer(double sample_rate, size_t fft_size, double l
     for (float v : window_) coherent_gain += v;
     window_gain_db_ = static_cast<float>(20.0 * std::log10(coherent_gain));
 
-    history_re_.assign(fft_size_, 0.0f);
-    if (kind_ == SignalKind::Iq) history_im_.assign(fft_size_, 0.0f);
+    if (kind_ == SignalKind::Iq) ring_.assign(4 * fft_size_, 0.0f);
+    else history_re_.assign(fft_size_, 0.0f);
     work_re_.assign(fft_size_, 0.0f);
     work_im_.assign(fft_size_, 0.0f);
     accumulator_.assign(fft_size_, 0.0f);
@@ -88,13 +88,10 @@ void SpectrumAnalyzer::push(const cfloat* input, size_t count) {
         }
         // Stop at both boundaries. Crossing a hop before transforming would
         // replace samples needed by that FFT; crossing the ring end would
-        // overrun storage. Inside the span there is no per-sample division or
-        // branch, so deinterleaving can vectorise.
+        // overrun storage.
         const size_t span = std::min({count, fft_size_ - write_pos_, hop_ - since_hop_});
-        for (size_t i = 0; i < span; i++) {
-            history_re_[write_pos_ + i] = input[i].real();
-            history_im_[write_pos_ + i] = input[i].imag();
-        }
+        std::memcpy(ring_.data() + 2 * write_pos_, input, span * sizeof(cfloat));
+        std::memcpy(ring_.data() + 2 * (write_pos_ + fft_size_), input, span * sizeof(cfloat));
         input += span;
         count -= span;
         finish_span(span);
@@ -138,20 +135,14 @@ void SpectrumAnalyzer::finish_span(size_t count) {
 
 void SpectrumAnalyzer::transform() {
     transforms_++;
-    // Unwrap the ring into the work buffer, oldest first, applying the window:
-    // the oldest samples run from write_pos_ to the end of the ring, the rest
-    // from its start. Two straight runs rather than one masked index, so the
-    // loops vectorise.
-    const size_t older = fft_size_ - write_pos_;
-    const bool iq = kind_ == SignalKind::Iq;
-    for (size_t i = 0; i < older; i++) work_re_[i] = history_re_[write_pos_ + i] * window_[i];
-    for (size_t i = 0; i < write_pos_; i++) work_re_[older + i] = history_re_[i] * window_[older + i];
-    if (iq) {
-        for (size_t i = 0; i < older; i++) work_im_[i] = history_im_[write_pos_ + i] * window_[i];
-        for (size_t i = 0; i < write_pos_; i++) work_im_[older + i] = history_im_[i] * window_[older + i];
-    }
-
     if (kind_ == SignalKind::Real) {
+        // Unwrap the ring into the work buffer, oldest first, applying the
+        // window: the oldest samples run from write_pos_ to the end of the
+        // ring, the rest from its start. Two straight runs rather than one
+        // masked index, so the loops vectorise.
+        const size_t older = fft_size_ - write_pos_;
+        for (size_t i = 0; i < older; i++) work_re_[i] = history_re_[write_pos_ + i] * window_[i];
+        for (size_t i = 0; i < write_pos_; i++) work_re_[older + i] = history_re_[i] * window_[older + i];
         // A real input occupies 0 .. rate/2, so only that half is transformed
         // and only that half is published.
         real_fft_.forward(work_re_.data(), work_re_.data(), work_im_.data());
@@ -161,7 +152,10 @@ void SpectrumAnalyzer::transform() {
             accumulator_[i] += re * re + im * im;
         }
     } else {
-        fft_.forward(work_re_.data(), work_im_.data());
+        // The window's oldest sample is at write_pos_; its second half starts
+        // half a transform on, both in the doubled ring's one run.
+        const float* older = ring_.data() + 2 * write_pos_;
+        fft_.forward_windowed(older, older + fft_size_, window_.data(), work_re_.data(), work_im_.data());
         for (size_t i = 0; i < fft_size_; i++) {
             const float re = work_re_[i];
             const float im = work_im_[i];
