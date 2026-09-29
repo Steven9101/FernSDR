@@ -4,8 +4,14 @@
 # configuration on the first start; the receiver itself runs as `fernsdr`.
 #
 # FERNSDR_SETUP=internet leaves the admin panel to HTTPS through a web
-# server in front, as install.sh does for a server on the internet; the
-# default, home, lets the home network in over plain HTTP.
+# server in front, as install.sh does for a server on the internet; http
+# serves a server without a domain, the admin panel through an SSH tunnel;
+# the default, home, lets the home network in over plain HTTP.
+#
+# FERNSDR_USB_GID is the host's group for SDR devices, as install.sh sets it
+# up with a udev rule. With /dev/bus/usb bound in from the host, a radio
+# plugged in later appears with that group, and the receiver, a member of
+# it here too, opens it without the container starting again.
 set -eu
 
 STATE=/var/lib/fernsdr
@@ -26,14 +32,22 @@ chmod 0700 "$STATE"
 # Devices given with --device /dev/bus/usb/... keep the host's owner inside
 # the container, usually root alone. These nodes are the container's own, so
 # giving them to the receiver's group changes nothing on the host.
-if [ -d /dev/bus/usb ]; then
+if [ -n "${FERNSDR_USB_GID:-}" ]; then
+    case "$FERNSDR_USB_GID" in *[!0-9]* | '') echo "fernsdr: FERNSDR_USB_GID is a group number, not $FERNSDR_USB_GID" >&2; exit 1 ;; esac
+    group=$(awk -F: -v gid="$FERNSDR_USB_GID" '$3 == gid { print $1 }' /etc/group)
+    if [ -z "$group" ]; then
+        addgroup -g "$FERNSDR_USB_GID" hostusb
+        group=hostusb
+    fi
+    addgroup fernsdr "$group" 2> /dev/null || true
+elif [ -d /dev/bus/usb ]; then
     find /dev/bus/usb -type c -exec chgrp fernsdr {} + -exec chmod 0660 {} +
 fi
 
 if [ ! -f "$CONFIG" ]; then
     case "${FERNSDR_SETUP:-home}" in
-        home | internet) ;;
-        *) echo "fernsdr: FERNSDR_SETUP is home or internet, not ${FERNSDR_SETUP}" >&2; exit 1 ;;
+        home | internet | http) ;;
+        *) echo "fernsdr: FERNSDR_SETUP is home, internet or http, not ${FERNSDR_SETUP}" >&2; exit 1 ;;
     esac
     password=$(head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 20)
     hash=$(printf '%s\n' "$password" | "$PROGRAM" --hash-password 2> /dev/null | sed -n 's/^password_hash = //p')
@@ -45,12 +59,17 @@ if [ ! -f "$CONFIG" ]; then
             section == "server" && /^[ \t]*root[ \t]*=/ { print "root = /opt/fernsdr/web"; next }
             { print }' /opt/fernsdr/fernsdr.example.conf
         printf '\n[admin]\n'
-        printf '# The password is in admin-password beside this file. For another one:\n'
-        printf '# docker exec -it <container> /opt/fernsdr/fernsdr --hash-password\n'
+        printf '# The password is in admin-password beside this file. Change it on the\n'
+        printf "# admin panel's Station page, or with install.sh run again.\n"
         printf 'password_hash = %s\n' "$hash"
         if [ "${FERNSDR_SETUP:-home}" = home ]; then
             printf '# The admin panel over plain HTTP from the home network (docs/DEPLOYMENT.md).\n'
             printf 'home_network = yes\n'
+        fi
+        if [ -n "${FERNSDR_PLAIN_ADMIN:-}" ]; then
+            printf '# The admin panel over plain HTTP from anywhere, at your own risk: anyone\n'
+            printf '# on the way can read it and catch the password (docs/DEPLOYMENT.md).\n'
+            printf 'plain_http_anywhere = yes\n'
         fi
     } > "$CONFIG.new"
     umask 077

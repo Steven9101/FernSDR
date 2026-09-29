@@ -43,6 +43,8 @@ UPDATE=/var/lib/fernsdr-update
 UNITS=/etc/systemd/system
 SERVICE_USER=fernsdr
 MANIFEST=fernsdr-release-v1.txt
+IMAGE=${FERNSDR_IMAGE:-ghcr.io/steven9101/fernsdr:latest}
+CONTAINER=fernsdr
 
 WORK=""
 PLATFORM=""
@@ -465,11 +467,15 @@ this_address() {
 # A password for the admin panel: 20 characters from 32 that cannot be
 # mistaken for one another, 100 bits. The receiver keeps only its hash; the
 # password itself goes in a file for root, which /opt/fernsdr is.
-new_admin_password() {
+make_password() {
     PASSWORD=$(od -An -N20 -tu1 /dev/urandom | awk -v alphabet=abcdefghjkmnpqrstuvwxyz023456789 '
         { for (i = 1; i <= NF; i++) out = out substr(alphabet, $i % 32 + 1, 1) }
         END { print substr(out, 1, 4) "-" substr(out, 5, 4) "-" substr(out, 9, 4) "-" substr(out, 13, 4) "-" substr(out, 17, 4) }')
     [ "${#PASSWORD}" = 24 ] || die "Could not make up a password for the admin panel."
+}
+
+new_admin_password() {
+    make_password
     HASH=$(printf '%s\n' "$PASSWORD" | "$1/fernsdr" --hash-password 2> /dev/null | sed -n 's/^password_hash = //p')
     [ -n "$HASH" ] || die "Could not hash the admin panel's password."
     (umask 077 && printf '%s\n' "$PASSWORD" > "$INSTALL/admin-password")
@@ -1237,6 +1243,191 @@ new_password() {
     printf '\n'
 }
 
+# --- Docker -------------------------------------------------------------------
+#
+# The receiver in a container instead of as a service: the image FernSDR
+# publishes, its configuration and modules in a volume, restarted by Docker,
+# and the host's USB bus bound in, so that a radio plugged in later appears
+# without the container starting again. The device rules and the kernel
+# drivers kept away are the host's, as for a service; the container takes the
+# host's group for the radios. SDRplay's API needs glibc and a service of
+# its own, which the image does not have.
+
+# A receiver this installer runs in Docker: the container it made, by label.
+docker_managed() {
+    have docker || return 1
+    [ -n "$(docker inspect -f '{{index .Config.Labels "org.fernsdr.setup"}}' "$CONTAINER" 2> /dev/null)" ]
+}
+
+# Docker when the operator asks for it: FERNSDR_DOCKER=1, or the answer to
+# a question asked only where Docker runs and nothing is installed yet.
+want_docker() {
+    [ ! -e "$INSTALL/trusted" ] && [ ! -f "$STATE/fernsdr.conf" ] && [ -z "$MIGRATING" ] || return 1
+    if ! have docker || ! docker info > /dev/null 2>&1; then
+        [ -z "${FERNSDR_DOCKER:-}" ] || die "FERNSDR_DOCKER asks for Docker, which does not run here."
+        return 1
+    fi
+    [ -z "${FERNSDR_DOCKER:-}" ] || return 0
+    [ -z "${FERNSDR_SETUP:-}" ] && (exec < /dev/tty) 2> /dev/null || return 1
+    {
+        printf '\nDocker runs on this machine. How should FernSDR run?\n\n'
+        printf '  1  As a service of this machine: updates from the admin panel\n'
+        printf '  2  In a Docker container: updates by running this installer again;\n'
+        printf '     not for SDRplay radios\n\n'
+        printf 'Answer [1]: '
+    } > /dev/tty
+    IFS= read -r answer < /dev/tty || answer=1
+    [ "$answer" = 2 ]
+}
+
+docker_label() { docker inspect -f "{{index .Config.Labels \"org.fernsdr.$1\"}}" "$CONTAINER" 2> /dev/null; }
+
+# SETUP PLAIN_ADMIN: the container, from $IMAGE.
+docker_run() {
+    setup=$1 plain=$2
+    case "$setup" in internet) ports=127.0.0.1:8073:8073 ;; *) ports=8073:8073 ;; esac
+    gid=$(getent group "$SERVICE_USER" | cut -d: -f3)
+    set -- -d --name "$CONTAINER" --restart unless-stopped \
+        --label "org.fernsdr.setup=$setup" --label "org.fernsdr.plain_admin=$plain" \
+        -p "$ports" -v fernsdr:/var/lib/fernsdr \
+        -e "FERNSDR_SETUP=$setup" -e "FERNSDR_PLAIN_ADMIN=$plain" -e "FERNSDR_USB_GID=$gid" -e FERNSDR_SUPERVISED=1
+    # USB character devices, major 189, may be opened as they come and go.
+    if [ -d /dev/bus/usb ]; then set -- "$@" -v /dev/bus/usb:/dev/bus/usb --device-cgroup-rule 'c 189:* rmw'; fi
+    docker run "$@" "$IMAGE" > /dev/null
+}
+
+# The image, fetched; one already here does when fetching fails, as on a
+# machine without internet access.
+docker_pull() {
+    docker pull -q "$IMAGE" > "$WORK/pull.log" 2>&1 && return 0
+    docker image inspect "$IMAGE" > /dev/null 2>&1 || return 1
+    warn "Could not fetch $IMAGE; going on with the one already here."
+}
+
+# Whether the container's receiver answers, within a minute.
+docker_wait() {
+    for i in $(seq 1 60); do
+        if have curl; then
+            curl -fsS -o /dev/null --max-time 2 http://127.0.0.1:8073/api/status 2> /dev/null && return 0
+        else
+            wget -q -O /dev/null -T 2 http://127.0.0.1:8073/api/status 2> /dev/null && return 0
+        fi
+        sleep 1
+    done
+    return 1
+}
+
+docker_first() {
+    ask_where
+    ensure_user
+    install_usb_rules
+    say "Fetching $IMAGE"
+    docker_pull || die "Could not fetch $IMAGE."
+    docker volume create fernsdr > /dev/null
+    docker_run "$WHERE" "$PLAIN_ADMIN" || die "Docker could not start the container."
+    docker_wait || die "The container does not answer; docker logs $CONTAINER says why."
+    PASSWORD=$(docker exec "$CONTAINER" cat /var/lib/fernsdr/admin-password 2> /dev/null || true)
+    setup_https
+    docker_summary
+}
+
+# A newer image, if there is one: the container made again from it, with the
+# volume as it was. One that does not answer gives way to the image before.
+docker_update() {
+    WHERE=$(docker_label setup)
+    PLAIN_ADMIN=$(docker_label plain_admin)
+    before=$(docker inspect -f '{{.Image}}' "$CONTAINER")
+    # The image the container runs keeps a name of its own, given before the
+    # new one takes its tag: an image without a name is dropped once its
+    # container is gone, and cannot be named again by its id.
+    previous=${IMAGE%:*}:previous
+    if [ "$(docker image inspect -f '{{.Id}}' "$IMAGE" 2> /dev/null)" = "$before" ]; then
+        docker tag "$IMAGE" "$previous"
+    elif ! docker tag "$before" "$previous" 2> /dev/null; then
+        previous=""
+    fi
+    say "Looking for a newer image"
+    docker_pull || die "Could not fetch $IMAGE."
+    if [ "$(docker image inspect -f '{{.Id}}' "$IMAGE")" = "$before" ]; then
+        say "The container runs the newest image"
+        docker start "$CONTAINER" > /dev/null 2>&1 || true
+    else
+        say "Starting the container again from the new image"
+        docker rm -f "$CONTAINER" > /dev/null
+        if ! docker_run "$WHERE" "$PLAIN_ADMIN" || ! docker_wait; then
+            docker rm -f "$CONTAINER" > /dev/null 2>&1 || true
+            [ -n "$previous" ] ||
+                die "The new image does not start, and the one before has no name to go back to; docker logs $CONTAINER says why."
+            IMAGE=$previous
+            docker_run "$WHERE" "$PLAIN_ADMIN" && docker_wait ||
+                die "Neither the new image nor the one before starts; docker logs $CONTAINER says why."
+            die "The new image did not start, so the container runs the one before again."
+        fi
+    fi
+    docker_summary
+}
+
+# A new admin password in the container's configuration; the receiver
+# restarts to take it.
+docker_password() {
+    make_password
+    printf '%s\n' "$PASSWORD" | docker exec -i "$CONTAINER" /opt/fernsdr/fernsdr --set-password /var/lib/fernsdr/fernsdr.conf \
+        > /dev/null 2>&1 || die "The container did not take the new password."
+    printf '%s\n' "$PASSWORD" | docker exec -i "$CONTAINER" sh -c \
+        'umask 077 && cat > /var/lib/fernsdr/admin-password && chown fernsdr:fernsdr /var/lib/fernsdr/admin-password'
+    docker restart "$CONTAINER" > /dev/null
+    docker_wait || warn "The container does not answer yet; docker logs $CONTAINER says why."
+    printf '\n'
+    say "The admin panel has a new password"
+    if [ -t 1 ]; then note "Password:      $PASSWORD"; fi
+    note "It is also in the volume, as admin-password."
+    printf '\n'
+}
+
+docker_main() {
+    if docker_managed; then
+        INSTALLED=$(docker inspect -f '{{index .Config.Labels "org.opencontainers.image.version"}}' "$CONTAINER" 2> /dev/null || true)
+        [ -n "$INSTALLED" ] || INSTALLED="in Docker"
+        ask_rerun
+        if [ "$ACTION" = password ]; then docker_password; else docker_update; fi
+    else
+        docker_first
+    fi
+}
+
+docker_summary() {
+    address=$(this_address)
+    printf '\nFernSDR runs in Docker, in the container %s.\n\n' "$CONTAINER"
+    if [ "$WHERE" = internet ]; then
+        site=${DOMAIN:-radio.example.org}
+        note "Listeners:     https://$site"
+        note "Admin panel:   https://$site/admin"
+        [ -n "$HTTPS" ] || note "               once a web server in front serves it over HTTPS, as the guide shows"
+    else
+        note "Listeners:     http://$address:8073"
+        if [ -n "$PLAIN_ADMIN" ]; then
+            note "Admin panel:   http://$address:8073/admin, over plain HTTP, at your own risk"
+        elif [ "$WHERE" = http ]; then
+            note "Admin panel:   through an SSH tunnel: ssh -L 8073:localhost:8073 you@$address,"
+            note "               then http://localhost:8073/admin"
+        else
+            note "Admin panel:   http://$address:8073/admin, from the home network"
+        fi
+    fi
+    if [ -n "$PASSWORD" ] && [ -t 1 ]; then
+        note "Password:      $PASSWORD"
+        note "               also in the volume, as admin-password"
+    elif [ -n "$PASSWORD" ]; then
+        note "Password:      in the volume, as admin-password"
+    fi
+    printf '\n'
+    note "Settings:      the volume fernsdr, kept when the container is made again"
+    note "Log:           docker logs $CONTAINER"
+    note "Updates:       this installer again, which fetches the newest image"
+    note "Lost password: this installer again, answer 2"
+    printf '\n'
+}
+
 firewall_hint() {
     if have firewall-cmd && firewall-cmd --state > /dev/null 2>&1; then
         note "firewalld is on. For other machines to reach the receiver:"
@@ -1347,6 +1538,10 @@ main() {
     trap 'exit 143' HUP TERM
 
     find_installed
+    if docker_managed || want_docker; then
+        docker_main
+        exit 0
+    fi
     if [ -n "$MIGRATING" ] && [ "$INIT" != systemd ]; then
         die "$INSTALL/etc holds a receiver that tools/source-install.sh set up, which only systemd runs. Move $INSTALL/etc/fernsdr.conf to $STATE/fernsdr.conf by hand if it is to be kept, move $INSTALL away, then run this again."
     fi

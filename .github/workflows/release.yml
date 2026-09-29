@@ -70,6 +70,15 @@ jobs:
         env:
           FERNSDR_WEB_DIST: ${{ runner.temp }}/pages
         run: tools/build-release.sh rehearsal "$RUNNER_TEMP/release"
+      # The container images, built as the release builds them and kept on
+      # the runner, to see that they build before a release pushes them.
+      - name: Container images
+        run: |
+          docker run --privileged --rm tonistiigi/binfmt@sha256:8f58e6214f4cc9dc83ce8f5acad1ece508eb6b20e696a8c1e9f274481982c541 --install arm64,arm
+          tools/build-image.sh "$RUNNER_TEMP/release" fernsdr-rehearsal
+          for arch in x86_64 aarch64 armhf; do
+            docker run --rm --entrypoint /opt/fernsdr/fernsdr "fernsdr-rehearsal:$(sed -n 's/^version //p' "$RUNNER_TEMP/release/fernsdr-release-v1.txt")-$arch" --version
+          done
       - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
           name: rehearsal-${{ github.run_number }}
@@ -83,6 +92,7 @@ jobs:
     environment: release
     permissions:
       contents: write
+      packages: write
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -113,3 +123,12 @@ jobs:
             "$out/fernsdr-$version-linux-x86_64.tar" "$out/fernsdr-$version-linux-aarch64.tar" \
             "$out/fernsdr-$version-linux-armhf.tar" "$out/fernsdr-release-v1.txt" \
             "$out/fernsdr-release-v1.txt.sig" "$out/install.sh"
+      # The container image install.sh's Docker path and docker run fetch,
+      # from the archives just published, for all three processors.
+      - name: Container images
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
+          docker run --privileged --rm tonistiigi/binfmt@sha256:8f58e6214f4cc9dc83ce8f5acad1ece508eb6b20e696a8c1e9f274481982c541 --install arm64,arm
+          tools/build-image.sh "$RUNNER_TEMP/release" ghcr.io/steven9101/fernsdr push
