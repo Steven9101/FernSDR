@@ -1,3 +1,5 @@
+<p align="center"><img src="docs/images/logo.png" width="128" height="128" alt="The FernSDR logo"></p>
+
 # FernSDR
 
 A radio receiver you use through a web browser, and the server that runs it.
@@ -6,6 +8,8 @@ Point a radio at an antenna, run this next to it, and anyone with the link can
 listen. They pick a frequency, they hear what the antenna hears, and they see a
 picture of the radio spectrum scrolling past. Listeners tune independently;
 the server's CPU and uplink determine how many can listen at once.
+
+![The listener's page: spectrum and waterfall of the medium wave band, the receiver tuned to 909 kHz AM, and the station's widgets beside it](docs/images/listener.webp)
 
 ## If none of that meant anything
 
@@ -107,6 +111,12 @@ has the commands for the common ones.
 - **Stream quality** to choose, and a connection that gives up waterfall
   detail before it gives up sound when the network is slow.
 
+<p align="center">
+  <img src="docs/images/phone.webp" width="260" alt="The listener's page on a phone">
+  &nbsp;
+  <img src="docs/images/widgets.webp" width="540" alt="Widgets beside the waterfall: space weather with the bands open from the station, day and night on a world map, and the station's card">
+</p>
+
 ## What operators get
 
 - **An admin panel** at `/admin`, as usable on a phone as on a desktop:
@@ -132,6 +142,8 @@ has the commands for the common ones.
   runit or SysV init; Debian, Ubuntu, Fedora, Alpine, Arch and the rest; or a
   Docker container. The released programs are static.
 - **Monitoring:** `/api/status`, `/api/health` and Prometheus `/metrics`.
+
+![The admin panel's overview: the band receiving, one listener tuned to 909 kHz AM, and what goes out](docs/images/admin.webp)
 
 ## Asking for something
 
