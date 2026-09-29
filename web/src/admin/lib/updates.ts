@@ -45,3 +45,59 @@ export function machineName(platform: string): string {
       return platform || 'not one releases are built for';
   }
 }
+
+const DISMISSED_KEY = 'fernsdr.update.dismissed';
+const LOOKED_KEY = 'fernsdr.update.looked';
+const DAY_S = 24 * 60 * 60;
+
+/** Puts a version's offer away in this browser; a newer version is offered again. */
+export function dismissUpdate(version: string): void {
+  try {
+    localStorage.setItem(DISMISSED_KEY, version);
+  } catch {
+    // No storage: the offer comes back at the next sign-in.
+  }
+}
+
+export function updateDismissed(version: string): boolean {
+  try {
+    return localStorage.getItem(DISMISSED_KEY) === version;
+  } catch {
+    return false;
+  }
+}
+
+/**
+ * Whether the panel should ask the receiver to look for a newer release:
+ * when it has not looked for a day, and this browser has not asked it to in
+ * the last six hours, which keeps a receiver that restarts often from asking
+ * GitHub at every sign-in.
+ */
+export function lookDue(checkedS: number | undefined, nowS: number, askedS: number): boolean {
+  return (!checkedS || nowS - checkedS > DAY_S) && nowS - askedS > DAY_S / 4;
+}
+
+export function lastAsked(): number {
+  try {
+    return Number(localStorage.getItem(LOOKED_KEY)) || 0;
+  } catch {
+    return 0;
+  }
+}
+
+export function noteAsked(nowS: number): void {
+  try {
+    localStorage.setItem(LOOKED_KEY, String(nowS));
+  } catch {
+    // Nothing to keep it in.
+  }
+}
+
+/** "2026-10-01" as "1 October 2026"; anything else as it is. */
+export function releaseDate(date: string): string {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(date);
+  if (!match) return date;
+  const months = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+  const month = months[Number(match[2]) - 1];
+  return month ? `${Number(match[3])} ${month} ${match[1]}` : date;
+}

@@ -12,10 +12,11 @@
 	import { Button } from '../components/ui/button/index';
 	import { Confirm } from '../components/ui/confirm/index';
 	import RestoreBackup from '../components/RestoreBackup.svelte';
+	import ReleaseNotes from '../components/ReleaseNotes.svelte';
 	import { backupFileName } from '../lib/backup';
 	import { saveFile } from '../../util/save-file';
 	import { ago } from '../lib/format';
-	import { machineName, stepLabel, updating } from '../lib/updates';
+	import { machineName, releaseDate, stepLabel, updating } from '../lib/updates';
 
 	/*
 	Updates: which FernSDR runs here, whether a newer release is published and what it changes,
@@ -28,10 +29,13 @@
 	// The receiver stopped answering while an update ran: it is restarting.
 	let away = $state(false);
 	let confirmOpen = $state(false);
+	let notesOpen = $state(false);
 
 	const checking = $derived(view?.check.state === 'checking');
 	const underWay = $derived(updating(view?.status));
 	const found = $derived(view?.check.state === 'done' && view.check.newer ? view.check : null);
+	// About what fits in the folded height; shorter notes show whole, with nothing to open.
+	const folded = $derived(!notesOpen && (found?.notes?.length ?? 0) > 700);
 
 	async function load() {
 		try {
@@ -171,7 +175,7 @@
 				title="Available"
 				footer={`Listeners are away for a few seconds while the receiver restarts. If ${found.version} does not work within five minutes, ${view.running} comes back by itself.`}
 			>
-				<SettingsRow label={`FernSDR ${found.version}`} detail={found.date ? `Released ${found.date}` : undefined}>
+				<SettingsRow label={`FernSDR ${found.version}`} detail={found.date ? `Released ${releaseDate(found.date)}` : undefined}>
 					{#snippet control()}
 						<Button size="lg" class="h-10 rounded-full px-4 md:h-9" onclick={() => (confirmOpen = true)}>
 							Update
@@ -179,10 +183,18 @@
 					{/snippet}
 				</SettingsRow>
 				{#if found.notes}
-					<!-- Plain text from the signed release: shown as it is, never as markup. -->
-					<p class="px-4 py-3.5 text-[14px] leading-relaxed whitespace-pre-line text-muted-foreground">
-						{found.notes}
-					</p>
+					<!-- The signed release's notes, set as text: nothing in them becomes markup. -->
+					<!-- Long notes open on request: a release's whole changelog would otherwise be the page. -->
+					<div class="relative px-4 py-4 {folded ? 'max-h-80 overflow-hidden' : ''}">
+						<ReleaseNotes notes={found.notes} />
+						{#if folded}
+							<div class="absolute inset-x-0 bottom-0 flex h-24 items-end justify-center bg-linear-to-t from-card via-card/90 to-transparent pb-3">
+								<Button variant="secondary" size="lg" class="h-10 rounded-full px-4 md:h-9" onclick={() => (notesOpen = true)}>
+									All changes
+								</Button>
+							</div>
+						{/if}
+					</div>
 				{/if}
 			</SettingsGroup>
 		{:else if view.check.state === 'done' && !underWay && !away}

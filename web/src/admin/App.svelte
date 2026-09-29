@@ -20,6 +20,9 @@
 	import Widgets from './pages/Widgets.svelte';
 	import Setup from './pages/Setup.svelte';
 	import { looksNew, setupDone, setupInProgress } from './lib/setup';
+	import UpdateDialog from './components/UpdateDialog.svelte';
+	import { updateToOffer } from './lib/update-offer';
+	import type { UpdateView } from './api';
 
 	let session = $state<'checking' | 'signed-out' | 'signed-in'>('checking');
 	let exposed = $state(false);
@@ -57,6 +60,28 @@
 				if (looksNew(bands.map((band) => band.fixed.source)) && router.route.page === 'overview') router.go({ page: 'setup' });
 			})
 			.catch(() => {});
+	});
+
+	// A newer release, offered once after signing in, a few seconds on so that it does not cover
+	// the page as it appears, and not while the setup runs, which has its own questions.
+	let offered = $state<UpdateView | null>(null);
+	let offerOpen = $state(false);
+	$effect(() => {
+		if (session !== 'signed-in') return;
+		let cancelled = false;
+		const timer = window.setTimeout(() => {
+			updateToOffer()
+				.then((view) => {
+					if (cancelled || !view || router.route.page === 'setup' || router.route.page === 'updates') return;
+					offered = view;
+					offerOpen = true;
+				})
+				.catch(() => {});
+		}, 4000);
+		return () => {
+			cancelled = true;
+			window.clearTimeout(timer);
+		};
 	});
 
 	// A session that ran out while the panel was open lands back on sign-in, not on an error.
@@ -125,6 +150,7 @@
 		</div>
 	</div>
 	<BottomNav onSignOut={signOut} />
+	{#if offered}<UpdateDialog view={offered} bind:open={offerOpen} />{/if}
 {/if}
 
 <Toaster position="top-center" />
