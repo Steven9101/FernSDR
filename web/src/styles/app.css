@@ -479,6 +479,10 @@ a {
   background: var(--waterfall-empty);
   overflow: hidden;
   display: grid;
+  /* The column stays the stage's own width. Left to size itself, it grew to
+     the widest line of the tuner under it, which on a touch phone, with its
+     larger buttons, ran 74 px past the screen and cut off the audio button. */
+  grid-template-columns: minmax(0, 1fr);
   grid-template-rows: minmax(0, 1fr) auto;
 }
 
@@ -1993,6 +1997,18 @@ kbd {
   .tuner__side {
     flex: 1 1 100%;
     justify-content: space-between;
+  }
+
+  /* The frequency's own column may be narrower than its row of tools, which
+     then wraps under the band's name rather than past the screen's edge. */
+  .frequency {
+    min-width: 0;
+    max-width: 100%;
+  }
+
+  .frequency__meta {
+    flex-wrap: wrap;
+    row-gap: var(--space-2);
   }
 
   .frequency__digits {
