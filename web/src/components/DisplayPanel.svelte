@@ -5,9 +5,8 @@
   import Segmented from './Segmented.svelte';
   import Slider from './Slider.svelte';
   import Toggle from './Toggle.svelte';
-  import { applyTheme, display, operatorTheme, theme } from '../state/store';
-  import { layout, meterFace, resetLayout, setLayout } from '../state/layout';
-  import { MediaQuery } from 'svelte/reactivity';
+  import { applyTheme, display, theme } from '../state/store';
+  import { editingLayout } from '../state/layout';
   import { PALETTES, paletteGradient } from '../render/palettes';
   import { formatSigned } from '../util/frequency';
 
@@ -22,21 +21,8 @@
     { value: 'full', label: 'Full', title: 'Also bass and treble, low cut, de-emphasis and the finer filter controls' },
   ] as const;
 
-  const METERS = [
-    { value: 'bar', label: 'Bar', title: 'A bar with a peak marker' },
-    { value: 'needle', label: 'Needle', title: 'An analog meter' },
-    { value: 'numeric', label: 'Numbers', title: 'The reading and its peak as figures' },
-    { value: 'history', label: 'Trace', title: 'The last half minute, to see a fade coming' },
-  ] as const;
-  const SIDES = [
-    { value: 'left', label: 'Left' },
-    { value: 'right', label: 'Right' },
-  ] as const;
-  // The column only has a side on a wide screen; the phone's sheet has none.
-  const wide = new MediaQuery('(min-width: 1024px)');
 
   const settings = $derived(display.value);
-  const own = $derived(layout.value);
 </script>
 
 <Panel title="Display">
@@ -78,22 +64,14 @@
   </Rack>
 
   <Rack title="Layout">
-    <Field label="Meter" stacked>
-      <!-- The face in use is marked, the station's until the listener picks
-           one; the reset below goes back to the station's. -->
-      <Segmented label="Meter" options={METERS} value={meterFace(own.meter, operatorTheme.value?.meter)}
-        onChange={(meter) => setLayout({ meter })} />
+    <!-- Where things are is arranged on the page itself, in the edit mode:
+         a list of switches here would describe a page the listener is
+         looking at anyway. -->
+    <Field label="Page">
+      <button type="button" id="customise-layout" class="button button--small" onclick={() => (editingLayout.value = true)}>
+        Customise
+      </button>
     </Field>
-    {#if wide.current}
-      <Field label="Controls">
-        <Segmented label="Side of the controls" options={SIDES} value={own.side} onChange={(side) => setLayout({ side })} />
-      </Field>
-    {/if}
-    <Toggle label="Meter on the dial" checked={own.show.meter} onChange={(meter) => setLayout({ show: { meter } })} />
-    <Toggle label="Volume on the dial" checked={own.show.volume} onChange={(volume) => setLayout({ show: { volume } })} />
-    <Toggle label="Band name" checked={own.show.band} onChange={(band) => setLayout({ show: { band } })} />
-    <Toggle label="Tools under the dial" checked={own.show.tools} onChange={(tools) => setLayout({ show: { tools } })} />
-    <button type="button" class="button button--small layout__reset" onclick={resetLayout}>Back to the station's layout</button>
   </Rack>
 
   <Rack title="Levels">

@@ -1,11 +1,17 @@
 <script lang="ts" module>
   import { lazy } from './lazy';
+  import { box } from '../state/reactive.svelte';
+  import { Recording } from '../audio/recorder';
 
   // Each tool's panel loads the first time it is opened: none of them makes
   // the page heavier for a listener who never uses it.
   const loadBookmarks = lazy(() => import('./tools/BookmarksPanel.svelte'));
   const loadLogbook = lazy(() => import('./tools/LogbookPanel.svelte'));
   const loadRig = lazy(() => import('./tools/RigPanel.svelte'));
+  // A recording belongs to the page, not to this row: hiding the tools, or
+  // arranging the page, must not leave one running with no way to stop or
+  // save it.
+  const recordingNow = box<Recording | null>(null);
 </script>
 
 <script lang="ts">
@@ -15,11 +21,13 @@
    * button until it is used, and costs nothing until then.
    */
   import Popover from './Popover.svelte';
+  import Editable from './Editable.svelte';
+  import { layout, setLayout } from '../state/layout';
   import { controller, tuning, viewport } from '../state/store';
   import { loadBookmarks as readBookmarks } from '../state/bookmarks';
   import { rigState } from '../cat/state';
   import { equalizeVfo, loadVfo, swapVfo, vfo, type VfoSetting } from '../state/vfo';
-  import { extensionFor, Recording, recordingName } from '../audio/recorder';
+  import { extensionFor, recordingName } from '../audio/recorder';
   import { signalForCarrier } from '../util/cw';
   import { saveFile } from '../util/save-file';
 
@@ -27,7 +35,7 @@
   let bookmarkButton = $state<HTMLButtonElement | null>(null);
   let logButton = $state<HTMLButtonElement | null>(null);
   let rigButton = $state<HTMLButtonElement | null>(null);
-  let recording = $state<Recording | null>(null);
+  const recording = $derived(recordingNow.value);
   let elapsed = $state(0);
   let problem = $state('');
 
@@ -74,7 +82,7 @@
     problem = '';
     if (recording) {
       const done = recording;
-      recording = null;
+      recordingNow.value = null;
       const blob = await done.stop();
       const tune = tuning.value;
       saveFile(blob, recordingName(signalForCarrier(tune.freq, tune.mode, tune.cwPitch), tune.mode, done.started, extensionFor(done.type)));
@@ -84,7 +92,7 @@
     if (typeof started === 'string') problem = started;
     else {
       elapsed = 0;
-      recording = started;
+      recordingNow.value = started;
     }
   }
 
@@ -92,6 +100,7 @@
 </script>
 
 <div class="tools" role="toolbar" aria-label="Receiver tools">
+  <Editable label="VFO A and B" inline shown={layout.value.tools.vfo} onToggle={(vfo) => setLayout({ tools: { vfo } })}>
   <button
     type="button"
     class="tools__button"
@@ -105,6 +114,8 @@
     title="Copy this VFO into the other one"
     onclick={() => equalizeVfo(here())}
   >A=B</button>
+  </Editable>
+  <Editable label="Bookmarks" inline shown={layout.value.tools.bookmarks} onToggle={(bookmarks) => setLayout({ tools: { bookmarks } })}>
   <button
     bind:this={bookmarkButton}
     type="button"
@@ -116,6 +127,8 @@
   >
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.8 3.9 4.2.5-3.1 2.9.8 4.2L8 11.2l-3.7 2.1.8-4.2L2 6.2l4.2-.5z" /></svg>
   </button>
+  </Editable>
+  <Editable label="Recording" inline shown={layout.value.tools.record} onToggle={(record) => setLayout({ tools: { record } })}>
   <button
     type="button"
     class="tools__button{recording ? ' is-recording' : ''}"
@@ -127,6 +140,8 @@
     <span class="tools__dot" aria-hidden="true"></span>
     {#if recording}<span class="tools__time">{clock(elapsed)}</span>{/if}
   </button>
+  </Editable>
+  <Editable label="Logbook" inline shown={layout.value.tools.logbook} onToggle={(logbook) => setLayout({ tools: { logbook } })}>
   <button
     bind:this={logButton}
     type="button"
@@ -138,6 +153,8 @@
     >
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zm1.5 3v1h5v-1zm0 3v1h5v-1zm0 3v1h3v-1z" fill-rule="evenodd" /></svg>
   </button>
+  </Editable>
+  <Editable label="Radio link" inline shown={layout.value.tools.rig} onToggle={(rig) => setLayout({ tools: { rig } })}>
   <button
     bind:this={rigButton}
     type="button"
@@ -149,6 +166,7 @@
     >
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h9A1.5 1.5 0 0 1 14 5.5v5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 10.5zm3 2.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zm5-1h2v1h-2zm0 2h2v1h-2zM4 2.5h5V4H4z" fill-rule="evenodd" /></svg>
   </button>
+  </Editable>
   {#if problem}<span class="tools__problem" role="status">{problem}</span>{/if}
 </div>
 

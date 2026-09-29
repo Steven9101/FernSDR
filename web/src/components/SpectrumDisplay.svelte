@@ -14,10 +14,12 @@
   import { WaterfallDecoder } from '../dsp/waterfall';
   import { WaterfallRenderer, MAX_LINE_WIDTH, type WaterfallLine } from '../render/waterfall-gl';
   import { WaterfallFallbackRenderer } from '../render/waterfall-2d';
-  import { drawOverlay, DARK_THEME, RULER_HEIGHT, overlayLayout } from '../render/overlay';
+  import { drawOverlay, DARK_THEME, MIN_TRACE, RULER_HEIGHT, overlayLayout } from '../render/overlay';
   import { spotNear, type SpotFrequency } from '../state/bandplan';
   import { signalForCarrier } from '../util/cw';
   import { controller, display, tuning, viewport, currentBand } from '../state/store';
+  import { editingLayout, layout as listenerLayout, setLayout, SPECTRUM_MAX } from '../state/layout';
+  import GripHorizontal from '@lucide/svelte/icons/grip-horizontal';
   import { anchoredViewport, wheelPixels, wheelZoomFactor, zoomViewport } from '../util/viewport';
   import { waterfallLevels } from '../util/waterfall-levels';
   import { resampleLevels } from '../util/spectrum-samples';
@@ -72,6 +74,72 @@
   const pointers = new Map<number, { x: number; y: number }>();
   let pinch: { distance: number; centerHz: number; span: number } | null = null;
   let size = { width: 0, height: 0, dpr: 1 };
+  // The display's height in CSS pixels, for what the markup places by it.
+  let displayHeight = $state(0);
+
+  /**
+   * Where the spectrum, the band plan and the ruler sit. The listener's own
+   * spectrum height, set in the edit mode, may take up to 70 % of the
+   * display; the page's default stays at a third, as it always was.
+   */
+  function traceLayout(height: number) {
+    const settings = display.value;
+    const own = listenerLayout.value.spectrum;
+    return overlayLayout(height, own ?? settings.spectrumHeight, settings.showSpectrum, settings.showBandPlan,
+                         own === null ? 0.34 : 0.7);
+  }
+
+  // The line under the spectrum, which the edit mode lets the listener drag,
+  // and the tallest the display lets it be.
+  const splitTop = $derived(editingLayout.value ? traceLayout(displayHeight).spectrumHeight : 0);
+  const splitMax = $derived.by(() => {
+    if (!editingLayout.value) return 0;
+    const settings = display.value;
+    return overlayLayout(displayHeight, SPECTRUM_MAX, true, settings.showBandPlan, 0.7).spectrumHeight;
+  });
+
+  function setSpectrum(height: number) {
+    // A trace under MIN_TRACE pixels is drawn as none (overlayLayout), so a
+    // height in between would move nothing: it is either none or the least.
+    let next = Math.max(0, Math.min(splitMax || SPECTRUM_MAX, Math.round(height)));
+    if (next > 0 && next < MIN_TRACE) next = height > (listenerLayout.value.spectrum ?? splitTop) ? MIN_TRACE : 0;
+    // Dragged open while the trace is switched off: it is wanted again.
+    if (next > 0 && !display.value.showSpectrum) display.value = { ...display.value, showSpectrum: true };
+    setLayout({ spectrum: next });
+  }
+
+  function onSplitDown(event: PointerEvent) {
+    // Not the display's own drag, which would tune or pan.
+    event.stopPropagation();
+    const handle = event.currentTarget as HTMLElement;
+    handle.setPointerCapture(event.pointerId);
+    const top = container.getBoundingClientRect().top;
+    const move = (next: PointerEvent) => setSpectrum(next.clientY - top);
+    const up = () => {
+      handle.removeEventListener('pointermove', move);
+      handle.removeEventListener('pointerup', up);
+      handle.removeEventListener('pointercancel', up);
+    };
+    handle.addEventListener('pointermove', move);
+    handle.addEventListener('pointerup', up);
+    handle.addEventListener('pointercancel', up);
+  }
+
+  // The line moves the way the key points: down makes the spectrum taller.
+  // Right and left do the same as down and up, for a slider's usual keys.
+  function onSplitKey(event: KeyboardEvent) {
+    const steps: Record<string, number> = {
+      ArrowUp: -10, ArrowLeft: -10, ArrowDown: 10, ArrowRight: 10, PageUp: -50, PageDown: 50,
+    };
+    const from = display.value.showSpectrum ? (listenerLayout.value.spectrum ?? splitTop) : 0;
+    if (event.key in steps) setSpectrum(from + steps[event.key]);
+    else if (event.key === 'Home') setSpectrum(0);
+    else if (event.key === 'End') setSpectrum(SPECTRUM_MAX);
+    else return;
+    // Not the page's own arrow keys, which tune and change the volume.
+    event.preventDefault();
+    event.stopPropagation();
+  }
   let lastTap = { time: 0, x: 0 };
 
   // Read by the render loop on every frame, so a plain variable: nothing on
@@ -245,6 +313,7 @@
       const width = Math.max(1, Math.round(rect.width * dpr));
       const height = Math.max(1, Math.round(rect.height * dpr));
       size = { width, height, dpr };
+      displayHeight = height / dpr;
       renderer?.setPixelRatio(dpr);
 
       for (const canvas of [glCanvas, overlay]) {
@@ -305,6 +374,7 @@
     let paintedRenderer: Renderer | null = null;
     let paintedView: typeof viewport.value | null = null;
     let paintedSettings: typeof display.value | null = null;
+    let paintedSpectrum: number | null = null;
     let paintedSize: typeof size | null = null;
     let paintedLine: typeof latestLine = null;
     const paint = () => {
@@ -312,8 +382,7 @@
       const view = viewport.value;
       const settings = display.value;
       const current = size;
-      const layout = overlayLayout(current.height / current.dpr, settings.spectrumHeight,
-        settings.showSpectrum, settings.showBandPlan);
+      const layout = traceLayout(current.height / current.dpr);
       const { spectrumHeight, waterfallTop } = layout;
       visibleRows = Math.max(1, Math.ceil(current.height / current.dpr - waterfallTop));
 
@@ -322,12 +391,14 @@
       // and size changes still paint on the next animation frame, so dragging
       // and zooming keep the display's full response rate.
       const line = latestLine;
-      if (target && view.highHz > view.lowHz && (target !== paintedRenderer ||
+      const spectrum = listenerLayout.value.spectrum;
+      if (target && view.highHz > view.lowHz && (target !== paintedRenderer || spectrum !== paintedSpectrum ||
           view !== paintedView || settings !== paintedSettings || current !== paintedSize || line !== paintedLine)) {
         target.render(view.lowHz, view.highHz, waterfallTop * current.dpr);
         paintedRenderer = target;
         paintedView = view;
         paintedSettings = settings;
+        paintedSpectrum = spectrum;
         paintedSize = current;
         paintedLine = line;
       }
@@ -439,9 +510,7 @@
     const touch = event.pointerType === 'touch' || (!event.pointerType && coarsePointer());
     const markerHz = signalForCarrier(tune.freq, tune.mode, tune.cwPitch);
     const markerX = (markerHz - view.lowHz) * scale;
-    const settings = display.value;
-    const { rulerTop } = overlayLayout(rect.height, settings.spectrumHeight,
-      settings.showSpectrum, settings.showBandPlan);
+    const { rulerTop } = traceLayout(rect.height);
     const y = event.clientY - rect.top;
     const kind = spectrumDrag(x, lowEdgeX, highEdgeX, markerX, touch,
       y >= rulerTop && y <= rulerTop + RULER_HEIGHT, event.shiftKey);
@@ -471,9 +540,7 @@
       const tune = tuning.value;
       const view = viewport.value;
       const scale = rect.width / Math.max(1, view.highHz - view.lowHz);
-      const settings = display.value;
-      const { rulerTop } = overlayLayout(rect.height, settings.spectrumHeight,
-        settings.showSpectrum, settings.showBandPlan);
+      const { rulerTop } = traceLayout(rect.height);
       const y = event.clientY - rect.top;
       const kind = spectrumDrag(event.clientX - rect.left,
         (tune.freq + tune.low - view.lowHz) * scale,
@@ -577,10 +644,8 @@
 
   /** The band-plan marker under the pointer, when it is on the band-plan strip. */
   function markerAt(event: PointerEvent, touch: boolean): SpotFrequency | null {
-    const settings = display.value;
     const rect = container.getBoundingClientRect();
-    const { spectrumHeight, bandPlanHeight } = overlayLayout(rect.height, settings.spectrumHeight,
-      settings.showSpectrum, settings.showBandPlan);
+    const { spectrumHeight, bandPlanHeight } = traceLayout(rect.height);
     const y = event.clientY - rect.top;
     if (bandPlanHeight === 0 || y < spectrumHeight || y > spectrumHeight + bandPlanHeight) return null;
     const view = viewport.value;
@@ -650,6 +715,23 @@
   {#if filling}
     <div class="spectrum__filling">
       Building history
+    </div>
+  {/if}
+  {#if editingLayout.value}
+    <div
+      class="spectrum__split"
+      style:top="{splitTop}px"
+      role="slider"
+      tabindex="0"
+      aria-label="Height of the spectrum"
+      aria-valuemin={0}
+      aria-valuemax={Math.round(splitMax)}
+      aria-valuenow={Math.round(splitTop)}
+      aria-valuetext={splitTop > 0 ? `${Math.round(splitTop)} pixels; arrow down makes it taller` : 'No spectrum; arrow down shows it'}
+      onpointerdown={onSplitDown}
+      onkeydown={onSplitKey}
+    >
+      <span class="spectrum__split-grip"><GripHorizontal size={16} aria-hidden="true" /> Drag to set the spectrum's height</span>
     </div>
   {/if}
 </div>

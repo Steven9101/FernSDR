@@ -106,11 +106,14 @@ The first release.
   around the receiver, its locator, antenna and what it listens with.
   Widgets showing another site's page load it only when the listener asks,
   so no third-party page, cookie banner or tracker loads with the receiver.
-- A layout of the listener's own, kept in their browser: the meter they
-  read, the controls on the left or the right, and whether the meter, the
-  volume, the band name and the tools sit on the dial. The operator's theme
-  sets the look and the meter a listener starts with; one button goes back
-  to it.
+- A layout of the listener's own, kept in their browser and arranged on the
+  page itself: *Customise* in Display, or the L key, outlines each part and
+  lets it be hidden and brought back (the meter, the volume, the band name,
+  each tool under the dial, the status line), sets the meter's face and the
+  side of the controls, and gives the line under the spectrum a handle to
+  drag, or move with the arrow keys, for as tall a spectrum as wanted. The
+  operator's theme sets the look and the meter a listener starts with; one
+  button goes back to it.
 - An S-meter as a bar, a needle or numbers, with a trace of the last minute.
   In SAM the Receive panel and the meter say whether the carrier is locked
   and how far it sits from the dial.

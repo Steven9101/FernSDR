@@ -108,11 +108,15 @@ export const BAND_PLAN_HEIGHT = 16;
 export const PASSBAND_HEIGHT = 20;
 export const RULER_HEIGHT = PASSBAND_HEIGHT + 24;
 
-export function overlayLayout(height: number, requestedSpectrum: number, showSpectrum: boolean, showBandPlan: boolean) {
+/** A spectrum shorter than this shows nothing worth reading, and is not drawn. */
+export const MIN_TRACE = 28;
+
+export function overlayLayout(height: number, requestedSpectrum: number, showSpectrum: boolean, showBandPlan: boolean,
+                              maxShare = 0.34) {
   const bandPlanHeight = showBandPlan && height >= 110 ? BAND_PLAN_HEIGHT : 0;
   const available = Math.max(0, height - bandPlanHeight - RULER_HEIGHT - 48);
-  const trace = showSpectrum ? Math.min(requestedSpectrum, height * 0.34, available) : 0;
-  const spectrumHeight = trace >= 28 ? trace : 0;
+  const trace = showSpectrum ? Math.min(requestedSpectrum, height * maxShare, available) : 0;
+  const spectrumHeight = trace >= MIN_TRACE ? trace : 0;
   const rulerTop = spectrumHeight + bandPlanHeight;
   return { spectrumHeight, bandPlanHeight, rulerTop, waterfallTop: rulerTop + RULER_HEIGHT };
 }

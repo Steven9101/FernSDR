@@ -14,7 +14,8 @@
   import { controller, currentBand, frequencyEntry, rds, signalFreq, site, tuning } from '../state/store';
   import { describeFrequency, planFor } from '../state/bandplan';
   import { programmeType, stationName } from '../util/rds';
-  import { layout } from '../state/layout';
+  import { layout, setLayout } from '../state/layout';
+  import Editable from './Editable.svelte';
   import ToolsRow from './ToolsRow.svelte';
   import { parseFrequency } from '../util/frequency';
   import { digitsOf, isLeadingZero, placesFor } from './frequency-digits';
@@ -170,8 +171,14 @@
       >
         Type a frequency
       </button>
-      {#if bandLabel && layout.value.show.band}<span class="frequency__band">{bandLabel}</span>{/if}
-      {#if layout.value.show.tools}<ToolsRow />{/if}
+      {#if bandLabel}
+        <Editable label="Band name" inline shown={layout.value.show.band} onToggle={(band) => setLayout({ show: { band } })}>
+          <span class="frequency__band">{bandLabel}</span>
+        </Editable>
+      {/if}
+      <Editable label="Tools" inline container shown={layout.value.show.tools} onToggle={(tools) => setLayout({ show: { tools } })}>
+        <ToolsRow />
+      </Editable>
     </div>
     {#if stationLabel || radiotext}
       <div class="frequency__rds" title={radiotext || undefined}>

@@ -7,6 +7,8 @@
    * sight of it. Three snap heights, dragged with the handle or cycled by
    * tapping it; the sheet never covers the frequency readout.
    */
+  import { untrack } from 'svelte';
+  import { editingLayout } from '../state/layout';
   import type { Snippet } from 'svelte';
   import ControlTabs from './ControlTabs.svelte';
 
@@ -50,6 +52,19 @@
   }
 
   let snap = $state<SheetSnap>('peek');
+  // Out of the way while the page is arranged, since what is arranged is
+  // behind it, and back where it was afterwards, with the Customise button
+  // that opened it in reach for the focus to return to.
+  let snapBeforeEditing: SheetSnap | null = null;
+  $effect(() => {
+    if (editingLayout.value) {
+      snapBeforeEditing = untrack(() => snap);
+      snap = 'peek';
+    } else if (snapBeforeEditing) {
+      snap = snapBeforeEditing;
+      snapBeforeEditing = null;
+    }
+  });
   let dragOffset = $state<number | null>(null);
   let drag: { startY: number; startFraction: number; lastY: number; lastAt: number; velocity: number } | null = null;
 

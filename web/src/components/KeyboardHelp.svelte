@@ -13,9 +13,10 @@
     { keys: 'Space', description: 'Start audio, or mute once it is running' },
     { keys: 'Z / X', description: 'Zoom out / in' },
     { keys: '[ ]', description: 'Narrow / widen the filter' },
-    { keys: '1 – 9', description: 'Mode: USB, LSB, CW, CW-L, AM, SAM, NFM, DSB, and WFM where the band has it' },
+    { keys: '1 to 9', description: 'Mode: USB, LSB, CW, CW-L, AM, SAM, NFM, DSB, and WFM where the band has it' },
     { keys: 'F', description: 'Type a frequency' },
     { keys: 'N', description: 'Toggle noise reduction' },
+    { keys: 'L', description: 'Arrange the page: hide what you do not use, set the spectrum height' },
     { keys: '?', description: 'This list' },
   ];
 </script>

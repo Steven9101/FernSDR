@@ -4,6 +4,7 @@
   // Loaded once per page, whatever mounts them.
   const loadWidgetPanel = lazy(() => import('./components/WidgetPanel.svelte'));
   const loadKeyboardHelp = lazy(() => import('./components/KeyboardHelp.svelte'));
+  const loadEditLayoutBar = lazy(() => import('./components/EditLayoutBar.svelte'));
 </script>
 
 <script lang="ts">
@@ -44,7 +45,8 @@
   import { watchSystemTheme } from './state/store';
   import { loadTone, tone, toneGroup } from './state/tone';
   import { loadBandPlan } from './state/bandplan';
-  import { layout, loadLayout } from './state/layout';
+  import { editingLayout, layout, loadLayout, setLayout } from './state/layout';
+  import Editable from './components/Editable.svelte';
   import { signalForCarrier } from './util/cw';
 
   const MODE_KEYS = ['usb', 'lsb', 'cw', 'cwl', 'am', 'sam', 'nfm', 'dsb', 'wfm'];
@@ -184,6 +186,11 @@
         case '?':
           showHelp = !showHelp;
           return;
+        case 'l':
+        case 'L':
+          if (event.ctrlKey || event.metaKey || event.altKey) return;
+          editingLayout.value = !editingLayout.value;
+          return;
         case 'Escape':
           showHelp = false;
           return;
@@ -304,7 +311,7 @@
   </div>
 {/snippet}
 
-<div class="app{isWide ? ' app--wide' : ' app--narrow'}{isWide && layout.value.side === 'left' ? ' app--left' : ''}">
+<div class="app{isWide ? ' app--wide' : ' app--narrow'}{isWide && layout.value.side === 'left' ? ' app--left' : ''}{editingLayout.value ? ' app--arranging' : ''}">
   <header class="topbar">
     <div class="topbar__identity">
       <h1 class="topbar__name">{information?.name ?? 'FernSDR'}</h1>
@@ -357,10 +364,14 @@
       <AudioGate />
       <div class="tuner">
         <FrequencyDisplay />
-        {#if layout.value.show.meter || layout.value.show.volume}
+        {#if layout.value.show.meter || layout.value.show.volume || editingLayout.value}
           <div class="tuner__side">
-            {#if layout.value.show.meter}<SMeter />{/if}
-            {#if layout.value.show.volume}<VolumeControl />{/if}
+            <Editable label="Meter" shown={layout.value.show.meter} onToggle={(meter) => setLayout({ show: { meter } })}>
+              <SMeter />
+            </Editable>
+            <Editable label="Volume" shown={layout.value.show.volume} onToggle={(volume) => setLayout({ show: { volume } })}>
+              <VolumeControl />
+            </Editable>
           </div>
         {/if}
       </div>
@@ -382,7 +393,19 @@
     </BottomSheet>
   {/if}
 
-  <StatusBar />
+  <Editable label="Status line" area="status" inset shown={layout.value.show.status}
+    onToggle={(status) => setLayout({ show: { status } })}>
+    <StatusBar />
+  </Editable>
+  {#if editingLayout.value}
+    {#await loadEditLayoutBar()}
+      <p role="status">Loading…</p>
+    {:then EditLayoutBar}
+      <EditLayoutBar />
+    {:catch}
+      <p role="alert">The layout editor did not load. Reload the page to try again.</p>
+    {/await}
+  {/if}
   {#if showHelp}
     {#await loadKeyboardHelp()}
       <p role="status">Loading shortcuts…</p>

@@ -101,6 +101,8 @@ has the commands for the common ones.
   them.
 - **Two levels of controls:** *Essential* shows what most people need, *Full*
   the rest. Frequency, filter and zoom are remembered for each band.
+- **The page arranged to taste:** hide what you do not use, pick the meter's
+  face and set how tall the spectrum is, right on the page (`L`).
 - **Phones:** the same page, with the controls in a sheet that slides up.
 - **Stream quality** to choose, and a connection that gives up waterfall
   detail before it gives up sound when the network is slow.
