@@ -23,10 +23,15 @@ A release that changes the list reaches receivers signed by a key they
 already have, so with the offline key a leaked key can be replaced, and a
 receiver that has taken that release refuses what the old key signs.
 
-While the list is empty, as it is until the first release, a build takes no
-update at all and `make installer` makes no installer.
+The two keys are in place: CI's,
+`59928fb2118b5d95360a86fad202c42a009b323ebcc41632dfd1ae29c02007dd`, and the
+offline one, `c0c7529f3d64898a19864a5f87a82155589d6ff298ab757d0076b5ab50f5e9ab`.
+The `release` environment holds CI's secret and takes deployments from `main`
+only. A required reviewer on it needs a paid plan while the repository is
+private; add one when it is public. A build without keys (a fork's, say)
+takes no update at all and `make installer` makes no installer.
 
-To make them, on a machine you trust, once:
+To make new ones, on a machine you trust:
 
 ```sh
 make -C server release-tools
