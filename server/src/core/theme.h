@@ -25,6 +25,8 @@ public:
     // does not exist or cannot be parsed. Never fails: a receiver with a
     // corrupt theme file should still come up looking like a receiver.
     void load(const std::string& path);
+    /** The file the theme is kept in; empty for one that is not saved. */
+    const std::string& path() const { return path_; }
 
     /** The current theme, as it is sent to clients. */
     Json snapshot() const;

@@ -11,6 +11,9 @@
 	import SettingsRow from '../components/SettingsRow.svelte';
 	import { Button } from '../components/ui/button/index';
 	import { Confirm } from '../components/ui/confirm/index';
+	import RestoreBackup from '../components/RestoreBackup.svelte';
+	import { backupFileName } from '../lib/backup';
+	import { saveFile } from '../../util/save-file';
 	import { ago } from '../lib/format';
 	import { machineName, stepLabel, updating } from '../lib/updates';
 
@@ -67,6 +70,22 @@
 		}
 	}
 
+	let saving = $state(false);
+	async function download() {
+		saving = true;
+		try {
+			const backup = await api.backup();
+			const station = typeof backup.station === 'string' ? backup.station : '';
+			saveFile(JSON.stringify(backup), backupFileName(station, new Date()), 'application/json');
+			const left = Array.isArray(backup.pictures_left_out) ? backup.pictures_left_out.length : 0;
+			if (left) toast.warning(`${left} of the pictures did not fit; upload them again on the new machine.`);
+		} catch (problem) {
+			toast.error((problem as ApiError).message);
+		} finally {
+			saving = false;
+		}
+	}
+
 	async function update() {
 		if (!found?.version) return;
 		try {
@@ -78,7 +97,7 @@
 	}
 </script>
 
-<PageHeader title="Updates" description="Which version of FernSDR runs here, and moving to a newer one.">
+<PageHeader title="Updates" description="Which version of FernSDR runs here, moving to a newer one, and moving to another computer.">
 	{#snippet actions()}
 		{#if view?.available}
 			<Button
@@ -183,3 +202,20 @@
 		/>
 	{/if}
 {/if}
+
+<!-- Apart from the updater: a backup is wanted most when the rest of this page cannot load. -->
+<div class="mt-8 flex max-w-2xl flex-col gap-8">
+	<SettingsGroup
+		title="Backup"
+		footer="Bands, station details, look and pictures in one file, to move this receiver to another computer or keep for a bad day. Your password is not in it: the new machine keeps its own."
+	>
+		<SettingsRow label="Download a backup" detail="A file of this receiver as it is now">
+			{#snippet control()}
+				<Button variant="secondary" size="lg" class="h-10 rounded-full px-4 md:h-9" disabled={saving} onclick={download}>
+					Download
+				</Button>
+			{/snippet}
+		</SettingsRow>
+		<RestoreBackup />
+	</SettingsGroup>
+</div>

@@ -6,6 +6,7 @@
 // a stray comma cannot turn into a parse error is worth more than expressive
 // syntax.
 #pragma once
+#include <functional>
 #include <map>
 #include <string>
 #include <vector>
@@ -77,6 +78,19 @@ bool write_text_file(const std::string& path, const std::string& text, std::stri
 
 // Trims ASCII whitespace from both ends.
 std::string trim(const std::string& s);
+
+/**
+ * Configuration text by section, for putting one file's sections into
+ * another's: `sections_of` gives every section of `text` named in `names`,
+ * header and comments included, in the order they stand; `without_sections`
+ * gives the rest. A section runs from its header to the next header, so a
+ * comment just above a header goes with the section before it.
+ */
+std::string sections_of(const std::string& text, const std::vector<std::string>& names);
+std::string without_sections(const std::string& text, const std::vector<std::string>& names);
+// `text` without the `key = value` lines `drop(section, key)` is true for.
+std::string without_keys(const std::string& text,
+                         const std::function<bool(const std::string& section, const std::string& key)>& drop);
 
 // Parses "7.1M", "14074k", "3690000" into Hz.  Suffixes are a real
 // convenience when the alternative is counting zeros in a band plan.

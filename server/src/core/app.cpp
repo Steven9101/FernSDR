@@ -536,7 +536,7 @@ bool Application::handle_decodes(const HttpRequest& request, std::string& respon
     return true;
 }
 
-bool Application::handle_admin(const Connection& connection, const HttpRequest& request,
+bool Application::handle_admin(Connection& connection, const HttpRequest& request,
                                std::string& response) {
     if (request.path.rfind("/api/admin/", 0) != 0) return false;
     const std::string& address = connection.remote_address();
@@ -669,6 +669,18 @@ bool Application::handle_admin(const Connection& connection, const HttpRequest& 
         return true;
     }
 
+    // Once a backup is restored, the files hold it and this receiver still
+    // runs on what it read at its start: a change made now would be made to
+    // the old settings and written over the backup. Installing the backup's
+    // modules and restarting is what is left to do.
+    if (restored_ && request.method != "GET" && request.path != "/api/admin/restart" &&
+        request.path != "/api/admin/restore" && request.path != "/api/admin/logout" &&
+        request.path.rfind("/api/admin/modules", 0) != 0) {
+        response = json_response(409, json_error("a backup was restored; restart FernSDR to take it first"),
+                                 request.keep_alive());
+        return true;
+    }
+
     if (request.path == "/api/admin/state") {
         response = json_response(200, admin_state_json(), request.keep_alive());
         return true;
@@ -777,6 +789,36 @@ bool Application::handle_admin(const Connection& connection, const HttpRequest& 
             response = json_response(200, out.serialize(), request.keep_alive());
             return true;
         }
+    }
+
+    // A backup to move the receiver with: its configuration and the panel's
+    // settings and look, the pictures it serves while they fit in what a
+    // restore may send, and the modules to install again. The sections that
+    // belong to the machine are left out, [admin] with the password's hash
+    // among them, so the file signs nobody in.
+    if (request.path == "/api/admin/backup" && request.method == "GET") {
+        response = json_response(200, backup_json(), request.keep_alive());
+        connection.allow_output(response.size());
+        return true;
+    }
+
+    // A backup played back onto this receiver. The sections that belong to
+    // this machine, [server], [modules] and [admin], stay as they are: the
+    // new machine's address, its programs and its password. The rest must
+    // pass what the configuration editor checks, so a backup can set no file
+    // a stolen session could not. The receiver restarts to take it.
+    if (request.path == "/api/admin/restore" && request.method == "POST") {
+        Json body;
+        std::string error;
+        Json result;
+        if (!Json::parse(request.body, body) || !body.is_object() || body["fernsdr_backup"].number(0) != 1) {
+            response = json_response(400, json_error("that is not a FernSDR backup"), request.keep_alive());
+        } else if (!restore_backup(body, result, error)) {
+            response = json_response(400, json_error(error), request.keep_alive());
+        } else {
+            response = json_response(200, result.serialize(), request.keep_alive());
+        }
+        return true;
     }
 
     // A new admin password. The browser derives its key and makes the stored
@@ -1542,11 +1584,236 @@ bool Application::store_upload(const std::string& body, std::string& url,
     return true;
 }
 
+namespace {
+
+// What a backup may carry of pictures, before base64: a restore's body is
+// limited to 9 MB like an upload's.
+constexpr size_t kBackupPictureBytes = 6 * 1024 * 1024;
+constexpr size_t kBackupPictures = 64;
+const char* const kMachineSections[] = {"server", "modules", "admin"};
+const char* const kMachineSettings[] = {"directory_id", "muted"};
+
+Json without_machine_settings(const Json& settings) {
+    Json out = Json::make_object();
+    for (const auto& [key, value] : settings.members()) {
+        if (std::find(std::begin(kMachineSettings), std::end(kMachineSettings), key) == std::end(kMachineSettings)) {
+            out.set(key, value);
+        }
+    }
+    return out;
+}
+
+}  // namespace
+
+std::string Application::backup_json() const {
+    Json out = Json::make_object();
+    out.set("fernsdr_backup", 1);
+    out.set("version", kVersion);
+    out.set("created_ms", static_cast<double>(now_ms()));
+    out.set("station", radio_.site().name);
+    Json files = Json::make_object();
+    std::string text;
+    if (read_text_file(admin_->config().config_path, text)) {
+        files.set("fernsdr.conf", without_sections(text, {std::begin(kMachineSections), std::end(kMachineSections)}));
+    }
+    Json settings;
+    if (!radio_.overlay_path().empty() && read_text_file(radio_.overlay_path(), text) && Json::parse(text, settings) &&
+        settings.is_object()) {
+        files.set("fernsdr-settings.json", without_machine_settings(settings).serialize());
+    }
+    if (!radio_.theme().path().empty() && read_text_file(radio_.theme().path(), text)) files.set("fernsdr-theme.json", text);
+    out.set("files", files);
+    // The pictures in use first, then the rest, as long as they fit.
+    Json pictures = Json::make_array();
+    Json left_out = Json::make_array();
+    size_t total = 0;
+    const Json listed = [&] { Json parsed; Json::parse(uploads_json(), parsed); return parsed["uploads"]; }();
+    for (const bool used : {true, false}) {
+        for (size_t i = 0; i < listed.size(); i++) {
+            const Json& item = listed[i];
+            if (item["in_use"].boolean(false) != used) continue;
+            std::string bytes;
+            if (!read_text_file(server_config_.uploads_root + "/" + item["name"].string(), bytes)) continue;
+            if (pictures.size() >= kBackupPictures || total + bytes.size() > kBackupPictureBytes) {
+                left_out.push_back(item["name"].string());
+                continue;
+            }
+            total += bytes.size();
+            Json picture = Json::make_object();
+            picture.set("name", item["name"].string());
+            picture.set("data", base64_encode(reinterpret_cast<const uint8_t*>(bytes.data()), bytes.size()));
+            pictures.push_back(picture);
+        }
+    }
+    out.set("pictures", pictures);
+    if (left_out.size() > 0) out.set("pictures_left_out", left_out);
+    Json modules = Json::make_array();
+    if (radio_.module_store()) {
+        for (const auto& module : radio_.module_store()->list()) {
+            Json entry = Json::make_object();
+            entry.set("id", module.id);
+            entry.set("version", module.active);
+            entry.set("origin", module.origin);
+            modules.push_back(entry);
+        }
+    }
+    out.set("modules", modules);
+    return out.serialize();
+}
+
+bool Application::restore_backup(const Json& backup, Json& result, std::string& error) {
+    const Json& files = backup["files"];
+    const std::string restored = files["fernsdr.conf"].string();
+    if (restored.empty() || restored.size() > 1024 * 1024) {
+        error = "the backup holds no configuration";
+        return false;
+    }
+    const std::string path = admin_->config().config_path;
+    std::string current_text;
+    Config current;
+    if (!read_text_file(path, current_text) || !current.load(path, error)) {
+        error = "cannot read " + path;
+        return false;
+    }
+    const std::vector<std::string> machine(std::begin(kMachineSections), std::end(kMachineSections));
+    // Where the old machine kept its waterfall history and look is its own;
+    // here the defaults do, and the look comes with the backup anyway. Other
+    // files a band reads, and network inputs, are refused below as the
+    // configuration editor refuses them: the old paths would name nothing here.
+    std::string merged = without_keys(without_sections(restored, machine), [](const std::string& section, const std::string& key) {
+        return (section.rfind("band:", 0) == 0 && key == "history_path") || (section == "site" && key == "theme_file");
+    });
+    if (!merged.empty() && merged.back() != '\n') merged += '\n';
+    merged += "\n" + sections_of(current_text, machine);
+    Config candidate;
+    if (!candidate.parse(merged, error)) return false;
+    const std::string refused = machine_only_change(current, candidate);
+    if (!refused.empty()) {
+        error = "the backup cannot be played back here: " + refused;
+        return false;
+    }
+    {
+        Radio probe;
+        if (!probe.configure(candidate, error)) {
+            error = "the backup's configuration does not start here: " + error;
+            return false;
+        }
+    }
+    // The panel's settings and look, checked before anything is written: a
+    // theme the receiver would refuse at its start would otherwise turn into
+    // the built-in look without a word.
+    Json settings, theme;
+    const std::string settings_text = files["fernsdr-settings.json"].string();
+    const std::string theme_text = files["fernsdr-theme.json"].string();
+    if (!settings_text.empty() && (!Json::parse(settings_text, settings) || !settings.is_object())) {
+        error = "the backup's settings are damaged";
+        return false;
+    }
+    if (!theme_text.empty() && (!Json::parse(theme_text, theme) || !validate_theme(theme, error))) {
+        error = "the backup's look cannot be used here: " + error;
+        return false;
+    }
+    std::vector<std::string> pictures;
+    const Json& listed = backup["pictures"];
+    for (size_t i = 0; i < listed.size() && i < kBackupPictures; i++) {
+        std::string bytes;
+        if (!base64_decode(listed[i]["data"].string(), bytes)) {
+            error = "a picture in the backup is damaged";
+            return false;
+        }
+        pictures.push_back(std::move(bytes));
+    }
+
+    // The listing id and the chat's mutes stay with this machine, as they
+    // were never in a backup: the id is what proves a listing is this
+    // receiver's, and the mutes are listeners' addresses.
+    const std::string directory = path.substr(0, path.find_last_of('/') + 1);
+    const std::string settings_path = directory + "fernsdr-settings.json";
+    const std::string theme_path = directory + "fernsdr-theme.json";
+    if (!settings_text.empty()) {
+        Json kept;
+        std::string text;
+        if (read_text_file(settings_path, text)) Json::parse(text, kept);
+        settings = without_machine_settings(settings);
+        for (const char* key : kMachineSettings) {
+            if (kept.is_object() && kept.has(key)) settings.set(key, kept[key]);
+        }
+    }
+
+    // Every file is written beside its place first and renamed over it only
+    // once all of them are written, so a full disk leaves this receiver as
+    // it was. The configuration goes first: once it is in place, the backup
+    // is taken, and what follows it is said to be missing if it fails.
+    struct Staged {
+        std::string path;
+        std::string text;
+        FileAccess access;
+    };
+    std::vector<Staged> staged = {{path, merged, FileAccess::OwnerOnly}};
+    if (!settings_text.empty()) staged.push_back({settings_path, settings.serialize(), FileAccess::OwnerOnly});
+    if (!theme_text.empty()) staged.push_back({theme_path, theme_text, FileAccess::Default});
+    const auto discard = [&] {
+        for (const Staged& file : staged) std::remove((file.path + ".restore").c_str());
+    };
+    error.clear();
+    for (const Staged& file : staged) {
+        if (!write_text_file(file.path + ".restore", file.text, error, file.access)) {
+            discard();
+            return false;
+        }
+    }
+    for (size_t i = 0; i < staged.size(); i++) {
+        if (std::rename((staged[i].path + ".restore").c_str(), staged[i].path.c_str()) != 0) {
+            error = i == 0 ? "cannot replace " + path
+                           : "the configuration was restored, but " + staged[i].path +
+                                 " could not be replaced; restart FernSDR and set it again in the panel";
+            discard();
+            if (i == 0) return false;
+            break;
+        }
+        if (i == 0) {
+            restored_ = true;
+            radio_.hold_overlay();
+        }
+    }
+    if (!error.empty()) return false;
+
+    Json not_restored = Json::make_array();
+    for (const std::string& bytes : pictures) {
+        std::string url, problem;
+        if (!store_upload(bytes, url, problem)) {
+            LOG_WARN("admin", "a picture from the backup was not restored: %s", problem.c_str());
+            not_restored.push_back(problem);
+        }
+    }
+    // What to install again: the backup's modules this receiver lacks.
+    Json missing = Json::make_array();
+    const Json& modules = backup["modules"];
+    for (size_t i = 0; i < modules.size() && i < 32; i++) {
+        const std::string id = modules[i]["id"].string();
+        ModuleStore::Module found;
+        if (!valid_module_id(id) || (radio_.module_store() && radio_.module_store()->find(id, found))) continue;
+        Json entry = Json::make_object();
+        entry.set("id", id);
+        entry.set("origin", modules[i]["origin"].string());
+        missing.push_back(entry);
+    }
+    result = Json::make_object();
+    result.set("ok", true);
+    result.set("modules", missing);
+    const size_t skipped = listed.size() > kBackupPictures ? listed.size() - kBackupPictures : 0;
+    result.set("pictures_not_restored", static_cast<double>(not_restored.size() + skipped));
+    LOG_INFO("admin", "a backup of %s from FernSDR %s was played back; the receiver restarts to take it",
+             backup["station"].string().c_str(), backup["version"].string().c_str());
+    return true;
+}
+
 std::string Application::admin_state_json() const {
     Json out = Json::make_object();
     out.set("site", radio_.site().name);
     out.set("users", session_count());
     out.set("max_users", max_users_);
+    if (restored_) out.set("restored", true);
 
     Json bands = Json::make_array();
     for (const auto& band : radio_.bands()) {

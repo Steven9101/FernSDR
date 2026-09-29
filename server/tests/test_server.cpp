@@ -546,6 +546,187 @@ TEST_CASE(admin_config_editor_cannot_point_the_receiver_at_other_files) {
     ::rmdir(directory);
 }
 
+namespace {
+
+void remove_directory(const std::string& path) {
+    if (DIR* directory = ::opendir(path.c_str())) {
+        while (const dirent* entry = ::readdir(directory)) {
+            if (entry->d_name[0] != '.') ::unlink((path + "/" + entry->d_name).c_str());
+        }
+        ::closedir(directory);
+    }
+    ::rmdir(path.c_str());
+}
+
+}  // namespace
+
+TEST_CASE(admin_a_backup_moves_a_receiver_to_another_machine) {
+    using fernsdr::Json;
+    char old_directory[] = "/tmp/fernsdr-backup-old-XXXXXX";
+    char new_directory[] = "/tmp/fernsdr-backup-new-XXXXXX";
+    CHECK(::mkdtemp(old_directory) != nullptr);
+    CHECK(::mkdtemp(new_directory) != nullptr);
+    const std::string old_path = std::string(old_directory) + "/fernsdr.conf";
+    const std::string new_path = std::string(new_directory) + "/fernsdr.conf";
+    const std::string old_hash = fernsdr::hash_password("the old machine", 1000);
+    const std::string new_hash = fernsdr::hash_password("the new machine", 1000);
+    std::string error;
+    CHECK(fernsdr::write_text_file(std::string(old_directory) + "/fernsdr-theme.json", "{\"meter\":\"needle\"}", error));
+    // A receiver listed on sdr-list.xyz, with a listener muted in the chat:
+    // neither belongs in a file that moves.
+    CHECK(fernsdr::write_text_file(std::string(old_directory) + "/fernsdr-settings.json",
+                                   "{\"directory_id\":\"0123456789abcdef0123456789abcdef\","
+                                   "\"muted\":[{\"address\":\"203.0.113.9\",\"until\":0}]}",
+                                   error));
+
+    Json backup;
+    std::string picture;
+    {
+        Harness harness(15000, 120000,
+                        "[band:forty]\nsource = test\nsample_rate = 192k\ncenter = 7.05M\nhistory_path = " +
+                            std::string(old_directory) + "/forty.wfa\n[modules]\ndirectory = " + old_directory +
+                            "/mods\n[admin]\npassword_hash = " + old_hash + "\n",
+                        old_path, "", [&](fernsdr::ServerConfig& config) {
+                            config.uploads_root = old_directory;
+                            config.document_root = old_directory;
+                        });
+        CHECK(harness.ok);
+        if (!harness.ok) return;
+        AdminClient admin;
+        CHECK(admin.sign_in(harness.port(), "the old machine"));
+        std::string png = std::string("\x89PNG\r\n\x1a\n", 8) + std::string("\0\0\0\rIHDR", 8) +
+                          std::string("\0\0\0\x01\0\0\0\x01\x08\x02\0\0\0", 13) + std::string(4, '\0');
+        const std::string uploaded = admin.request("POST", "/api/admin/upload", png);
+        const size_t at = uploaded.find("/uploads/");
+        CHECK(at != std::string::npos);
+        if (at == std::string::npos) return;
+        picture = uploaded.substr(at + 9, uploaded.find('"', at) - at - 9);
+
+        backup = json_body(admin.request("GET", "/api/admin/backup"));
+        CHECK_EQ(backup["fernsdr_backup"].number(), 1);
+        CHECK_EQ_STR(backup["station"].string(), "Test Receiver");
+        const std::string text = backup["files"]["fernsdr.conf"].string();
+        // The machine's own sections stay on it, the password's hash with them.
+        CHECK(text.find("[band:forty]") != std::string::npos);
+        CHECK(text.find(old_hash) == std::string::npos);
+        CHECK(text.find("[admin]") == std::string::npos);
+        CHECK(text.find("[server]") == std::string::npos);
+        CHECK(text.find("[modules]") == std::string::npos);
+        CHECK_EQ_STR(backup["files"]["fernsdr-theme.json"].string(), "{\"meter\":\"needle\"}");
+        const std::string settings = backup["files"]["fernsdr-settings.json"].string();
+        CHECK(!settings.empty());
+        CHECK(settings.find("0123456789abcdef0123456789abcdef") == std::string::npos);
+        CHECK(settings.find("203.0.113.9") == std::string::npos);
+        CHECK_EQ(backup["pictures"].size(), 1u);
+        CHECK_EQ_STR(backup["pictures"][size_t{0}]["name"].string(), picture);
+    }
+
+    CHECK(fernsdr::write_text_file(std::string(new_directory) + "/fernsdr-settings.json",
+                                   "{\"directory_id\":\"fedcba9876543210fedcba9876543210\"}", error));
+    {
+        Harness harness(15000, 120000,
+                        "[modules]\ndirectory = " + std::string(new_directory) + "/mods\n[admin]\npassword_hash = " +
+                            new_hash + "\n",
+                        new_path, "", [&](fernsdr::ServerConfig& config) {
+                            config.uploads_root = new_directory;
+                            config.document_root = new_directory;
+                        });
+        CHECK(harness.ok);
+        if (!harness.ok) return;
+        AdminClient admin;
+        CHECK(admin.sign_in(harness.port(), "the new machine"));
+        std::string before;
+        CHECK(fernsdr::read_text_file(new_path, before));
+
+        // Refused, and nothing written: what is not a backup, a band that
+        // reads a file or takes samples from the network, as the
+        // configuration editor refuses those.
+        const auto with_band = [&](const std::string& band) {
+            Json changed = backup;
+            Json files = changed["files"];
+            files.set("fernsdr.conf", files["fernsdr.conf"].string() + band);
+            changed.set("files", files);
+            return changed.serialize();
+        };
+        const std::pair<std::string, std::string> refusals[] = {
+            {"{\"files\":{}}", "not a FernSDR backup"},
+            {with_band("[band:file]\nsource = file\npath = /etc/passwd\nsample_rate = 192k\ncenter = 7.1M\n"),
+             "names a file"},
+            {with_band("[band:net]\nsource = udp\nport = 5555\nsample_rate = 192k\ncenter = 7.1M\n"),
+             "takes its samples over the network"},
+            {[&] {
+                 Json changed = backup;
+                 Json files = changed["files"];
+                 files.set("fernsdr-theme.json", "{\"meter\":\"dial\"}");
+                 changed.set("files", files);
+                 return changed.serialize();
+             }(),
+             "look cannot be used here"},
+        };
+        for (const auto& [body, reason] : refusals) {
+            const std::string response = admin.request("POST", "/api/admin/restore", body);
+            CHECK(response.find("400 Bad Request") != std::string::npos);
+            CHECK(response.find(reason) != std::string::npos);
+        }
+        std::string unchanged;
+        CHECK(fernsdr::read_text_file(new_path, unchanged));
+        CHECK(unchanged == before);
+
+        // A band on a module this machine lacks is taken, and the module
+        // named to install.
+        Json moved = json_body(admin.request("POST", "/api/admin/restore", [&] {
+            Json changed;
+            Json::parse(with_band("[band:rtl]\nsource = module\nmodule = rtlsdr\nsample_rate = 2.4M\ncenter = 14.1M\n"),
+                        changed);
+            Json modules = Json::make_array();
+            Json rtlsdr = Json::make_object();
+            rtlsdr.set("id", "rtlsdr");
+            rtlsdr.set("origin", "catalog");
+            modules.push_back(rtlsdr);
+            changed.set("modules", modules);
+            return changed.serialize();
+        }()));
+        CHECK(moved["ok"].boolean(false));
+        CHECK_EQ(moved["modules"].size(), 1u);
+        CHECK_EQ_STR(moved["modules"][size_t{0}]["id"].string(), "rtlsdr");
+
+        std::string after;
+        CHECK(fernsdr::read_text_file(new_path, after));
+        CHECK(after.find("[band:forty]") != std::string::npos);
+        CHECK(after.find("[band:rtl]") != std::string::npos);
+        CHECK(after.find("history_path") == std::string::npos);
+        CHECK(after.find(new_hash) != std::string::npos);
+        CHECK(after.find(std::string(new_directory) + "/mods") != std::string::npos);
+        CHECK(after.find(old_directory) == std::string::npos);
+        fernsdr::Config reread;
+        CHECK(reread.parse(after, error));
+        std::string theme, settings, stored;
+        CHECK(fernsdr::read_text_file(std::string(new_directory) + "/fernsdr-theme.json", theme));
+        CHECK_EQ_STR(theme, "{\"meter\":\"needle\"}");
+        // The backup's settings, with this machine's own listing id kept.
+        CHECK(fernsdr::read_text_file(std::string(new_directory) + "/fernsdr-settings.json", settings));
+        Json written;
+        CHECK(Json::parse(settings, written));
+        CHECK_EQ_STR(written["directory_id"].string(), "fedcba9876543210fedcba9876543210");
+        CHECK(settings.find("203.0.113.9") == std::string::npos);
+        CHECK_EQ(moved["pictures_not_restored"].number(), 0);
+        for (const char* left : {"/fernsdr.conf.restore", "/fernsdr-settings.json.restore", "/fernsdr-theme.json.restore"}) {
+            CHECK(::access((std::string(new_directory) + left).c_str(), F_OK) != 0);
+        }
+        CHECK(fernsdr::read_text_file(std::string(new_directory) + "/" + picture, stored));
+
+        // Until the restart, changes are refused rather than written over it.
+        CHECK(json_body(admin.request("GET", "/api/admin/state"))["restored"].boolean(false));
+        Json save = Json::make_object();
+        save.set("text", after);
+        const std::string refused = admin.request("POST", "/api/admin/config", save.serialize());
+        CHECK(refused.find("409") != std::string::npos);
+        CHECK(refused.find("restart FernSDR") != std::string::npos);
+    }
+    remove_directory(old_directory);
+    remove_directory(new_directory);
+}
+
 TEST_CASE(radio_names_the_files_it_keeps_for_itself) {
     char directory[] = "/tmp/fernsdr-own-XXXXXX";
     CHECK(::mkdtemp(directory) != nullptr);
@@ -1045,6 +1226,63 @@ TEST_CASE(completed_upload_releases_receive_memory_and_preserves_pipelined_reque
     thread.join();
     CHECK_EQ(handler.uploads.load(), 6u);
     CHECK(handler.largest_capacity.load() <= 64 * 1024);
+}
+
+// Past the output limit a client is taken for one that stopped reading and
+// dropped, unless the handler allowed that response more: the operator's
+// backup, several megabytes, on a slow link.
+TEST_CASE(server_sends_an_allowed_large_response_to_a_slow_reader) {
+    struct Handler : fernsdr::ServerHandler {
+        bool on_connect(fernsdr::Connection&) override { return true; }
+        void on_text(fernsdr::Connection&, const std::string&) override {}
+        void on_disconnect(fernsdr::Connection&) override {}
+        void on_flush() override {}
+        void on_tick() override {}
+        bool on_http(fernsdr::Connection& connection, const fernsdr::HttpRequest& request,
+                     std::string& response) override {
+            response = fernsdr::build_http_response(200, "text/plain", std::string(6 * 1024 * 1024, 'b') + "END",
+                                                    {}, false);
+            if (request.path == "/allowed") connection.allow_output(response.size());
+            return true;
+        }
+    } handler;
+    fernsdr::ServerConfig config;
+    config.bind_address = "127.0.0.1";
+    config.port = 0;
+    fernsdr::Server server(config, handler);
+    std::string error;
+    CHECK(server.start(error));
+    if (!error.empty()) return;
+    std::thread thread([&] { server.run(); });
+    for (const std::string path : {"/allowed", "/plain"}) {
+        // A small receive buffer, set before connecting, and nothing read for
+        // a while: the server's queue has to hold nearly all of it.
+        const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+        const int small = 16 * 1024;
+        ::setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &small, sizeof(small));
+        sockaddr_in address{};
+        address.sin_family = AF_INET;
+        address.sin_port = htons(static_cast<uint16_t>(server.bound_port()));
+        address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        CHECK(::connect(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0);
+        const std::string request = "GET " + path + " HTTP/1.1\r\nHost: localhost\r\n\r\n";
+        CHECK(::send(fd, request.data(), request.size(), MSG_NOSIGNAL) == static_cast<ssize_t>(request.size()));
+        wait_ms(300);
+        timeval timeout{5, 0};
+        ::setsockopt(fd, SOL_SOCKET, SO_RCVTIMEO, &timeout, sizeof(timeout));
+        std::string received;
+        char buffer[65536];
+        for (;;) {
+            const ssize_t got = ::recv(fd, buffer, sizeof(buffer), 0);
+            if (got <= 0) break;
+            received.append(buffer, static_cast<size_t>(got));
+        }
+        ::close(fd);
+        const bool whole = received.size() > 6 * 1024 * 1024 && received.compare(received.size() - 3, 3, "END") == 0;
+        CHECK_EQ(whole, path == "/allowed");
+    }
+    server.stop();
+    thread.join();
 }
 
 TEST_CASE(server_completes_the_handshake_and_sends_a_welcome) {

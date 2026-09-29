@@ -25,7 +25,9 @@
 	import { readSection, sectionNames, writeSection } from '../lib/ini-sections';
 	import { copyText } from '../../util/clipboard';
 	import { bandPlan, loadBandPlan } from '../../state/bandplan';
-	import { finishSetup, setupDone, setupStep, SETUP_STEPS, type SetupStep } from '../lib/setup';
+	import { dismissSetup, finishSetup, setupDone, setupStep, SETUP_STEPS, type SetupStep } from '../lib/setup';
+	import RestoreBackup from '../components/RestoreBackup.svelte';
+	import { installFromCatalog, restartAndReload } from '../lib/receiver';
 
 	/*
 	Setting a receiver up, from the first sign-in: one question at a time, in the order an operator
@@ -76,6 +78,13 @@
 		}
 	}
 
+	// A restored receiver is set up already. The page reloads where it is after the restart, so
+	// the address moves on first, without a navigation the restart would cut short.
+	function restored() {
+		dismissSetup();
+		history.replaceState(null, '', '#/overview');
+	}
+
 	// --- 2. station --------------------------------------------------------------------------
 
 	let station = $state({ name: '', operator: '', location: '', grid: '', band_plan: 'auto', public_host: '', sdr_list: false });
@@ -124,43 +133,14 @@
 		return modules?.installed.find((entry) => entry.id === module);
 	}
 
-	async function waitForJobs(): Promise<ModulesView> {
-		for (let i = 0; i < 600; i++) {
-			const view = await api.modules();
-			if (!view.jobs.some((job) => job.state === 'queued' || job.state === 'running')) return view;
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-		}
-		throw new Error('The receiver is still busy with modules; try again in a minute.');
-	}
-
 	async function install(radio: UsbRadio) {
 		installing = radio.module;
 		try {
-			let view = modules ?? (await api.modules());
-			const find = () =>
-				view.available.flatMap((repository) => (repository.releases ?? []).map((release) => ({ repository, release })))
-					.find(({ release }) => release.id === radio.module && release.asset && !release.prerelease);
-			if (!find()) {
-				view = await api.checkModules();
-				view = await waitForJobs();
-			}
-			const found = find();
-			if (!found) {
-				toast.error(`No ${radio.name} module for this computer was found in the module catalog.`);
-				return;
-			}
-			await api.installModule(found.repository.repository, found.release.tag, found.release.asset!, true);
-			view = await waitForJobs();
-			const failed = view.jobs.find((job) => job.state === 'failed');
-			if (failed && !view.installed.some((module) => module.id === radio.module)) {
-				toast.error(failed.message ?? 'The module could not be installed.');
-				return;
-			}
-			modules = view;
+			modules = await installFromCatalog(radio.module, radio.name);
 			chosen = radio;
 			toast.success(`The ${radio.name} module is installed.`);
 		} catch (problem) {
-			toast.error((problem as ApiError).message);
+			toast.error((problem as Error).message);
 		} finally {
 			installing = '';
 		}
@@ -252,28 +232,15 @@
 	// A new band starts with the receiver. Where it can restart itself, it does, and the flow waits
 	// for it to answer again; the page then signs in afresh, on the step after.
 	async function restartAndContinue() {
-		const view = hardware ?? (await api.hardware());
 		// A band added later, from the Bands page, needs no questions about listeners again.
 		setupStep(setupDone() ? 'done' : 'listeners');
-		if (!view.can_restart) {
-			applying = '';
-			restartNote = view.restart_note ?? 'Restart the receiver to start the new bands.';
-			return;
-		}
 		applying = 'Restarting the receiver…';
-		await api.restart();
-		await new Promise((resolve) => setTimeout(resolve, 1500));
-		for (let i = 0; i < 90; i++) {
-			try {
-				const answer = await fetch('/api/admin/session', { cache: 'no-store' });
-				if (answer.ok) break;
-			} catch {
-				// Not back yet.
-			}
-			await new Promise((resolve) => setTimeout(resolve, 1000));
-		}
 		// Sessions end with the receiver: signing in again lands here, on the next step.
-		location.reload();
+		const note = await restartAndReload();
+		if (note) {
+			applying = '';
+			restartNote = note;
+		}
 	}
 	let restartNote = $state('');
 
@@ -357,6 +324,7 @@
 			{/if}
 			<Button variant="secondary" size="lg" class="h-11 rounded-full px-5" onclick={nextStep}>Keep the one I have</Button>
 		</div>
+		<RestoreBackup variant="link" onRestored={restored} />
 	{:else if step === 'station'}
 		<p class="text-[15px] leading-relaxed text-muted-foreground">
 			What listeners see at the top of the page. The location on the map sets the band plan, the local time of sunrise

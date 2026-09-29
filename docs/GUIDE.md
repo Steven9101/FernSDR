@@ -184,6 +184,17 @@ before comes back by itself. Running the install line again does the same.
 
 *Technical detail:* what an update does, step by step: [Updates](DEPLOYMENT.md#updates).
 
+**Moving to a new computer.** On the old one, *Download* on the *Updates*
+page saves a backup file. Install FernSDR on the new computer, sign in, and
+in the first step of the setup choose *Restore its backup*. The new receiver
+gets your bands, station details, look and pictures, fetches the modules the
+old one used and restarts. Your password on the new computer stays the one
+it was installed with. Keep the backup file somewhere safe; it is also a way
+back after a bad day.
+
+*Technical detail:* what is in the file and what stays with the machine:
+[Moving to another machine](DEPLOYMENT.md#moving-to-another-machine).
+
 ## When something is wrong
 
 - A band that does not receive says why on the *Overview*: *No RTL-SDR is

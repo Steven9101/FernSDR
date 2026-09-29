@@ -193,6 +193,42 @@ page and the updater somewhere else: an
 `https://` address ending in `/` that serves the same files. The signature
 decides what is taken, wherever it came from.
 
+## Moving to another machine
+
+The Updates page's *Download* makes a backup: one JSON file with the
+configuration, `fernsdr-settings.json`, `fernsdr-theme.json`, the pictures
+the panel stored (up to 64 of them and 6 MB; the page says how many were
+left out) and the
+list of installed modules. It leaves out the `[server]`, `[modules]` and
+`[admin]` sections, so it holds no password hash and signs nobody in.
+
+On the new machine, install FernSDR, sign in and choose *Restore its
+backup* in the first step of the setup, or *Restore a backup* on the Updates
+page. The receiver then:
+
+1. keeps its own `[server]`, `[modules]` and `[admin]` sections: its address,
+   its module folder and its password;
+2. drops the old machine's `history_path` and `theme_file` settings, so the
+   new one keeps those files where it keeps them;
+3. checks the result as the configuration editor checks a save. A band that
+   reads a file (`path`) or takes samples over the network (`source = udp`)
+   is refused with the reason, as it would be in the editor: set it up in the
+   file on the new machine, or copy `fernsdr.conf` over by hand;
+4. writes the files, each beside its place first and then renamed over it,
+   so a full disk leaves the receiver as it was; installs the modules the
+   backup names from the catalog; and restarts. Until the restart, the panel
+   refuses other changes, which would be made to the old settings.
+
+A receiver started by hand, not as a service, cannot restart itself: the page
+says so, and the backup waits in the files for the next start. The waterfall
+archive is not in the backup; copy the `.wfa` files by hand to keep it.
+
+Two things stay with each machine and are not in the file: the id the
+receiver reports to the public list under, which is what proves an entry is
+its own, and the chat's mutes, which are listeners' addresses. The new
+machine is listed as an entry of its own once its listing is on; switch the
+old machine's listing off on its Station page.
+
 ## Building from source
 
 ```sh
@@ -825,6 +861,9 @@ What it does:
   moving to it (see [Updates](#updates)). Only a receiver installed from a
   release by `install.sh` updates itself; one built from source says so and
   offers nothing.
+- **Backup**: one file with the receiver's bands, station details, look and
+  pictures, and a receiver played back from one (see
+  [Moving to another machine](#moving-to-another-machine)).
 
 The chat can be turned off altogether with `chat = no` under `[site]`:
 messages are then refused with that reason, nothing said is kept, and a chat

@@ -46,6 +46,12 @@ public:
     void close(uint16_t code = 1000, const std::string& reason = "");
 
     size_t pending_bytes() const { return out_.size(); }
+    // Lets the response being queued run past ServerConfig::max_output_bytes,
+    // up to `bytes`, until the queue next empties. That limit is how the
+    // server tells a listener who stopped reading, and it keeps what anyone
+    // can make it hold small; a signed-in operator's backup is larger, and a
+    // slow link to them is no reason to cut it off.
+    void allow_output(size_t bytes) { output_allowance_ = bytes; }
     size_t receive_capacity() const { return in_.capacity(); }
     // An IPPROTO_TCP option of the socket, or -1 if it cannot be read. For
     // tests of what the server sets on a listener's connection.
@@ -94,6 +100,7 @@ private:
 
     std::vector<uint8_t> in_;
     OutputQueue out_;
+    size_t output_allowance_ = 0;
     // network_key() and wide_network_key() of the peer, worked out once at
     // accept for the per-address connection limits.
     std::string network_;
@@ -261,6 +268,7 @@ private:
     bool complete_handshake(Connection& connection, const HttpRequest& request);
     void queue(Connection& connection, const uint8_t* data, size_t size);
     void update_interest(Connection& connection);
+    size_t output_limit(const Connection& connection) const;
     void drop(Connection& connection, const char* reason);
     void reap_idle();
 

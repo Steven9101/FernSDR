@@ -1,5 +1,7 @@
 #include "config.h"
 
+#include <algorithm>
+
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
@@ -13,6 +15,76 @@
 #include <sstream>
 
 namespace fernsdr {
+
+namespace {
+
+// A line without its comment, '#' or ';' to the end, but not inside a quoted
+// value. Config::parse and the section helpers below read lines through the
+// same function, so a line is a header, a comment or a key for all of them
+// alike: the helpers decide which sections leave a machine in a backup.
+std::string uncommented(const std::string& line) {
+    bool in_quotes = false;
+    for (size_t i = 0; i < line.size(); i++) {
+        if (line[i] == '"') in_quotes = !in_quotes;
+        if (!in_quotes && (line[i] == '#' || line[i] == ';')) return line.substr(0, i);
+    }
+    return line;
+}
+
+// Each line of `text`, its newline included, with the section it is in and
+// the line as Config::parse reads it (uncommented and trimmed); the part
+// before the first header is in the section "".
+template <typename Each>
+void for_each_line_in_section(const std::string& text, Each each) {
+    std::string section;
+    size_t start = 0;
+    while (start < text.size()) {
+        const size_t newline = text.find('\n', start);
+        const size_t end = newline == std::string::npos ? text.size() : newline + 1;
+        const std::string line = text.substr(start, end - start);
+        const std::string bare = trim(uncommented(line.substr(0, line.size() - (newline == std::string::npos ? 0 : 1))));
+        if (!bare.empty() && bare.front() == '[' && bare.back() == ']') section = trim(bare.substr(1, bare.size() - 2));
+        each(section, line, bare);
+        start = end;
+    }
+}
+
+bool named(const std::vector<std::string>& names, const std::string& section) {
+    return std::find(names.begin(), names.end(), section) != names.end();
+}
+
+}  // namespace
+
+std::string sections_of(const std::string& text, const std::vector<std::string>& names) {
+    std::string out;
+    for_each_line_in_section(text, [&](const std::string& section, const std::string& line, const std::string&) {
+        if (named(names, section)) out += line;
+    });
+    if (!out.empty() && out.back() != '\n') out += '\n';
+    return out;
+}
+
+std::string without_sections(const std::string& text, const std::vector<std::string>& names) {
+    std::string out;
+    for_each_line_in_section(text, [&](const std::string& section, const std::string& line, const std::string&) {
+        if (!named(names, section)) out += line;
+    });
+    return out;
+}
+
+std::string without_keys(const std::string& text,
+                         const std::function<bool(const std::string& section, const std::string& key)>& drop) {
+    std::string out;
+    for_each_line_in_section(text, [&](const std::string& section, const std::string& line, const std::string& bare) {
+        const size_t equals = bare.find('=');
+        if (!bare.empty() && bare.front() != '[' && equals != std::string::npos &&
+            drop(section, trim(bare.substr(0, equals)))) {
+            return;
+        }
+        out += line;
+    });
+    return out;
+}
 
 std::string trim(const std::string& s) {
     size_t begin = 0;
@@ -80,17 +152,7 @@ bool Config::parse(const std::string& text, std::string& error) {
 
     while (std::getline(stream, line)) {
         line_number++;
-        // Strip comments, but leave '#' alone inside a quoted value.
-        bool in_quotes = false;
-        for (size_t i = 0; i < line.size(); i++) {
-            if (line[i] == '"') in_quotes = !in_quotes;
-            if (!in_quotes && (line[i] == '#' || line[i] == ';')) {
-                line = line.substr(0, i);
-                break;
-            }
-        }
-
-        const std::string trimmed = trim(line);
+        const std::string trimmed = trim(uncommented(line));
         if (trimmed.empty()) continue;
 
         if (trimmed.front() == '[') {

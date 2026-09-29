@@ -155,3 +155,32 @@ TEST_CASE(config_whole_numbers_no_long_can_hold_fall_back) {
     CHECK_EQ(a.get_int("past32", 7), wide ? 2147483648LL : 7LL);
     CHECK_EQ(a.get_int("big", 7), wide ? 9000000000000000000LL : 7LL);
 }
+
+TEST_CASE(config_sections_move_from_one_text_to_another) {
+    const std::string text =
+        "# top\n[site]\nname = A\n\n[server]\nport = 8073 # ours\n; a note\n[band:20m]\nsource = test\n[ server ]\nbind = x\n";
+    CHECK(fernsdr::sections_of(text, {"server"}) == "[server]\nport = 8073 # ours\n; a note\n[ server ]\nbind = x\n");
+    CHECK(fernsdr::without_sections(text, {"server"}) == "# top\n[site]\nname = A\n\n[band:20m]\nsource = test\n");
+    CHECK(fernsdr::sections_of(text, {"modules"}).empty());
+    CHECK(fernsdr::sections_of("[admin]\nx = 1", {"admin"}) == "[admin]\nx = 1\n");
+}
+
+// A header the parser reads is a header to the helpers too, whatever
+// whitespace stands before it, and a '#' in a quoted value is no comment:
+// the helpers decide what leaves the machine in a backup.
+TEST_CASE(config_sections_are_found_as_the_parser_finds_them) {
+    const std::string text = "[site]\nname = \"A # B\"\n\v[admin]\x0c\npassword_hash = x\n[band:a]\nhistory_path = /x\n";
+    fernsdr::Config parsed;
+    std::string error;
+    CHECK(parsed.parse(text, error));
+    CHECK(parsed.has_section("admin"));
+    CHECK(fernsdr::without_sections(text, {"admin"}).find("password_hash") == std::string::npos);
+    const std::string kept = fernsdr::without_keys(text, [](const std::string& section, const std::string& key) {
+        return section == "band:a" && key == "history_path";
+    });
+    CHECK(kept.find("history_path") == std::string::npos);
+    CHECK(kept.find("name = \"A # B\"") != std::string::npos);
+    CHECK(fernsdr::without_keys("[x]\n# key = 1\nkey = 2 ; note\n", [](const std::string&, const std::string& key) {
+              return key == "key";
+          }) == "[x]\n# key = 1\n");
+}

@@ -158,6 +158,11 @@ The first release.
   version is kept once it has served for a minute with every band that ran
   before; otherwise the version before comes back, with its configuration
   files as they were, and so it does when the machine goes down mid-update.
+- A backup file from the Updates page moves a receiver to another machine:
+  restored there in the first step of the setup, it brings the bands,
+  station details, look and pictures, installs the modules the old machine
+  used and restarts, while the new machine keeps its own address, module
+  folder and password.
 
 ### Security
 

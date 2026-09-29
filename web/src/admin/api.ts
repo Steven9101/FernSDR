@@ -672,6 +672,14 @@ export const api = {
   // Modules. Every change is a job the server runs on its own thread; the
   // answer is the view with the job queued, and the panel polls for the rest.
   hardware: () => call<HardwareView>('/api/admin/hardware'),
+  /** Everything needed to move this receiver to another machine, as one file. */
+  backup: () => call<Record<string, unknown>>('/api/admin/backup'),
+  /** Plays a backup file back; `modules` are the ones to install before the restart. */
+  restore: (text: string) =>
+    call<{ ok: boolean; modules: { id: string; origin: string }[]; pictures_not_restored: number }>('/api/admin/restore', {
+      method: 'POST',
+      body: text,
+    }),
   /** Stops the receiver for its service to start it again; refused where nothing would. */
   restart: () => call<{ ok: boolean }>('/api/admin/restart', { method: 'POST', body: '{}' }),
   modules: () => call<ModulesView>('/api/admin/modules'),

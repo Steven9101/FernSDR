@@ -1233,6 +1233,10 @@ const std::string& Radio::directory_id() {
 
 bool Radio::save_overlay(const Json& document, std::string& error) const {
     if (overlay_path_.empty()) return true;
+    if (overlay_held_) {
+        error = "a backup was restored; restart FernSDR to take it before changing settings";
+        return false;
+    }
     return write_text_file(overlay_path_, document.serialize(), error, FileAccess::OwnerOnly);
 }
 

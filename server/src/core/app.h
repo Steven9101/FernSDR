@@ -57,7 +57,7 @@ private:
     std::string status_json() const;
 
     // --- admin ---
-    bool handle_admin(const Connection& connection, const HttpRequest& request, std::string& response);
+    bool handle_admin(Connection& connection, const HttpRequest& request, std::string& response);
     /** /api/admin/modules and below, once the caller is signed in. */
     void handle_modules(const HttpRequest& request, std::string& response);
     /** The waterfall archive. Public or admin-only, as the operator chose. */
@@ -77,6 +77,10 @@ private:
     /** The receiver in Prometheus' text format, for whoever is watching it. */
     std::string metrics_text() const;
     std::string uploads_json() const;
+    std::string backup_json() const;
+    // Plays a backup back; `result` says which modules to install again and
+    // how many pictures could not be restored.
+    bool restore_backup(const Json& backup, Json& result, std::string& error);
     bool upload_in_use(const std::string& name) const;
     bool delete_upload(const std::string& name, std::string& error);
 
@@ -118,6 +122,7 @@ private:
     // When the receiver stops so that its service starts it again, after
     // the panel asked; 0 while nobody has.
     int64_t restart_at_ms_ = 0;
+    std::atomic<bool> restored_{false};
     std::string last_band_status_;
     std::map<uint64_t, std::unique_ptr<Session>> sessions_;
     std::atomic<int> session_count_{0};  // sessions_.size(), kept alongside

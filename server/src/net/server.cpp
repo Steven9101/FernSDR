@@ -55,13 +55,17 @@ constexpr int kMaxConcurrentUploads = 4;
  */
 constexpr int64_t kDrainMs = 10000;
 
-/** True when the buffered head of a request is the upload endpoint. */
+/** True when the buffered head of a request is one of the two that carry a
+ * file: a picture, or a backup played back. */
 bool looks_like_an_upload(const std::vector<uint8_t>& buffer) {
-    static const char kHead[] = "POST /api/admin/upload";
-    const size_t length = sizeof(kHead) - 1;
-    if (buffer.size() <= length) return false;
-    return std::memcmp(buffer.data(), kHead, length) == 0 &&
-           (buffer[length] == ' ' || buffer[length] == '?');
+    for (const char* head : {"POST /api/admin/upload", "POST /api/admin/restore"}) {
+        const size_t length = std::strlen(head);
+        if (buffer.size() > length && std::memcmp(buffer.data(), head, length) == 0 &&
+            (buffer[length] == ' ' || buffer[length] == '?')) {
+            return true;
+        }
+    }
+    return false;
 }
 // Slots only this machine may use once the receiver is full, so an operator
 // coming in over ssh -L can still reach the admin panel while every other slot
@@ -797,7 +801,7 @@ void Server::process_http(Connection& connection) {
                 return;
             }
             if (peek == HttpParse::TooLarge) {
-                refuse_and_drain(connection, 413, "that image is too large, the limit is 8 MB");
+                refuse_and_drain(connection, 413, "that file is too large, the limit is 8 MB");
                 return;
             }
             head.secure = request_is_secure(connection.peer_address_, head, config_.trusted_proxies);
@@ -814,7 +818,7 @@ void Server::process_http(Connection& connection) {
             uploads_in_flight_++;
         }
         if (connection.oversized_ && connection.in_.size() > kMaxUploadRequestBytes) {
-            refuse_and_drain(connection, 413, "that image is too large, the limit is 8 MB");
+            refuse_and_drain(connection, 413, "that file is too large, the limit is 8 MB");
             return;
         }
 
@@ -829,7 +833,7 @@ void Server::process_http(Connection& connection) {
         }
         if (result == HttpParse::TooLarge) {
             refuse_and_drain(connection, 413,
-                             upload ? "that image is too large, the limit is 8 MB"
+                             upload ? "that file is too large, the limit is 8 MB"
                                     : "that request is too large");
             return;
         }
@@ -894,7 +898,7 @@ void Server::process_http(Connection& connection) {
         }
 
         if (!request.keep_alive()) connection.close_after_flush_ = true;
-        if (connection.pending_bytes() > config_.max_output_bytes) handle_writable(connection);
+        if (connection.pending_bytes() > output_limit(connection)) handle_writable(connection);
         if (connection.state_ == Connection::State::Closing) return;
         update_interest(connection);
 
@@ -1039,6 +1043,9 @@ void Server::handle_writable(Connection& connection) {
         const ssize_t sent = ::write(connection.fd_, connection.out_.data(), connection.out_.size());
         if (sent > 0) {
             connection.out_.consume(static_cast<size_t>(sent));
+            // A long download to a slow client is not an idle connection;
+            // a WebSocket's listener says so itself, with its pings.
+            if (connection.state_ == Connection::State::Http) connection.last_activity_ms_ = monotonic_ms();
             continue;
         }
         if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
@@ -1049,17 +1056,22 @@ void Server::handle_writable(Connection& connection) {
 
     if (!connection.out_.size()) {
         connection.want_write_ = false;
+        connection.output_allowance_ = 0;
         if (connection.close_after_flush_) {
             drop(connection, "closed");
             return;
         }
     }
 
-    if (connection.pending_bytes() > config_.max_output_bytes) {
+    if (connection.pending_bytes() > output_limit(connection)) {
         drop(connection, "client too slow");
         return;
     }
     update_interest(connection);
+}
+
+size_t Server::output_limit(const Connection& connection) const {
+    return std::max(config_.max_output_bytes, connection.output_allowance_);
 }
 
 void Server::update_interest(Connection& connection) {

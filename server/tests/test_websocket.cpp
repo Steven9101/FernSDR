@@ -207,3 +207,17 @@ TEST_CASE(websocket_assembler_rejects_interleaved_data_messages) {
     Frame orphan{Opcode::Continuation, true, {'x'}};
     CHECK(fresh.feed(orphan, message, opcode) == MessageAssembler::Status::Error);
 }
+
+TEST_CASE(base64_decodes_what_it_encodes_and_nothing_else) {
+    std::string out;
+    for (const std::string text : {std::string(), std::string("f"), std::string("fo"), std::string("foo"),
+                                   std::string("foob"), std::string("\0\xff\x10 bytes", 8)}) {
+        const std::string encoded =
+            fernsdr::base64_encode(reinterpret_cast<const uint8_t*>(text.data()), text.size());
+        CHECK(fernsdr::base64_decode(encoded, out));
+        CHECK(out == text);
+    }
+    for (const char* bad : {"Zg", "Zg=", "Z===", "Zg=a", "Zm9v!A==", "Zg==Zm9v", "Zm 9v"}) {
+        CHECK(!fernsdr::base64_decode(bad, out));
+    }
+}

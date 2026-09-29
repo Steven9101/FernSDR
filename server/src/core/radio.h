@@ -78,6 +78,12 @@ public:
     void stop();
 
     const SiteInfo& site() const { return site_; }
+    /** Where the panel's settings are kept beside the configuration. */
+    const std::string& overlay_path() const { return overlay_path_; }
+    // After a backup was played back into the overlay file, this receiver's
+    // settings are the old ones until it restarts, and writing them would
+    // undo the backup; from here every save is refused with the reason.
+    void hold_overlay() { overlay_held_ = true; }
 
     // The operator's colours, background and widgets. Owned here because it
     // outlives any one session and every session needs it.
@@ -300,6 +306,7 @@ private:
     ChatRoom chat_;
     std::string config_path_;
     std::string overlay_path_;
+    std::atomic<bool> overlay_held_{false};
     // What the config file said about the panel's settings when the overlay's
     // values were last reconciled with it: at startup, when the config editor
     // writes it, and for a setting the panel changes. Kept here rather than
