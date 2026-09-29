@@ -16,6 +16,8 @@
 		const active = router.route.page;
 		const element = list?.querySelector<HTMLElement>(`[data-section="${active}"]`);
 		if (element) indicator = { top: element.offsetTop, height: element.offsetHeight, ready: true };
+		// A page outside the navigation, such as the setup flow, marks nothing.
+		else indicator = { ...indicator, height: 0 };
 	});
 
 </script>

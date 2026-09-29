@@ -256,3 +256,21 @@ TEST_CASE(schedule_switches_on_its_own_thread_while_others_read_the_bands) {
     reader.join();
     radio.stop();
 }
+
+TEST_CASE(schedule_hours_of_a_band_that_is_rewired_wait_for_the_restart) {
+    // The setup flow replaces the test band with a radio's band of the same
+    // id and hours: those hours belong to the new band, which runs after the
+    // restart, not to the test band still running now.
+    fernsdr::Radio radio;
+    std::string error;
+    CHECK(configure(radio, "[band:40m]\nsource = test\nsample_rate = 192k\ncenter = 7.1M\n", error));
+    fernsdr::Band* band = radio.band("40m");
+    if (!band) return;
+    radio.apply_schedule(kMidnight + 12 * kHour);
+    fernsdr::Config saved;
+    CHECK(saved.parse(kModules + module_band("40m", "sunset-sunrise", "7.1M"), error));
+    radio.apply_hours(saved);
+    CHECK(radio.apply_schedule(kMidnight + 12 * kHour).empty());
+    CHECK(band->on_air());
+    CHECK(band->info().hours == "always");
+}

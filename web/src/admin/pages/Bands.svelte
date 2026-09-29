@@ -1,7 +1,9 @@
 <script lang="ts">
 	import ChevronLeft from '@lucide/svelte/icons/chevron-left';
 	import ChevronRight from '@lucide/svelte/icons/chevron-right';
+	import Plus from '@lucide/svelte/icons/plus';
 	import RotateCw from '@lucide/svelte/icons/rotate-cw';
+	import { setupStep } from '../lib/setup';
 	import { onMount } from 'svelte';
 	import { toast } from 'svelte-sonner';
 	import { api, ApiError } from '../api';
@@ -33,7 +35,7 @@
 	import { bandCondition, bandUplink, conditionDetail, live } from '../lib/live.svelte';
 	import { clockRange, complement, DAYLIGHT, describeHours, hoursNow, NIGHT, usesSun } from '../lib/hours';
 	import { setSectionValue } from '../lib/ini-sections';
-	import { href } from '../lib/router.svelte';
+	import { href, navigate } from '../lib/router.svelte';
 
 	let { id }: { id?: string } = $props();
 
@@ -208,6 +210,12 @@
 
 	const hoursChoice = (hours: string) => (['always', DAYLIGHT, NIGHT].includes(hours) ? hours : 'custom');
 
+	// The setup flow's radio and band steps, which find the radio and suggest what fits it.
+	function addBand() {
+		setupStep('radio');
+		navigate({ page: 'setup' });
+	}
+
 	async function restart() {
 		if (!current) return;
 		try {
@@ -234,7 +242,11 @@
 </script>
 
 {#if !id}
-	<PageHeader title="Bands" description="Each band is one stretch of spectrum from one input." />
+	<PageHeader title="Bands" description="Each band is one stretch of spectrum from one input.">
+		{#snippet actions()}
+			<Button size="lg" class="h-11 rounded-full px-4 md:h-9" onclick={addBand}><Plus /> Add a band</Button>
+		{/snippet}
+	</PageHeader>
 	{#if loadError}
 		<p class="text-destructive">{loadError}</p>
 	{:else if !live.state}

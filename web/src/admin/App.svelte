@@ -18,6 +18,8 @@
 	import Station from './pages/Station.svelte';
 	import Updates from './pages/Updates.svelte';
 	import Widgets from './pages/Widgets.svelte';
+	import Setup from './pages/Setup.svelte';
+	import { looksNew, setupDone, setupInProgress } from './lib/setup';
 
 	let session = $state<'checking' | 'signed-out' | 'signed-in'>('checking');
 	let exposed = $state(false);
@@ -37,6 +39,24 @@
 		live.unauthorised = false;
 		live.start();
 		return () => live.stop();
+	});
+
+	// After signing in: a receiver as the installer left it, or a setup the
+	// last restart broke off, opens the setup flow, unless the operator asked
+	// for another page by its address.
+	$effect(() => {
+		if (session !== 'signed-in' || router.route.page !== 'overview' || setupDone()) return;
+		if (setupInProgress()) {
+			router.go({ page: 'setup' });
+			return;
+		}
+		api
+			.readBands()
+			.then((answer) => {
+				const bands = answer.bands as { fixed: { source: string } }[];
+				if (looksNew(bands.map((band) => band.fixed.source)) && router.route.page === 'overview') router.go({ page: 'setup' });
+			})
+			.catch(() => {});
 	});
 
 	// A session that ran out while the panel was open lands back on sign-in, not on an error.
@@ -96,6 +116,8 @@
 					<Widgets />
 				{:else if router.route.page === 'updates'}
 					<Updates />
+				{:else if router.route.page === 'setup'}
+					<Setup />
 				{:else}
 					<Config />
 				{/if}

@@ -1,4 +1,5 @@
 import { fromHex, hmacSha256, pbkdf2Sha256, toHex, utf8 } from './crypto';
+import type { Tuning } from './lib/band-suggestions';
 
 /**
  * The key this session signs its changes with, kept so every change can be
@@ -203,6 +204,26 @@ export interface ModuleVersion {
   settings: ModuleSettingSpec[];
   /** What the operator installs first that the package cannot carry, such as a vendor's API. */
   requires?: string[];
+  /** For an input module: what its radio can be set to, for the band suggestions. */
+  tuning?: Tuning;
+}
+
+/** A radio on USB, seen before any module for it is installed. */
+export interface UsbRadio {
+  usb: string;
+  port: string;
+  name: string;
+  /** The module that drives it; empty when there is none yet. */
+  module: string;
+  serial?: string;
+}
+
+export interface HardwareView {
+  radios: UsbRadio[];
+  /** Kernel TV drivers holding a radio, which a restart of the machine lets go. */
+  drivers: { driver: string; radio: string; module: string }[];
+  can_restart: boolean;
+  restart_note?: string;
 }
 
 export interface InstalledModule {
@@ -650,6 +671,9 @@ export const api = {
 
   // Modules. Every change is a job the server runs on its own thread; the
   // answer is the view with the job queued, and the panel polls for the rest.
+  hardware: () => call<HardwareView>('/api/admin/hardware'),
+  /** Stops the receiver for its service to start it again; refused where nothing would. */
+  restart: () => call<{ ok: boolean }>('/api/admin/restart', { method: 'POST', body: '{}' }),
   modules: () => call<ModulesView>('/api/admin/modules'),
   checkModules: () =>
     call<ModulesView>('/api/admin/modules/refresh', { method: 'POST', body: '{}' }),

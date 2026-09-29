@@ -28,7 +28,10 @@ export const sections = [
   { id: 'updates', label: 'Updates', icon: ArrowUpCircle },
 ] as const;
 
-export type Page = (typeof sections)[number]['id'];
+/** Places that are not in the navigation: the setup flow, reached from the overview. */
+const hidden = ['setup'] as const;
+
+export type Page = (typeof sections)[number]['id'] | (typeof hidden)[number];
 
 export interface Route {
   page: Page;
@@ -36,7 +39,7 @@ export interface Route {
   id?: string;
 }
 
-const pages = new Set<string>(sections.map((section) => section.id));
+const pages = new Set<string>([...sections.map((section) => section.id), ...hidden]);
 
 export function parseRoute(hash: string): Route {
   const [page, id] = hash.replace(/^#\/?/, '').split('/');
@@ -100,3 +103,8 @@ function transitionKind(from: Route, to: Route): string | undefined {
 }
 
 export const router = new Router();
+
+/** Goes to a place in the panel, as a link there would. */
+export function navigate(route: Route): void {
+  router.go(route);
+}

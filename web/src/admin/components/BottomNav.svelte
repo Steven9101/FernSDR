@@ -14,6 +14,8 @@
 
 	let more = $state(false);
 	const activeIndex = $derived.by(() => {
+		// The setup flow is none of them, not even More.
+		if (router.route.page === 'setup') return -1;
 		const index = tabs.findIndex((tab) => tab.id === router.route.page);
 		return index === -1 ? tabs.length : index;
 	});
@@ -29,7 +31,7 @@
 		<span
 			aria-hidden="true"
 			class="absolute inset-y-1.5 left-1.5 w-[calc((100%-0.75rem)/5)] rounded-[1.25rem] bg-foreground/8 transition-transform duration-[560ms] ease-(--ease-page) dark:bg-foreground/12"
-			style="transform: translateX({activeIndex * 100}%)"
+			style="transform: translateX({Math.max(0, activeIndex) * 100}%); opacity: {activeIndex < 0 ? 0 : 1}"
 		></span>
 		{#each tabs as tab (tab.id)}
 			{@const active = tab.id === router.route.page}

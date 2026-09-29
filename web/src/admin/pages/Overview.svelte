@@ -19,7 +19,9 @@
 	import { ago, bitrate, dbfs, megahertz, share } from '../lib/format';
 	import { bandCondition, conditionDetail, live } from '../lib/live.svelte';
 	import { parseLogLine, recentProblems, type LogEntry } from '../lib/log';
+	import { dismissSetup, setupDone } from '../lib/setup';
 	import { href } from '../lib/router.svelte';
+	import Check from '@lucide/svelte/icons/check';
 
 	let now = $state(Date.now());
 	$effect(() => {
@@ -71,6 +73,20 @@
 		}
 	}
 
+
+	// What is left of setting the receiver up, until it is done or the
+	// operator hides it: a station with a name and a place, and a radio.
+	let setup = $state<{ station: boolean; radio: boolean } | null>(null);
+	if (!setupDone()) {
+		Promise.all([api.readStation(), api.readBands()])
+			.then(([station, bands]) => {
+				const values = station.station as { name?: string; grid?: string };
+				const sources = (bands.bands as { fixed: { source: string } }[]).map((band) => band.fixed.source);
+				const next = { station: !!values.grid && !!values.name && values.name !== 'FernSDR', radio: sources.some((source) => source !== 'test') };
+				setup = next.station && next.radio ? null : next;
+			})
+			.catch(() => {});
+	}
 </script>
 
 <PageHeader
@@ -83,6 +99,29 @@
 		</Button>
 	{/snippet}
 </PageHeader>
+
+{#if setup}
+	<article class="mb-8 flex flex-col gap-4 rounded-3xl bg-card p-5 md:p-6">
+		<div class="flex flex-col gap-1">
+			<h2 class="text-lg font-semibold">Finish setting up</h2>
+			<p class="text-[15px] text-muted-foreground">A few questions, one at a time, and the receiver listens with your radio.</p>
+		</div>
+		<ul class="flex flex-col gap-2 text-[15px]">
+			{#each [['Its name and its place on the map', setup.station], ['A radio instead of the test signal', setup.radio]] as [label, done] (label)}
+				<li class="flex items-center gap-2.5">
+					<span class="grid size-5 place-items-center rounded-full {done ? 'bg-primary text-primary-foreground' : 'border border-border'}">
+						{#if done}<Check size={12} />{/if}
+					</span>
+					<span class={done ? 'text-muted-foreground line-through' : ''}>{label}</span>
+				</li>
+			{/each}
+		</ul>
+		<div class="flex flex-wrap gap-3">
+			<Button size="lg" class="h-11 rounded-full px-5 md:h-9" href={href({ page: 'setup' })}>Continue <ArrowRight /></Button>
+			<Button variant="ghost" size="lg" class="h-11 rounded-full px-4 md:h-9" onclick={() => { dismissSetup(); setup = null; }}>Hide</Button>
+		</div>
+	</article>
+{/if}
 
 {#if live.error && live.state}
 	<p class="mb-6 flex items-center gap-2 rounded-2xl bg-destructive/10 px-4 py-3 text-sm text-destructive" role="alert">

@@ -885,6 +885,14 @@ void Radio::apply_hours(const Config& config) {
         BandHours hours;
         std::string error;
         const ConfigSection& section = config.section("band:" + bands_[i]->id());
+        // Only for the band that runs: a section rewired under the same id,
+        // such as a radio's band in place of the test band, is another band,
+        // and its hours start with it at the restart.
+        auto wanted = section.values();
+        auto built = bands_[i]->configured_values();
+        wanted.erase("hours");
+        built.erase("hours");
+        if (wanted != built) continue;
         if (!BandHours::parse(section.get("hours", ""), hours, error)) continue;
         if (hours != hours_[i]) {
             LOG_INFO("radio", "%s is on the air %s from now", bands_[i]->id().c_str(), hours.text().c_str());
