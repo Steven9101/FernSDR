@@ -7,8 +7,9 @@ the list.
 
 The interface is grey. The only colour in it is information:
 
-- the **waterfall**, whose colour is the measurement (and whose default ramp is
-  now greyscale too, with four colour ramps one click away in Display)
+- the **waterfall**, whose colour is the measurement: Classic by default,
+  with Mono, Aurora and Ember (safe for colour-blind eyes) one click away in
+  Display, and the operator's choice of default
 - the **carrier marker**, which has to be findable in one glance against
   whatever colour the waterfall is showing
 - the **S-meter's upper end**, where orange and amber mark the region above S9
@@ -266,13 +267,13 @@ natively.
 Two items were on this list until a receiver with eight bands was actually put
 in front of a phone:
 
-- **The band strip stays a strip.** Eight bands read well in the top bar, the
-  way browser tabs do; a vertical list would have cost the controls their room
-  for no gain. What testing *did* find was a real break - the strip was
-  pushing the whole page wider than the screen, because a flex child that
-  cannot shrink below its content does not scroll, it stretches. It now
-  shrinks, scrolls, and fades at its trailing edge so it is visible that there
-  is more.
+- **The band list.** A strip in the top bar read well for eight bands, the
+  way browser tabs do, and pushed the page wider than the screen on a phone,
+  because a flex child that cannot shrink below its content does not
+  scroll, it stretches. Receivers with more bands settled it: on a desktop
+  the bands are a list at the foot of the sidebar, each with what it listens
+  with, its range and its listeners, searchable from ten bands up; on a
+  phone more than six get a Bands tab of their own.
 
 - **The waterfall was never broken.** It looked empty because of the
   auto-levels bug above, and because history genuinely takes half a minute to
@@ -280,7 +281,10 @@ in front of a phone:
 
 ## Open items
 
-- Saving a configuration from the admin panel still requires a restart to
-  apply. Bands can be restarted individually from the panel, which covers the
-  common case (a source that has gone away); a full reload without dropping
+- Adding or removing a band, and any change to a band's lines in the
+  configuration file, wait for the receiver to restart, except a module's
+  own settings, which a restart of that band applies. The band settings on
+  the Bands page apply at once, as do station details, limits, the chat,
+  hours and decoders, and the panel restarts the whole receiver where a
+  service manager starts it again. A full reload without dropping
   listeners is the harder version and is not done.

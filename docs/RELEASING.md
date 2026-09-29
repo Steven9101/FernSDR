@@ -8,7 +8,8 @@ signature; and `install.sh` itself, with the keys the programs check
 releases with. They are published as the assets of a GitHub release, where
 `https://github.com/Steven9101/FernSDR/releases/latest/download/` finds the
 newest one. Downloads from a private repository fail, so nothing installs or
-updates until the repository is public.
+updates until the repository is public. A container image built from the
+same archives goes to `ghcr.io/steven9101/fernsdr`.
 
 The formats are in `server/src/update/release.h` and `ustar.h`; how a
 receiver updates, and how it goes back, is in [DEPLOYMENT.md](DEPLOYMENT.md#updates).
@@ -90,23 +91,16 @@ signing one no receiver takes.
 A receiver sees the new version once someone presses *Check for updates* on
 its Updates page; nothing updates by itself.
 
-5. The container image is not built by the workflow yet. From the release's
-   archives, one per processor, on a machine with Docker and buildx:
-
-   ```sh
-   for arch in x86_64 aarch64 armhf; do
-       mkdir -p image-$arch/tree && tar -xf fernsdr-VERSION-linux-$arch.tar -C image-$arch/tree
-       cp server/docker/Dockerfile server/docker/entrypoint.sh image-$arch/
-   done
-   docker buildx build --platform linux/amd64 -t ghcr.io/steven9101/fernsdr:VERSION-amd64 --push image-x86_64
-   docker buildx build --platform linux/arm64 -t ghcr.io/steven9101/fernsdr:VERSION-arm64 --push image-aarch64
-   docker buildx build --platform linux/arm/v7 -t ghcr.io/steven9101/fernsdr:VERSION-armv7 --push image-armhf
-   docker buildx imagetools create -t ghcr.io/steven9101/fernsdr:VERSION -t ghcr.io/steven9101/fernsdr:latest \
-       ghcr.io/steven9101/fernsdr:VERSION-amd64 ghcr.io/steven9101/fernsdr:VERSION-arm64 ghcr.io/steven9101/fernsdr:VERSION-armv7
-   ```
-
-   The image carries the signed release's own files; nothing in it is built
-   anew.
+5. The workflow then builds the container image from the archives it just
+   published, for all three processors, with `tools/build-image.sh`, and
+   pushes `ghcr.io/steven9101/fernsdr:VERSION` and `:latest`. The image
+   carries the signed release's own files; nothing in it is built anew. The
+   rehearsal builds the images too, without pushing them. A new package on
+   ghcr.io is private: once, after the first release, make it public in the
+   package's settings on GitHub, or `docker pull` asks everyone to sign in.
+   By hand, from the release's archives on a machine with Docker and buildx:
+   `tools/build-image.sh OUT ghcr.io/steven9101/fernsdr push`, where `OUT`
+   holds what `tools/build-release.sh` made.
 
 ## What a mistake costs
 

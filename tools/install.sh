@@ -1522,8 +1522,8 @@ summary() {
     if [ -n "$CONFIG_WRITTEN" ]; then
         printf '\n'
         note "It receives a synthetic band for now, so the whole chain can be tried in"
-        note "a browser before an antenna is connected. With an RTL-SDR dongle plugged"
-        note "in, the admin panel's Modules page sets it up."
+        note "a browser before an antenna is connected. Sign in to the admin panel: its"
+        note "setup finds the radio plugged in, fetches its module and adds its bands."
     fi
     printf '\n'
 }

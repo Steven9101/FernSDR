@@ -8,11 +8,23 @@ The first release.
 
 - Demodulates USB, LSB, CW, CW-L, AM, synchronous AM, NFM and DSB, each with its
   own passband presets and a passband that can be dragged to any width; the
-  SSB presets include 2.7 kHz, flat from 300 to 2700 Hz.
+  SSB presets include 2.7 kHz, flat from 300 to 2700 Hz. Wide FM, in mono,
+  on a band of 240 kHz or more, demodulated once per station for everyone
+  tuned to it, with RDS: the station's name, programme type and radiotext.
 - Runs several bands at once from standard input, files, UDP, ka9q-radio
-  multicast, a synthetic test source or a hardware module; the RTL-SDR and
-  RX-888 modules are installed from the admin panel, and a direct-sampling
-  band of 129.6 Msps from the RX-888 runs on about half a core.
+  multicast, a synthetic test source or a hardware module; the RTL-SDR,
+  RX-888 and SDRplay modules are installed from the admin panel, and a
+  direct-sampling band of 129.6 Msps from the RX-888 takes about three
+  quarters of a core of a Ryzen 9 9950X held to AVX2.
+- Hours on the air for each band, as UTC times or by sunrise and sunset at
+  the station's grid square, so that one radio serves 40 m at night and 20 m
+  by day; listeners are told ten minutes before and move with the input, and
+  the hours apply without a restart.
+- Decoder modules on a narrow channel of a band's shared spectrum, sandboxed
+  and at idle priority; Fern-FT8 is the first. Decodes are checked before
+  they are kept for a day, shown to listeners where the operator makes the
+  decoder public (a list, a filter and a map, one click from being tuned),
+  served at `/api/decodes`, and reported to PSK Reporter at a switch.
 - Shares one FFT front end per band across its listeners, using AVX-512 on AMD,
   AVX2, SSE2, NEON or plain C++, whichever the machine has. A band nobody
   listens to and that keeps no archive skips the listeners' transform and
@@ -22,12 +34,12 @@ The first release.
 - Per listener: automatic gain in four speeds, each set against the band noise
   around the channel so that the noise stays level between words and a weaker
   station taking over is up within half a second, following the carrier on
-  AM, or manual gain; noise reduction, automatic and manual notches, an
-  automatic squelch that needs no threshold, an audio low cut and NFM
-  de-emphasis.
+  AM, or manual gain; noise reduction, an automatic notch (manual notches
+  through the protocol), an automatic squelch that needs no threshold, an
+  audio low cut and NFM de-emphasis.
 - Per band: noise blanker, DC removal, IQ balance and swap, frequency and ppm
   correction measured against a known carrier, S-meter calibration in dBm, and
-  an optional waterfall archive of up to 24 hours.
+  an optional waterfall archive (the panel offers 6 to 72 hours).
 - Audio in NAC3, coded against the channel's own noise, and a waterfall in
   WFC5, rows through a context-modelled range coder that takes about a third
   less than WFC4 (still sent to older pages), with three data profiles for
@@ -78,6 +90,8 @@ The first release.
 - The band list names what each band listens with (RX-888, RTL-SDR,
   SDRplay, a recording, a network stream) and gives its range in MHz; from
   ten bands on it has a search by name or by a frequency inside a band.
+- Keyboard shortcuts for tuning, volume, mute, zoom, filter width, mode,
+  typing a frequency and noise reduction; `?` lists them.
 - Remembers frequency, filter and zoom per band; links open on the same signal
   and view. Tuning that takes the passband off screen, by key, wheel or a
   typed frequency, brings the view along with the passband in its middle.
@@ -122,9 +136,18 @@ The first release.
 ### Operator
 
 - Admin panel at `/admin`: live bands and listeners, band and station
-  settings, appearance and widgets, hardware modules, the log and the
-  configuration file. Sign-in is a challenge-response over a PBKDF2 hash, and
-  every change is signed.
+  settings, appearance and widgets, hardware modules and decoders, the log
+  and the configuration file. Sign-in is a challenge-response over a PBKDF2
+  hash, and every change is signed.
+- A setup at the first sign-in: the password, the station and its place,
+  the radio found on USB with its module installed from the catalog, bands
+  suggested from what the radio tunes and the region's band plan (two of
+  them taking turns by day and night), and whether the receiver is public
+  and listed. The panel restarts the receiver where a service manager starts
+  it again.
+- A new admin password from the Station page, without the password crossing
+  the network, from `fernsdr --set-password` on the machine, or by running
+  the installer again.
 - The chat can be turned off with `chat = no` under `[site]`.
 - Lists the receiver on sdr-list.xyz when the Station page or `sdr_list = yes`
   asks for it, with a report once a minute and its outcome on the page.
@@ -135,8 +158,12 @@ The first release.
 - Released as static programs for x86_64, aarch64 and armhf (ARMv7 with
   NEON), which run on any Linux of their processor.
 - `install.sh`, published with each release, installs it as a service after
-  one question, at home or on a server on the internet, moves over a
-  receiver set up from source, and updates it when run again. Tested on
+  one question, at home, on a server with a domain name (setting up HTTPS
+  with Caddy under systemd, where the distribution packages it) or on one
+  without, moves over a
+  receiver set up from source, and when run again updates it or makes a new
+  admin password. Where Docker runs it offers the container instead, and
+  updates that too, going back to the image before if the new one fails. Tested on
   Debian 10 to 13, Ubuntu 18.04 to 26.04, Fedora, Rocky 9, AlmaLinux 8,
   Amazon Linux 2023, openSUSE Leap and Tumbleweed, and Arch; on systemd
   before 239 (Ubuntu 18.04) its units run without the system call filter,
@@ -154,7 +181,9 @@ The first release.
   runs the receiver as its own user under tini, and gives USB devices passed
   with `--device` to it; the Updates page says that a new image is the
   update there.
-- Updates from the admin panel's Updates page, never by themselves. A new
+- Updates from the admin panel's Updates page, never by themselves. After
+  signing in, the panel asks the receiver to look once a day and offers a
+  newer version in a dialog with its notes, set as headings and lists. A new
   version is kept once it has served for a minute with every band that ran
   before; otherwise the version before comes back, with its configuration
   files as they were, and so it does when the machine goes down mid-update.
@@ -184,11 +213,16 @@ The first release.
 - The receiver will not start with its own files inside a directory it
   serves, and `/uploads/` serves only uploaded images.
 - A Content-Security-Policy on every page, and the admin page is never framed.
+- The chat shows names, messages and addresses as text; only a frequency
+  becomes a button. A test holds it to that against the attack behind
+  CVE-2026-97723, a chat message that ran script in every listener's page in
+  UberSDR before 0.1.58, which magicint1337 found and reported.
 - At most 16 listeners per IPv4 address or IPv6 /64 by default.
 - The configuration and settings are written readable by their owner only.
 - The receiver refuses to serve as root unless given `--allow-root`.
-- The HTTP, WebSocket, JSON, configuration and module package parsers have
-  libFuzzer targets (`make -C server fuzz`). The first runs found that JSON
+- The HTTP, WebSocket, JSON, configuration, module package, Ed25519, ustar
+  and release manifest parsers have libFuzzer targets
+  (`make -C server fuzz`). The first runs found that JSON
   numbers with a fraction were written with ten significant digits and that
   an integer too large in the configuration was cast regardless; both are
   fixed.

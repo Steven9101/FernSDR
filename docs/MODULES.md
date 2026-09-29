@@ -3,10 +3,17 @@
 A module is a separate program that FernSDR starts and talks to. The receiver
 itself links only the C and C++ runtime; everything that needs a vendor
 library, USB access or a driver lives in a module. An input module delivers
-samples for one band. Fern-RTLSDR, for RTL2832U dongles including the
-RTL-SDR Blog V4, is the first one: <https://github.com/Steven9101/Fern-RTLSDR>.
-Fern-RX888, for the RX-888 MkII sampling HF directly, is the second:
-<https://github.com/Steven9101/Fern-RX888>.
+samples for one band; a decoder module takes a narrow channel and reports
+what it decodes. These are the ones in the default catalog:
+
+| Module | Kind | For | Platforms |
+|---|---|---|---|
+| [Fern-RTLSDR](https://github.com/Steven9101/Fern-RTLSDR) | input | RTL2832U dongles, the RTL-SDR Blog V4 included | x86_64, aarch64, armhf |
+| [Fern-RX888](https://github.com/Steven9101/Fern-RX888) | input | the RX-888 MkII sampling HF directly, 0 to 30 or 0 to 60 MHz at once | x86_64, aarch64, armhf |
+| [Fern-SDRPlay](https://github.com/Steven9101/Fern-SDRPlay) | input | SDRplay RSPs, through SDRplay's own API | x86_64 |
+| [Fern-FT8](https://github.com/Steven9101/Fern-FT8) | decoder | FT8 | x86_64, aarch64, armhf |
+
+The RX-888 and SDRplay modules have not been run with real radios yet.
 
 In plain words: FernSDR never talks to radio hardware itself. A module does,
 a small program of its own for one kind of hardware, which FernSDR starts,
@@ -200,6 +207,20 @@ it takes:
  ]}
 ```
 
+An input module can also say what its radio tunes, so the admin panel's
+setup can offer bands that fit rather than ask for a centre frequency and a
+sample rate:
+
+```json
+"tuning":{"ranges":[[500000,1766000000]],"rates":[2400000,2048000,1024000],"signal":"iq"}
+```
+
+`ranges` are up to 8 `[low, high]` pairs of centre frequencies the radio
+tunes, and `rates` up to 8 sample rates worth offering, the first the
+default, all in whole Hz; `signal` is `iq`, or `real` for a radio that
+samples from 0 Hz up, as the RX-888 does. Without `tuning` the setup says it
+cannot suggest bands for the radio, and the operator writes the band by hand.
+
 `type` is `string`, `number`, `boolean` or `choice`, with `choices` for the
 last and optional `min`, `max` and `unit` for numbers. `advanced: true` marks
 a setting most operators should leave alone; the admin panel shows it apart
@@ -241,7 +262,9 @@ FERNMOD1\n
 `version` is `major.minor.patch`, each at most four digits. `platform` is
 `linux-` followed by `x86_64`, `aarch64` or `armhf`; `armhf` means ARMv7 with
 hardware floating point, which is every Raspberry Pi from the Pi 2 on, and not
-the Pi Zero or Pi 1. `settings` is the list `--describe` prints. The manifest
+the Pi Zero or Pi 1. `settings` and `tuning` are what `--describe` prints;
+`name` is at most 64 characters, `license` 100, `source` and `description`
+300, and there are at most 64 settings. The manifest
 is at most 16 KiB and the executable at most 32 MiB. Executables should be
 linked statically, so that one package runs on every distribution of its
 architecture.
@@ -457,7 +480,7 @@ other stations and their locators.
 the Station page (`[site] operator` and `grid`), with the antenna when one is
 given. FernSDR sends, not the module, which has no network: a datagram every
 five minutes or so, not in step with the clock, each station at most once an
-hour unless its locator changed, and only confident decodes of stations that
+hour on each band unless its locator changed, and only confident decodes of stations that
 sent their call in full. The Decoders page has it as a switch and says what
 went out and when, or what is missing. `[site] spot_server` changes where
 spots go, `host:port`; PSK Reporter's test port is 14739. Saved from the admin panel or its

@@ -123,6 +123,10 @@ python3 tools/loadtest.py --port 18073 --clients 1000 --seconds 60 --ramp 10 \
   --meter-format binary --modes usb,lsb,cw,cwl,am,sam,nfm,dsb
 ```
 
+The load test codes the waterfall with WFC4 for each client; real pages use
+WFC5, shared between listeners with the same view, so its waterfall figures
+are not a page's ([PERFORMANCE.md](PERFORMANCE.md#size-a-receiver)).
+
 `make -C server link-model` runs one listener's stream budget over many link
 shapes and stalls without a network. `tools/link-lab.sh`, as root with
 `sch_netem` and `sch_plug` loaded, plays the same kinds of link to the real

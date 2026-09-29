@@ -90,6 +90,14 @@ python3 tools/loadtest.py --port 8073 --clients 1000 --seconds 60 \
 
 Check delivered audio seconds as well as sequence gaps. A source that runs
 at half speed can deliver every frame and still fail to provide live audio.
+
+`loadtest.py` speaks the waterfall codecs up to WFC4. Pages ask for WFC5,
+which is range-coded and which the server codes once for every listener
+with the same view, so the tool's waterfall figures are not a page's: WFC5
+rows are about a third smaller, and their CPU cost depends on how many
+listeners share a view. Measure with real pages where the waterfall's exact
+cost matters.
+
 The tool reports CPU, RSS, media payload and TCP payload separately. TCP
 payload includes WebSocket/control bytes, but excludes IP, TCP and TLS
 overhead. Leave uplink headroom for those costs and traffic bursts.

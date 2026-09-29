@@ -152,14 +152,67 @@ frequency sat in that row. History stays locked to frequency through pans and
 zooms instead of shearing sideways, and a region no line ever covered is drawn
 empty rather than smeared with an invented edge pixel.
 
+## Work shared between listeners
+
+Beyond the channelizer, two more pieces of work depend only on what is heard
+or seen, not on who hears or sees it, and are done once for everyone who
+shares them:
+
+- **Broadcast FM.** A WFM channel is 200 kHz wide, and its discriminator
+  and decimation cost more than everything after them. The band keeps one
+  demodulator per station, passband and de-emphasis (`core/shared_fm.h`), with its RDS
+  decoder, and each listener tuned there copies the audio and does only its
+  own squelch, volume and codec.
+- **Waterfall rows.** Most listeners look at the whole band at the width
+  their screen asks for. The band range-codes each row once per such view
+  (`core/shared_waterfall.h`); a listener takes the shared rows from the next
+  key row on, and codes its own while it cannot take every row.
+
+## Modules and decoders
+
+The receiver never talks to hardware. An input module
+([MODULES.md](MODULES.md)) is a separate program, started by the band that
+uses it, that sends samples through a pipe and reads commands as lines of
+JSON; a driver that crashes or hangs takes its module down, not the
+receiver, which starts it again unless the failure needs the operator, such
+as a setting the module refuses. A decoder module gets a narrow channel cut
+from a band's shared spectrum (`core/decoder_tap.cpp`, at about 12 kHz, a
+power-of-two share of the band's rate) on a thread of its own per decoder, and sends back what it decoded; every
+decode is checked before it is kept, shown or reported to PSK Reporter.
+
+## Hours on the air
+
+A band's `hours` (`core/band_hours.h`) are times of day in UTC, or times
+relative to sunrise and sunset at the station's grid square. The radio
+checks them once a second; a band whose hours end stops and its listeners
+are moved to the band that takes over its input. Bands share one input when
+their hours cannot overlap; hours by the Sun that might meet somewhere in the
+year are allowed with a warning, and the band on the air first keeps the
+input. Starting and stopping run on a thread of
+their own, so a slow device never holds up a tick.
+
+## What the server keeps
+
+No database and no accounts. Beside the configuration, the receiver keeps
+what the admin panel saves (`fernsdr-settings.json`), the page's look
+(`fernsdr-theme.json`), the pictures uploaded for it, installed modules, the
+waterfall archive of bands that keep one, and in memory the last day of
+decodes (at most 20,000) and the chat's recent messages. A backup from the
+admin panel carries the configuration without the machine's own sections
+(`[server]`, `[modules]`, `[admin]`), the saved settings without the listing
+id and the chat's mutes, the look, and the pictures (up to 64 files and
+6 MB); it names the installed modules for another machine to install
+again, and leaves out the archive, the decodes and the chat.
+
 ## What is deliberately absent
 
-- **No digital-mode decoding, SSTV or packet.** The audio path carries them
-  intact to software that does this better.
-- **No plugin system.** Every feature here is one somebody uses on every
-  session.
-- **No database, no accounts, no server-side state beyond the live sessions.**
-- **No TLS in the server.** A reverse proxy does it better; see
-  `docs/DEPLOYMENT.md`.
+- **No TLS in the server.** A reverse proxy does it better, and the installer
+  sets one up; see [DEPLOYMENT.md](DEPLOYMENT.md#https).
 - **No external dependencies in the server.** One `make` on any machine with a
-  C++17 compiler.
+  C++17 compiler. Anything that needs a vendor library, such as SDRplay's API,
+  is a module.
+- **No hardware drivers in the server**, for the same reason: see
+  [Modules and decoders](#modules-and-decoders).
+- **No audio-mode decoders in the page.** Modes such as RTTY, PSK31 and SSTV
+  reach software on the listener's computer intact through the audio; the
+  receiver decodes only what is worth doing once for everybody, as FT8.

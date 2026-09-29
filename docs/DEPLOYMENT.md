@@ -17,23 +17,50 @@ curl -fsSL https://github.com/Steven9101/FernSDR/releases/latest/download/instal
 `wget -qO-` in place of `curl -fsSL` does the same. The installer asks one
 question, where the receiver runs:
 
-- **At home**, it listens on every address, port 8073, and the admin panel
-  takes plain HTTP from the home network (`home_network = yes`, see
-  [Administration without HTTPS](#administration-without-https)).
-- **On a server on the internet**, it listens on 127.0.0.1 only, for a web
-  server in front of it to serve over HTTPS, and prints the lines that make
-  Caddy do that. Answering `2 radio.example.org` puts the domain in them.
+1. **At home.** It listens on every address, port 8073, and the admin panel
+   takes plain HTTP from the home network (`home_network = yes`, see
+   [Administration without HTTPS](#administration-without-https)).
+2. **On a server with a domain name**, answered as `2 radio.example.org`. It
+   listens on 127.0.0.1 only, and where the distribution packages Caddy and
+   the init is systemd, installs Caddy and writes its site into
+   `/etc/caddy/Caddyfile` between marker lines, keeping the file before as
+   `Caddyfile.before-fernsdr`; Caddy then fetches the certificate. Elsewhere
+   it prints the lines that make Caddy, or another web server, do it.
+3. **On a server without a domain name.** It serves listeners plain HTTP on
+   port 8073, and the admin panel only through an SSH tunnel
+   (`ssh -L 8073:localhost:8073 you@server`, then
+   `http://localhost:8073/admin`), unless you answer yes to the admin panel
+   over plain HTTP from anywhere, at your own risk (`plain_http_anywhere`).
 
 Without a terminal to ask on, as from a provisioning script, `FERNSDR_SETUP`
-gives the answer: `home`, `internet`, or `internet radio.example.org`.
+gives the answer: `home`, `internet radio.example.org`, `internet` (only
+listening locally, for a web server of your own), `http`, or `http admin`
+for the third answer with the admin panel over plain HTTP.
+
+Where Docker runs and nothing is installed yet, it first asks whether to
+install the receiver as a service of the machine or in a Docker container;
+`FERNSDR_DOCKER=1` answers the container, and `FERNSDR_IMAGE` names another
+image than `ghcr.io/steven9101/fernsdr`, on every run, or the next one goes
+back to that. See [In a container](#in-a-container).
 
 It makes up a password for the admin panel and keeps it in
 `/opt/fernsdr/admin-password`, which only root can read; the receiver has
 only its hash. On a terminal it prints the password too, but not into the log
 of a run without one. Until an antenna is connected the receiver runs a synthetic
-band, so the whole chain can be tried in a browser first. With an RTL-SDR
-dongle plugged in, the panel's Modules page sets it up: the service may open
-USB devices, and nothing else, and RTL2832U dongles belong to its user.
+band, so the whole chain can be tried in a browser first. The first sign-in
+to the admin panel opens its setup, which finds a radio plugged in, installs
+its module and adds its bands; the service may open USB devices, and nothing
+else, and RTL2832U dongles belong to its user.
+
+Run again on a machine where FernSDR is installed, the installer asks what
+to do: `1` updates to the newest release, `2` makes a new admin password
+when the old one is lost, prints it and restarts the receiver
+(`FERNSDR_NEW_PASSWORD=1` asks for that without a terminal). A password
+changed in the admin panel is only in the configuration, as a hash, so
+`/opt/fernsdr/admin-password` then no longer holds it; a new one from the
+installer does. On a receiver of your own,
+`fernsdr --set-password fernsdr.conf` sets one from the terminal and keeps
+the file's owner.
 
 What goes where:
 
@@ -102,8 +129,11 @@ aside.
 
 ### In a container
 
-`make -C server docker` builds an image of a release, 34 MB on Alpine, and
-the release notes name the published one:
+The installer sets a container up too: where Docker runs and nothing is
+installed yet, it asks whether to use one, and it updates it when run again
+(see below). By hand,
+each release publishes `ghcr.io/steven9101/fernsdr`, for x86_64, aarch64 and
+armhf; `make -C server docker` builds one locally, 34 MB on Alpine.
 
 ```sh
 docker run -d --name fernsdr --restart unless-stopped -p 8073:8073 \
@@ -119,17 +149,32 @@ host directory works as the volume too, whoever owns it: the container
 gives it to `fernsdr` when it starts.
 
 - `-e FERNSDR_SETUP=internet` on the first start leaves the admin panel to
-  HTTPS through a web server in front, as `install.sh` does for a server on
-  the internet. The default, `home`, lets the home network in over plain
-  HTTP. Docker's usual port forwarding keeps each client's own address;
-  where it does not, as with rootless Docker, every client arrives from a
-  private address, so use `internet` there.
+  HTTPS through a web server on the host, which reaches the container
+  through a port published on the host's 127.0.0.1 only
+  (`-p 127.0.0.1:8073:8073`). Docker hands those connections over from its
+  bridge's gateway, not from loopback, so the configuration it writes
+  believes the gateway's forwarded addresses as well
+  (`trusted_proxies = loopback, 172.17.0.1`). The default, `home`, lets the
+  home network in over plain HTTP. `http` is the installer's third answer:
+  in a container the admin panel then answers only with
+  `-e FERNSDR_PLAIN_ADMIN=1`, plain HTTP from anywhere at your own risk,
+  because an SSH tunnel arrives from the gateway too and cannot be told
+  from anyone else, so the installer asks for that or stops. Docker's usual
+  port forwarding keeps each client's own address; where it does not, as
+  with rootless Docker, every client arrives from a private address, so
+  use `internet` there.
 - `--device /dev/bus/usb/001/005` passes one USB device, an RTL-SDR or an
   RX-888; the container gives its node to the receiver's group. The numbers
-  change when it is plugged in again; `--device /dev/bus/usb` passes them all.
-- Updates are a new image: `docker pull` and start the container again from
-  it. The Updates page says so; the volume keeps everything. Modules install
-  from the admin panel as elsewhere and live in the volume.
+  change when it is plugged in again. The installer instead binds all of
+  `/dev/bus/usb` and allows USB devices by number
+  (`--device-cgroup-rule 'c 189:* rmw'`), so a radio plugged in again later
+  is found, and passes the host's group for radios as `FERNSDR_USB_GID`.
+- Updates are a new image. Run the installer again: it pulls the image,
+  keeps the one before as `:previous`, starts the container from the new one
+  and goes back to the old one if the new does not answer. By hand,
+  `docker pull` and start the container again from it. The Updates page
+  says so; the volume keeps everything. Modules install from the admin panel
+  as elsewhere and live in the volume.
 - A module that loads a vendor's library, such as the SDRplay module, does
   not run in this image: the library needs glibc, which Alpine does not
   have, and a vendor service beside it. For an SDRplay RSP, install FernSDR
@@ -141,7 +186,11 @@ gives it to `fernsdr` when it starts.
 ## Updates
 
 The admin panel's Updates page says which version runs, looks for a newer
-one when asked, and shows its notes. *Update* asks the updater, which runs as
+one when asked, and shows its notes. After signing in, the panel also asks
+the receiver to look once a day, and offers a newer version in a dialog with
+its notes until *Later* puts that version away; nothing is installed
+without *Update*. The notes are the changelog's section for the version,
+shown as text: headings, lists and `code`, never markup. *Update* asks the updater, which runs as
 root beside the receiver, in `fernsdr-update.service` or started by the
 supervisor, with the trusted version's program:
 
@@ -167,8 +216,8 @@ receiver starts: that is `fernsdr-update-boot.service`, or the supervisor's
 first step. Nothing updates by
 itself, and a receiver never moves to an older version.
 
-Running `install.sh` again does the same from the command line, and prints
-how it goes. It also brings the new version's systemd units, which an update
+Running `install.sh` again and answering `1` does the same from the command
+line, and prints how it goes. It also brings the new version's systemd units, which an update
 from the panel leaves alone. The configuration stays as it is, except that
 one without a password for the admin panel gets one.
 
@@ -268,56 +317,34 @@ links the first.
 
 ## Feeding it
 
-Hardware is attached through a pipe rather than a driver, so the server never
-needs to know about your front end.
+The receiver never talks to hardware itself. A radio with a module, the
+RTL-SDR, the RX-888 and the SDRplay RSPs, is run by that module, a small
+program the receiver starts for the band and restarts when the radio comes
+back after being unplugged. Any other radio feeds it through a pipe from its
+own program, and ka9q-radio or anything else that sends IQ over the network
+through UDP.
 
-### RX888 MkII, 0–30 MHz
-
-The direct-sampling path expects real samples. It is different from a
-channelized IQ stream. For a 64 Msps signed 16-bit producer:
-
-```ini
-[band:hf]
-name        = 0-30 MHz
-source      = stdin
-format      = s16
-signal      = real
-sample_rate = 64M
-low         = 0
-high        = 30M
-spectrum_bins = 1048576
-spectrum_rate = 12
-spectrum_averages = 1
-```
-
-```sh
-rx888_stream -f /path/to/SDDC_FX3.img -s 64000000 \
-  | server/build/fernsdr server/fernsdr.conf
-```
-
-The command uses [ringof/rx888_tools](https://github.com/ringof/rx888_tools),
-whose streamer writes real int16 samples to stdout. Follow that project's
-USB permissions, firmware and installation instructions. Its hardware driver
-has its own dependencies; FernSDR does not link them. This path was exercised
-with generated sample files, not an attached RX888. See
-[PERFORMANCE.md](PERFORMANCE.md) before choosing a user limit.
+The admin panel's setup does the usual case by itself: it finds the radio on
+USB, installs its module from the catalog and writes the bands. The sections
+below are what it writes, for doing it by hand and for everything else.
 
 ### RTL dongle
 
-The RTL-SDR module runs the dongle for the receiver: it starts with the band,
-and when the dongle is unplugged the band goes offline and comes back once it
-is plugged in again. It works with RTL2832U dongles, including the RTL-SDR
-Blog V3 and V4.
+The RTL-SDR module works with RTL2832U dongles: the RTL-SDR Blog V3 and V4,
+and sticks with an R820T, R828D, E4000, FC0012, FC0013 or FC2580 tuner.
 
-1. Install the module. In the admin panel open Modules, press *Check for
-   updates* and install `rtlsdr`. On a machine without internet access, copy
-   the package for its platform from the module's releases and run
+1. Install the module: the setup does, or in the admin panel open Modules,
+   press *Check for updates* and install `rtlsdr`. On a machine without
+   internet access, copy the package for its platform from the module's
+   releases and run
    `./fernsdr --install-module rtlsdr-0.1.0-linux-aarch64.fernmod fernsdr.conf`.
 2. A receiver installed from a release by `install.sh` may open USB devices
    already. One built from source as a service needs this once:
    `sudo tools/source-install.sh --service --usb`. Either way the service may
    open USB devices and nothing else, RTL2832U dongles belong to the
-   receiver's user, and the DVB-T television driver is kept off them.
+   receiver's user, and the DVB-T television driver is kept off them
+   (`/etc/udev/rules.d/61-fernsdr-usb.rules`,
+   `/etc/modprobe.d/fernsdr-rtlsdr.conf`).
 3. *Find devices* on the Modules page lists the dongles with their serials.
    Describe the band:
 
@@ -329,12 +356,15 @@ sample_rate     = 2400k
 center          = 14.175M
 module.device   = serial:00000001
 module.gain     = auto
+dc_remove       = yes
 ```
 
 Every `module.` setting is checked against what the installed module
 declares, so a typing mistake is refused when the file is saved rather than
 when the band starts. The gain, the RTL2832's AGC and the bias tee change live
-from the band's page.
+from the band's page. `module.direct_sampling` defaults to `auto`: off on the
+Blog V4, whose upconverter covers HF, and the Q branch below the tuner's
+lowest frequency on other sticks.
 
 `module.gain = auto`, the default, is the module's own control: the highest
 of the tuner's gains that keeps the 8-bit converter out of clipping with 6 dB
@@ -347,7 +377,7 @@ AGC, which watches the tuner and not the converter, and a number such as
 `38.6` fixes it. An S-meter calibration holds at the gain it was made at, so
 a calibrated band wants a fixed gain.
 
-Set `dc_remove = yes` to take out the spike in the middle of the waterfall.
+`dc_remove = yes` takes out the spike in the middle of the waterfall.
 The module puts the band within 3.4 Hz of where it was asked for, correcting
 where the R820T's and R828D's synthesizer lands; a crystal without
 temperature control still drifts a few parts per million. On the band's page
@@ -355,8 +385,93 @@ in the admin panel, "Measure against a known carrier" reads where a station
 such as WWV or CHU shows and writes the correction into the configuration, as
 `ppm` for the crystal's error or `frequency_offset` for a fixed one.
 
-`rtl_sdr` in a pipe still works when a pipe is all you want, but nothing
-restarts it:
+How modules are packaged, installed and trusted, and how to write one, is in
+[MODULES.md](MODULES.md).
+
+### RX-888 MkII
+
+The RX-888 module samples the HF input directly, 0 to 30 MHz at 64.8 Msps
+or 0 to 60 MHz, 6 m included, at 129.6 Msps, over USB 3. It carries the
+board's firmware itself. Only the MkII is supported, and only its HF input;
+the module has not been run with a real board yet.
+
+```ini
+[band:hf]
+name          = Shortwave, 0 to 30 MHz
+source        = module
+module        = rx888
+signal        = real
+sample_rate   = 64800000
+center        = 0
+low           = 0
+high          = 30M
+module.gain   = auto
+```
+
+`module.gain = auto` sets the amplifier in front of the converter as the
+RTL-SDR module does; `module.attenuation` (0 to 31.5 dB), `module.bias_tee`
+and `module.dither` change live. The band is a real signal from 0 Hz up, so
+`center` is 0 and `low` and `high` say what listeners see. A band this wide
+is heavy on the shared transform, before any listener. `tools/wideband-check.sh`
+measures it on the machine at hand; on a Ryzen 9 9950X held to AVX2, as an
+older Intel Core has it, a band took 43 % of a core at 64.8 Msps and 74 % at
+129.6 Msps, with no samples lost (a virtual machine of six cores, 20
+seconds each). A core of a 6th-generation Core i5 such as the i5-6500T is
+roughly a third as fast, which puts 0 to 30 MHz at about one and a third of
+its four cores and 0 to 60 MHz at about two and a quarter: an estimate from
+that ratio, not a measurement on one. See [PERFORMANCE.md](PERFORMANCE.md) before
+choosing a user limit. ARM boards have not been measured with it.
+
+### SDRplay RSP
+
+The SDRplay module runs the RSP1, RSP1A, RSP1B, RSP2, RSPduo (one tuner at a
+time), RSPdx and RSPdx-R2 through SDRplay's own API, which SDRplay does not
+let anyone pass on. It is for x86_64 machines, and not for the container
+image: the API needs glibc and SDRplay's service beside it. The module has
+not been run with a real RSP yet.
+
+1. Download the API for Linux, 3.14 or 3.15, from
+   <https://www.sdrplay.com/api/> and install it:
+   `sudo sh SDRplay_RSP_API-Linux-*.run`. It installs a service, `sdrplay`,
+   which has to be running.
+2. Install the module `sdrplay`, in the setup or on the Modules page. The
+   Modules page shows what it needs first until the API is found.
+3. For the first RSP, the RSP1: the kernel has a driver of its own for its
+   chip, `msi2500`, which takes the radio as a TV tuner before SDRplay's
+   service can. `install.sh` keeps it away
+   (`/etc/modprobe.d/fernsdr-sdrplay.conf`) and unloads it when it is loaded;
+   if the RSP1 was plugged in before, unplug it once or restart the machine.
+
+```ini
+[band:40m]
+source          = module
+module          = sdrplay
+sample_rate     = 2000000
+center          = 7.1M
+module.device   = serial:1234567890
+module.antenna  = auto
+module.gain     = auto
+```
+
+`module.gain = auto` chooses the LNA state and IF gain itself, as high as
+keeps the converter out of clipping; `manual` with `module.lna_state` and
+`module.if_gain_reduction`, or the API's `agc`, instead. The notch filters
+(`module.rf_notch`, `module.dab_notch`, `module.am_notch`), the bias tee and
+`module.ppm` change live; `module.antenna` picks the input on the RSP2
+(`a`, `b`, `hiz`), the RSPduo (`tuner1`, `tuner2`, `hiz`) and the RSPdx
+(`a`, `b`, `c`). Rates of 2, 6 and 10 Msps are what the setup offers; any
+from 62.5 kHz to 10.66 MHz works.
+
+### Radios without a module
+
+Every SDR with a program that writes its samples out can feed a band. Run in
+a terminal, the program's output goes straight into the receiver:
+
+```sh
+rtl_sdr -f 7100000 -s 2048000 - | ./fernsdr fernsdr.conf
+```
+
+with the band reading standard input:
 
 ```ini
 [band:40m]
@@ -366,12 +481,72 @@ sample_rate = 2048k
 center      = 7.1M
 ```
 
-```sh
-rtl_sdr -f 7100000 -s 2048000 - | ./fernsdr fernsdr.conf
+`format` is how the program writes each sample: `cu8` (unsigned 8-bit IQ),
+`cs8`, `cs16` or `cf32`, or for a real signal from 0 Hz up, with
+`signal = real`, `u8`, `s8`, `s16` or `f32`. `sample_rate` and `center` are
+what the program was told. Only one band can read standard input.
+
+These are the usual programs, each with the `format` it writes:
+
+| Radio | Command | `format` |
+|---|---|---|
+| RTL-SDR | `rtl_sdr -f 7100000 -s 2048000 -` | `cu8` |
+| HackRF | `hackrf_transfer -r - -f 7100000 -s 2000000 -l 16 -g 20` | `cs8` |
+| Airspy R2 or Mini (24 MHz and up) | `airspy_rx -r - -f 145.0 -a 2500000 -t 2` | `cs16` |
+| Airspy HF+ | `airspyhf_rx -r stdout -f 7.1 -a 768000` | `cf32` |
+| anything SoapySDR knows: LimeSDR, Pluto, Airspy HF+, SDRplay | `rx_sdr -d driver=lime -f 7100000 -s 2000000 -F CS16 -` | `cs16` |
+
+`hackrf_transfer` runs from 2 Msps up; `-l` and `-g` are its two gains. The
+Airspy R2 runs at 2.5 or 10 Msps, the Mini at 3 or 6. `airspy_rx -f` and
+`airspyhf_rx -f` take megahertz, the others hertz. Each program's own
+documentation says how to install it and the rest of its options.
+
+A receiver installed as a service has no terminal to read from. There the
+program writes into a FIFO, a named pipe, and a small service of its own
+keeps it running. The FIFO sits in a directory of that service's, which the
+receiver may read and not write: the feed runs as root, and nothing the
+receiver does should be able to choose where root writes.
+
+```ini
+# /etc/systemd/system/fernsdr-feed.service
+[Unit]
+Description=Samples for FernSDR
+Before=fernsdr.service
+
+[Service]
+Group=fernsdr
+RuntimeDirectory=fernsdr-feed
+RuntimeDirectoryMode=0750
+RuntimeDirectoryPreserve=yes
+ExecStartPre=/bin/sh -c 'test -p /run/fernsdr-feed/iq-hf || mkfifo -m 0640 /run/fernsdr-feed/iq-hf'
+ExecStart=/bin/sh -c 'exec hackrf_transfer -r - -f 7100000 -s 2000000 > /run/fernsdr-feed/iq-hf'
+Restart=always
+RestartSec=5
+
+[Install]
+WantedBy=multi-user.target
 ```
 
-How modules are packaged, installed and trusted, and how to write one, is in
-[MODULES.md](MODULES.md).
+```ini
+[band:hf]
+source      = file
+path        = /run/fernsdr-feed/iq-hf
+format      = cs8
+sample_rate = 2000000
+center      = 7.1M
+```
+
+```sh
+sudo systemctl daemon-reload
+sudo systemctl enable --now fernsdr-feed
+```
+
+The receiver waits for a writer on the FIFO and takes up again when the
+program restarts; the FIFO is kept across its restarts, so it stays the one
+the receiver reads. `path` names a file, so it is set in the file on the
+machine, not in the admin panel. If a radio should rather work as the
+RTL-SDR does, found by the setup and started by the receiver, [ask for a
+module](https://github.com/Steven9101/FernSDR/issues/new/choose).
 
 ### Several bands from one radio
 
@@ -402,16 +577,18 @@ listeners to the other when they change:
 
 ```ini
 [band:20m]
-source   = module
-module   = rtlsdr
-center   = 14.1M
-hours    = sunrise-sunset
+source      = module
+module      = rtlsdr
+sample_rate = 2400k
+center      = 14.1M
+hours       = sunrise-sunset
 
 [band:40m]
-source   = module
-module   = rtlsdr
-center   = 7.1M
-hours    = sunset-sunrise
+source      = module
+module      = rtlsdr
+sample_rate = 2400k
+center      = 7.1M
+hours       = sunset-sunrise
 ```
 
 In the admin panel this is one choice: on a band's page, under On the air,
@@ -443,6 +620,19 @@ told, and when they end they move to the band that takes the input over. A
 decoder listening to the band starts again with a fresh clock when it comes
 back. The schedule follows the system clock, so a machine without a real-time
 clock picks the right band once NTP has set it.
+
+### Decoding FT8
+
+On the admin panel's Decoders page, one button installs the Fern-FT8
+module and starts a decoder on the FT8 frequencies the bands cover. Each
+decoder has two switches: *Shown to listeners* puts a Decodes tab on the
+page, with a list and a map, and *Report spots to PSK Reporter* sends what it
+decoded there, confident decodes only, each station at most once an hour
+on each band.
+In the file a decoder is a `[decoder:ft8]` section with its module and
+channels; [Configuring a decoder](MODULES.md#configuring-a-decoder) has every
+key. A decoder costs little: it gets a channel of at most 12 kHz cut from the
+band's shared transform, not a band of its own.
 
 ### ka9q-radio
 
@@ -700,8 +890,8 @@ port behind the HTTPS proxy.
 
 The receiver will not serve as root: a program facing the internet around
 the clock, which also starts module programs, should not own the machine if
-something in it is ever found to be wrong. `--check`, `--version` and
-`--hash-password` still run as root. In a container with no other user, pass
+something in it is ever found to be wrong. `--check`, `--version`,
+`--hash-password` and `--set-password` still run as root. In a container with no other user, pass
 `--allow-root`. A unit written by hand before 0.1.0 without `User=` now stops
 at once and, with `Restart=always`, restarts in a loop: give it a user, as the
 installer's unit does.
@@ -741,7 +931,7 @@ compression, and transport headers add overhead:
 | Profile | Audio | Waterfall | Total |
 |---|---|---|---|
 | Low | 32 kbit/s | 768 bins at 8/s | ~50 kbit/s |
-| Balanced | 48 kbit/s | 1024 bins at 12/s | ~85 kbit/s |
+| Balanced | 48 kbit/s | up to 1536 bins at 12/s | ~85 kbit/s |
 | High | 64 kbit/s | 2048 bins at 20/s | ~180 kbit/s |
 
 The user chooses the profile; the server enforces a ceiling regardless:
@@ -795,16 +985,22 @@ everyone arrives from it: set a per-client limit in the proxy, for example
 ## The admin panel
 
 Off unless you configure a password, because a panel with a default password is
-a back door with a login page in front of it. `install.sh` makes one up for
-each receiver and prints it. To set one yourself:
+a back door with a login page in front of it. `install.sh` and
+`tools/source-install.sh` make one up for each receiver and print it. After
+that, *Change password* on the Station page sets a new one. On the machine:
 
 ```sh
-./server/build/fernsdr --hash-password
+sudo /opt/fernsdr/current/fernsdr --set-password /var/lib/fernsdr/fernsdr.conf
+sudo systemctl restart fernsdr
 ```
 
-It reads the password from the terminal rather than from an argument - an
-argument would be in your shell history and visible in `ps` to every other user
-on the machine - and prints the two lines to paste into your config:
+asks for it twice and writes its hash into `[admin]`, keeping the file's
+owner; the receiver takes it when it restarts. In a container:
+`docker exec -it fernsdr /opt/fernsdr/fernsdr --set-password /var/lib/fernsdr/fernsdr.conf`,
+then `docker restart fernsdr`. Both read the password from the terminal rather than from an argument,
+which would be in your shell history and visible in `ps` to every other user
+on the machine. `--hash-password` only prints the two lines to paste into a
+config by hand:
 
 ```ini
 [admin]
@@ -826,6 +1022,13 @@ access works at `http://127.0.0.1:8073/admin`, and from the home network with
 
 What it does:
 
+- **Setup.** The first sign-in on a receiver that has only the test band
+  opens a setup of five steps: the password, the station and its place, the
+  radio (found on USB by its ids, its module installed from the catalog),
+  bands suggested from what the module says its radio tunes and the region's
+  band plan, two of them taking turns by day and night, and whether the
+  receiver is public and listed. It restarts the receiver to start the
+  bands, where a service manager starts it again; otherwise it says to.
 - **Live**: how many people are listening and to what, each listener's address,
   band, frequency, mode, stream rate and how long they have been connected, and
   every band's state. Refreshes every three seconds.
@@ -850,8 +1053,27 @@ What it does:
   stolen session is then limited to what the panel
   does while it lasts. A file setting may be deleted, which brings back its
   default, and a UDP band may be switched to another source or removed.
-- **Station details**: name, operator, location, grid square, antenna,
-  contact, website, notice and the listener limit. The Station page keeps
+- **A band's page**: its live spectrum and last minute of waterfall, why it
+  is not receiving, and its settings: name, starting audio quality, the
+  ceiling per listener, the widest filter, the noise blanker, IQ swap and
+  balance, removing the centre spike, the hours on the air, frequency
+  correction measured against a known carrier, the S-meter calibration and
+  the waterfall archive. For a hardware module: where it tuned, the gain it
+  chose, clipping, dropped samples, its live settings and its log. *Add a
+  band* offers the same suggestions as the setup.
+- **Modules** and **Decoders**: install, update, switch off and remove
+  modules from the catalog, find the radios a module sees, and with one
+  button install the FT8 decoder for the FT8 frequencies the bands cover,
+  show its decodes to listeners and report them to PSK Reporter.
+- **Appearance** and **Widgets**: the page's colours and background picture,
+  the default waterfall colours and meter, and the widgets beside the
+  waterfall (chat, clock, space weather, greyline and lightning maps, the
+  station card, listeners by band, notices, links, pictures, embedded
+  pages).
+- **Log**: what the receiver has been doing, problems first if asked.
+- **Station details**: name, operator, location, grid square, band plan,
+  antenna, contact, website, notice, the listener limit, how long an idle
+  listener stays, the sdr-list.xyz listing, and *Change password*. The Station page keeps
   them in `fernsdr-settings.json` beside the configuration, and whichever was
   changed last wins. A value saved in the panel stands until that setting is
   edited in the file, by hand or in the configuration editor; saving the file
@@ -935,6 +1157,21 @@ Here `\n` means one newline byte. Send the hex signature in
 `X-FernSDR-Signature` and a strictly increasing positive integer, no greater
 than 9,007,199,254,740,991, in `X-FernSDR-Counter`. Send mutations in sequence
 and preserve the counter across page reloads.
+
+A new password never crosses the network either. POST
+`/api/admin/password` with `{"nonce","proof","hash"}`: a fresh challenge
+answered with the current password, as for a login, and the new password's
+stored form, `pbkdf2$<rounds>$<32 hex digits of salt>$<64 hex digits>`
+with at least 100,000 rounds, made in the browser. The receiver writes it
+into `[admin]` and ends every session, this one included.
+
+A few more endpoints the panel uses, all behind the same session:
+`GET /api/admin/hardware` lists the radios on USB and the kernel drivers in
+their way; `POST /api/admin/restart` stops the receiver for its service
+manager to start again, and is refused (409, with the reason) where nothing
+would; `GET /api/admin/backup` returns the backup file and
+`POST /api/admin/restore` plays one back, as
+[Moving to another machine](#moving-to-another-machine) describes.
 
 ## Per-band settings worth knowing about
 
@@ -1070,12 +1307,13 @@ The ones worth knowing:
 
 | Setting | Default | When to change it |
 |---|---|---|
-| `usable_fraction` | 0.8 | How much of the sample rate to show. Raise if your front end's anti-alias filter is sharper than usual. |
+| `usable_fraction` | 0.8, 0.94 for `signal = real` | How much of the sample rate to show. Raise if your front end's anti-alias filter is sharper than usual. |
 | `spectrum_bins` | 2× the channelizer FFT | Raise for finer waterfall resolution on a wide band; costs CPU per band, not per user. |
 | `spectrum_averages` | 8 | More averaging steadies the display and lowers the waterfall bitrate. Averages that would overlap by more than 75 % are left out: on a 2 Msps band that is 5, and the line is as steady. |
 | `spectrum_smoothing` | 0.5 | Same, applied across lines. The variance it removes is noise the codec would otherwise spend bits encoding. |
 | `max_bandwidth` | 20 kHz | The widest passband one listener may request. |
 | `max_user_bitrate` | 100000 | The ceiling described above. |
+| `wfm` | yes | Offers wide FM, with RDS, on a band of 240 kHz or more; `no` leaves only the narrow modes. |
 
 ## Troubleshooting
 
@@ -1090,9 +1328,9 @@ that will not fill points at the network. The low bandwidth profile raises the
 buffer target as well as lowering the rate.
 
 **Waterfall is blank but audio works.** Almost always a proxy that is not
-passing WebSocket binary frames intact, or one buffering them. The `2-D mode`
-badge in the corner means WebGL2 was unavailable and the fallback renderer is
-in use, which is a display difference, not a fault.
+passing WebSocket binary frames intact, or one buffering them. A browser
+without WebGL2 draws the waterfall with a slower fallback, which is a display
+difference, not a fault.
 
 **The band stops after a while.** Check the source process and the receiver
 log. A source EOF stops that band and makes `/api/health` return 503; the

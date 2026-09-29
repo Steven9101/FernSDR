@@ -6,9 +6,10 @@ exactly how, bit by bit, for anyone writing their own client.
 
 Two formats: **NAC** for audio and a line codec for the waterfall. Both are
 documented here in enough detail to write an independent decoder, and both are
-implemented three times over - the C++ encoder/decoder, the TypeScript decoder
-in the browser, and the Python decoder in `tools/fernsdr-probe.py`. Cross-check
-vectors keep them honest (`make -C server vectors`).
+implemented in C++ for the server and in TypeScript for the browser. The
+Python client in `tools/fernsdr-probe.py` decodes the audio and the waterfall
+up to WFC4, not WFC5. Cross-check vectors keep them honest
+(`make -C server vectors`).
 
 ## Shared conventions
 

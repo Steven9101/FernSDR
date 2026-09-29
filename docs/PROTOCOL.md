@@ -11,8 +11,10 @@ carry audio, waterfall data and negotiated compact meter updates. Byte layouts a
 
 There is also a small HTTP API: `GET /api/status` returns the site, its bands
 and their listener counts as JSON; `GET /api/health` returns 200 while every
-band is receiving, or deliberately switched off by the operator, and 503
-otherwise.
+band is receiving, deliberately switched off by the operator or off the air
+by its hours, and 503 otherwise. `GET /api/space-weather` returns what the
+receiver last fetched for the space weather widget; it fetches only while
+that widget is on the page, and answers `{}` until its first fetch.
 
 The upgrade requires GET over HTTP/1.1, WebSocket version 13 and a canonical
 16-byte base64 nonce as specified by [RFC 6455](https://www.rfc-editor.org/rfc/rfc6455#section-4.2.1).
@@ -106,7 +108,10 @@ roughly `300 .. 2700` and LSB `-2700 .. -300`. Changing `mode` without naming a
 passband adopts that mode's default - otherwise switching from AM to CW would
 leave a 9 kHz CW filter.
 
-Modes: `usb`, `lsb`, `cw`, `cwl`, `am`, `sam`, `nfm`, `dsb`.
+Modes: `usb`, `lsb`, `cw`, `cwl`, `am`, `sam`, `nfm`, `dsb`, and `wfm` on a
+band whose `wfm` is true in `welcome` (at least 240 kHz wide, and not
+switched off by the operator). `fm` is taken for `nfm`. A listener asking for
+`wfm` on a band without it gets `nfm` and a `note` saying so.
 
 CW passbands are centred on `cw_pitch`; CW-L uses its negative. The displayed
 signal frequency is `freq + cw_pitch` for CW and `freq - cw_pitch` for CW-L.
@@ -186,7 +191,7 @@ apply only after `nac3` was negotiated.
 ```json
 {"type":"dsp","agc":"auto","gain":0,"nr":0.0,"autonotch":false,
  "squelch":-200,"notches":[{"hz":1200,"width":150}],
- "highpass":0,"deemphasis":300,"ctcss_filter":true,"ctcss_squelch":0,"ctcss_squelch":0}
+ "highpass":0,"deemphasis":300,"ctcss_filter":true,"ctcss_squelch":0}
 ```
 
 `agc` is `auto`, `fast`, `medium`, `slow`, `long` or `off`. The automatic
@@ -210,6 +215,34 @@ has been measured (about two and a half seconds after it starts).
 tones in Hz keeps the audio muted until that tone is received (it opens in
 about half a second and ignores the neighbouring tones), 0 or anything that
 is not a standard tone switches it off.
+
+Four more fields: `max_gain` caps what the automatic gain may add, in dB
+(60 unless set); `volume` scales the audio, 1 being unity; `auto_squelch`,
+true or false, switches the automatic squelch, which needs no level;
+`wfm_deemphasis` is the broadcast FM de-emphasis in microseconds, 0 to 200,
+50 unless set (75 in the Americas, which the page chooses from the band
+plan's region).
+
+### `state` (request)
+
+```json
+{"type":"state"}
+```
+
+Asks for a `state` reply without changing anything.
+
+### `chat`
+
+```json
+{"type":"chat","name":"Ann","text":"strong on 14074 FT8"}
+{"type":"chat","history":true}
+```
+
+Posts a line to the chat, under `name` (cut to 24 bytes of UTF-8, kept for
+the connection's later lines). A longer line is cut to 400 bytes; the
+receiver limits how often one address may post. With `history`, nothing is
+posted: the reply is a `chat-history` with the messages kept, which a page
+asks for whenever its chat appears.
 
 ### `ping`
 
@@ -249,6 +282,17 @@ the limits the server will enforce.
            "min_audio_bitrate":8000,"max_audio_bitrate":128000,
            "max_users":200}}
 ```
+
+Besides the fields shown, a band carries `wfm: true` when it offers wide
+FM, `noise_blanker` (its level, for the page to show), `noise_floor` (dBFS),
+`calibration` (the S-meter's `[{hz, offset}]` points, empty until the
+operator measured it), and `history`, `off`, `private` or `public`, with
+`history_from` and `history_to` (Unix ms, 0 while nothing is kept yet)
+whenever `history` is not `off`. The
+message also carries `theme` (the operator's look and widgets, as the
+`theme` message does), `agc_profiles` (the `agc` names the server takes),
+and in `site` `source_url` (where this build's source is) and `chat`
+(whether the chat is on).
 
 Every band carries `on_air`: whether its hours have it on the air. A band
 with hours also carries `hours` (the operator's text, `sunset-sunrise`) and
@@ -294,6 +338,9 @@ The authoritative receiver state, sent after every change. Carries an optional
              "width":1024,"fps":12},
  "note":"passband narrowed to the channel maximum"}
 ```
+
+The reply also carries `auto_squelch`, `ctcss_squelch` and `wfm_deemphasis`
+as the `dsp` command sets them.
 
 `tune`, `viewport` and `dsp` commands may each carry a monotonically increasing
 `request_id`. State replies include `ack: {"tune":N,"viewport":N,"dsp":N}` with
@@ -380,6 +427,32 @@ nothing to show: another station, another mode, or a station without RDS.
 
 The server decodes RDS once per station, beside the shared WFM demodulation,
 so it costs the same for one listener as for a thousand.
+
+### `chat`, `chat-history` and `chat-refused`
+
+```json
+{"type":"chat","id":42,"name":"Ann","text":"strong on 14074 FT8","at":1790000000000}
+{"type":"chat-history","messages":[{"id":41,"name":"Bo","text":"...","at":1789999990000}]}
+{"type":"chat-refused","reason":"you are sending faster than anyone can read; wait a moment"}
+```
+
+Every listener gets each posted line as `chat`, with `at` in Unix
+milliseconds. `chat-history` answers a `chat` with `history`. A line the
+receiver would not take (empty, too fast, from a muted address, or with the
+chat switched off) is answered with `chat-refused` and its reason, to the
+sender only.
+
+### `station` and `theme`
+
+```json
+{"type":"station","site":{"name":"...","chat":true,"source_url":"..."},"decoders":[]}
+{"type":"theme","theme":{"colors":{},"widgets":[]}}
+```
+
+Sent to every listener when the operator changes the station's details or
+the page's look: `station` carries the same `site` object as `welcome` and
+the public `decoders`, `theme` the whole theme as `welcome` carries it. A
+page applies them as they arrive.
 
 ### `error`
 
@@ -472,17 +545,17 @@ Exactly 26 bytes, all multibyte integers little-endian:
 | Offset | Type | Field |
 |---:|---|---|
 | 0 | u8 | `0x03` |
-| 1 | u8 | Flags: bit 0 squelch open, bit 1 PLL locked, bit 2 automatic squelch statistic present, bit 3 SAM fields present |
+| 1 | u8 | Flags: bit 0 squelch open, bit 1 PLL locked, bit 2 automatic squelch statistic present, bit 3 SAM fields present, bit 4 NFM (only after `meter-ctcss`) |
 | 2 | i16 | dBFS × 10 |
 | 4 | i16 | AGC gain in dB × 10 |
 | 6 | u16 | Automatic squelch statistic × 10, when bit 2 is set |
-| 8 | i32 | PLL offset in Hz × 10, when bit 3 is set |
+| 8 | i32 | PLL offset in Hz × 10 when bit 3 is set; the CTCSS tone in Hz × 10 when bit 4 is set, 0 for none |
 | 12 | u32 | Audio payload bits/s |
 | 16 | u32 | Waterfall payload bits/s |
 | 20 | u16 | Waterfall lines/s × 10 |
 | 22 | u32 | Listeners across the receiver |
 
-Bits 4–7 are reserved and must be zero. Ignore optional fields unless their
+Bits 5 to 7 are reserved and must be zero. Ignore optional fields unless their
 presence flag is set. Reject incorrect lengths and unknown flag bits. Rates
 count media payload; they exclude WebSocket framing and control messages.
 Ten updates per second need 2.24 kbit/s including WebSocket framing.
