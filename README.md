@@ -182,9 +182,10 @@ machine has them.
 
 ## How it is built
 
-One server program and a browser client with three runtime dependencies. The
-audio codec, waterfall codec, DSP and HTTP server live in this repository.
-Each band shares its large FFT across listeners. Each listener has independent
+One server program and a browser client built on two libraries, Svelte and
+the Lucide icons, with the Inter typeface. The audio codec, waterfall codec,
+DSP and HTTP server live in this repository. Each band shares its large FFT
+across listeners. Each listener has independent
 tuning, audio processing and a bandwidth budget. Hardware and decoders are
 separate programs, modules, that the server starts and talks to through
 pipes, so a driver that crashes or hangs takes its module down, not the

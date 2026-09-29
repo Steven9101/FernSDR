@@ -11,7 +11,7 @@
   // A recording belongs to the page, not to this row: hiding the tools, or
   // arranging the page, must not leave one running with no way to stop or
   // save it.
-  const recordingNow = box<Recording | null>(null);
+  export const recordingNow = box<Recording | null>(null);
 </script>
 
 <script lang="ts">
@@ -28,6 +28,13 @@
   import { rigState } from '../cat/state';
   import { equalizeVfo, loadVfo, swapVfo, vfo, type VfoSetting } from '../state/vfo';
   import { extensionFor, recordingName } from '../audio/recorder';
+
+  let {
+    recordingOnly = false,
+  }: {
+    /** Only the record button: the tools are hidden, but a recording runs and must stay in reach. */
+    recordingOnly?: boolean;
+  } = $props();
   import { signalForCarrier } from '../util/cw';
   import { saveFile } from '../util/save-file';
 
@@ -100,6 +107,7 @@
 </script>
 
 <div class="tools" role="toolbar" aria-label="Receiver tools">
+  {#if !recordingOnly}
   <Editable label="VFO A and B" inline shown={layout.value.tools.vfo} onToggle={(vfo) => setLayout({ tools: { vfo } })}>
   <button
     type="button"
@@ -115,6 +123,8 @@
     onclick={() => equalizeVfo(here())}
   >A=B</button>
   </Editable>
+  {/if}
+  {#if !recordingOnly}
   <Editable label="Bookmarks" inline shown={layout.value.tools.bookmarks} onToggle={(bookmarks) => setLayout({ tools: { bookmarks } })}>
   <button
     bind:this={bookmarkButton}
@@ -128,7 +138,8 @@
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M8 1.8l1.8 3.9 4.2.5-3.1 2.9.8 4.2L8 11.2l-3.7 2.1.8-4.2L2 6.2l4.2-.5z" /></svg>
   </button>
   </Editable>
-  <Editable label="Recording" inline shown={layout.value.tools.record} onToggle={(record) => setLayout({ tools: { record } })}>
+  {/if}
+  <Editable label="Recording" inline shown={layout.value.tools.record || recording !== null} onToggle={(record) => setLayout({ tools: { record } })}>
   <button
     type="button"
     class="tools__button{recording ? ' is-recording' : ''}"
@@ -141,6 +152,7 @@
     {#if recording}<span class="tools__time">{clock(elapsed)}</span>{/if}
   </button>
   </Editable>
+  {#if !recordingOnly}
   <Editable label="Logbook" inline shown={layout.value.tools.logbook} onToggle={(logbook) => setLayout({ tools: { logbook } })}>
   <button
     bind:this={logButton}
@@ -154,6 +166,8 @@
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M3.5 1.5h8a1 1 0 0 1 1 1v11a1 1 0 0 1-1 1h-8a1 1 0 0 1-1-1v-11a1 1 0 0 1 1-1zm1.5 3v1h5v-1zm0 3v1h5v-1zm0 3v1h3v-1z" fill-rule="evenodd" /></svg>
   </button>
   </Editable>
+  {/if}
+  {#if !recordingOnly}
   <Editable label="Radio link" inline shown={layout.value.tools.rig} onToggle={(rig) => setLayout({ tools: { rig } })}>
   <button
     bind:this={rigButton}
@@ -167,6 +181,7 @@
     <svg viewBox="0 0 16 16" aria-hidden="true"><path d="M2 5.5A1.5 1.5 0 0 1 3.5 4h9A1.5 1.5 0 0 1 14 5.5v5a1.5 1.5 0 0 1-1.5 1.5h-9A1.5 1.5 0 0 1 2 10.5zm3 2.5a1.5 1.5 0 1 0 3 0 1.5 1.5 0 0 0-3 0zm5-1h2v1h-2zm0 2h2v1h-2zM4 2.5h5V4H4z" fill-rule="evenodd" /></svg>
   </button>
   </Editable>
+  {/if}
   {#if problem}<span class="tools__problem" role="status">{problem}</span>{/if}
 </div>
 

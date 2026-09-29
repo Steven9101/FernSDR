@@ -100,11 +100,16 @@
 <style>
   /* Over the title bar, which holds nothing to arrange: one row, so it
      covers nothing that is. */
+  /* Centred by its margins, not a transform: a transform would make the bar
+     the frame the tooltips of its buttons are placed in, and they are placed
+     against the window (util/place.ts), so they landed off by the bar's own
+     offset. */
   .layout-bar {
     position: fixed;
     top: calc(env(safe-area-inset-top, 0px) + 6px);
-    left: 50%;
-    transform: translateX(-50%);
+    left: 0;
+    right: 0;
+    margin-inline: auto;
     z-index: 60;
     display: flex;
     align-items: center;
@@ -160,7 +165,6 @@
     .layout-bar {
       left: var(--space-3);
       right: var(--space-3);
-      transform: none;
       width: auto;
       flex-wrap: wrap;
       padding: var(--space-3);

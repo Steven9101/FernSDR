@@ -5,10 +5,12 @@
  * then start later.
  *
  * `linkHasRoom()` resolves as soon as the stream runs where the page's own
- * script came in at a megabit a second or more, and never where it came in
- * slower. With nothing measured, the script from the cache, it resolves once
- * the waterfall has run at the rate the listener asked for over eight
- * seconds. It never resolves where the listener asked the browser to save
+ * script came in at a megabit a second or more. Where it came in slower, or
+ * nothing was measured (the script from the cache), it resolves once the
+ * waterfall has run at the rate the listener asked for over eight seconds.
+ * A slow script is not taken as a slow link for good: on a fresh connection
+ * its transfer is a couple of round trips of TCP's slow start, so a far
+ * server reads slow over a fast line, and the stream is the better judge. It never resolves where the listener asked the browser to save
  * data or the browser knows the link is 2G. The browser's estimate of a fast
  * link is not taken: Chromium calls a fresh page's link 4G at 10 Mbit/s
  * before it has measured anything, a 24 kbit/s one included; and the
@@ -17,6 +19,9 @@
  */
 import { bandwidthProfile, meter } from './store';
 import { watch } from './reactive.svelte';
+// The font file itself, by its hashed name: a new font is a new name, and a
+// browser that has it cached has this name stored, not merely "a font".
+import fontFile from '../assets/fonts/inter-latin-wght-400-700.woff2?url';
 
 /** Seconds of the full waterfall rate that count as room, where nothing else says. */
 const SETTLED_SECONDS = 8;
@@ -52,8 +57,7 @@ export function linkHasRoom(): Promise<void> {
     } catch {
       // No resource timing: the stream decides alone.
     }
-    // Measured slow: the sound needs all of it, for good.
-    if (downlink !== null && downlink < ROOMY_BPS) return;
+    const fast = downlink !== null && downlink >= ROOMY_BPS;
     let steady = 0;
     let last = 0;
     let done = false;
@@ -62,7 +66,7 @@ export function linkHasRoom(): Promise<void> {
       const target = bandwidthProfile.value.waterfallFps;
       if (done || fps <= 0) return;
       // Measured fast: as soon as the stream is running.
-      const needed = downlink !== null ? 0 : SETTLED_SECONDS;
+      const needed = fast ? 0 : SETTLED_SECONDS;
       const now = performance.now();
       // Held back below the rate asked for, the stream is being slowed to
       // fit the link, and anything else would take what the sound needs.
@@ -90,14 +94,14 @@ const FONT_KEY = 'fernsdr.font';
 export function loadFontWhenTheLinkAllows(): void {
   let cached = false;
   try {
-    cached = localStorage.getItem(FONT_KEY) === '1';
+    cached = localStorage.getItem(FONT_KEY) === fontFile;
   } catch {
     // No storage: the first-visit rule every time.
   }
   const load = () => {
     void import('../styles/inter.css');
     try {
-      localStorage.setItem(FONT_KEY, '1');
+      localStorage.setItem(FONT_KEY, fontFile);
     } catch {
       // Kept for this page only.
     }

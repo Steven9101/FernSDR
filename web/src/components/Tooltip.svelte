@@ -5,8 +5,8 @@
    * The `title` attribute was doing this job and doing it badly: the browser
    * decides when it appears (about a second, unconfigurably), it cannot be
    * styled, it never appears on a touch screen, and on a phone a long press gets
-   * the text-selection menu instead. So this is a real one, positioned by
-   * Floating UI so it flips and shifts rather than sliding off the edge of a
+   * the text-selection menu instead. So this is a real one, placed by
+   * util/place.ts so it flips and shifts rather than sliding off the edge of a
    * phone.
    *
    * The delay rules are Emil Kowalski's, and they are the whole reason this is

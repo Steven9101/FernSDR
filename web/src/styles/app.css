@@ -539,6 +539,9 @@ a {
  * a band a finger can hold, with the grip in the middle, over the display.
  */
 .spectrum__split {
+  /* The highest the line is drawn: on a phone the edit mode's bar covers
+     the top of the display, and a line pushed under it could not be held. */
+  --split-floor: 0px;
   position: absolute;
   left: 0;
   right: 0;
@@ -577,6 +580,12 @@ a {
 .spectrum__split:focus-visible .spectrum__split-grip {
   outline: 2px solid var(--ring);
   outline-offset: 2px;
+}
+
+@media (max-width: 760px) {
+  .spectrum__split {
+    --split-floor: 96px;
+  }
 }
 
 
@@ -974,7 +983,7 @@ a {
 }
 
 /* --- tooltip -------------------------------------------------------------
- * Positioned by Floating UI, so `position: fixed` at the origin and moved by a
+ * Placed by util/place.ts, so `position: fixed` at the origin and moved by a
  * transform. No entrance animation: a tooltip that fades in after its delay has
  * already made the reader wait twice.
  */

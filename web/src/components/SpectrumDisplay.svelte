@@ -84,7 +84,9 @@
    */
   function traceLayout(height: number) {
     const settings = display.value;
-    const own = listenerLayout.value.spectrum;
+    // No spectrum is the Display panel's switch, not a height of 0: a 0
+    // stored before that was so falls back to the page's own height.
+    const own = listenerLayout.value.spectrum || null;
     return overlayLayout(height, own ?? settings.spectrumHeight, settings.showSpectrum, settings.showBandPlan,
                          own === null ? 0.34 : 0.7);
   }
@@ -103,8 +105,14 @@
     // height in between would move nothing: it is either none or the least.
     let next = Math.max(0, Math.min(splitMax || SPECTRUM_MAX, Math.round(height)));
     if (next > 0 && next < MIN_TRACE) next = height > (listenerLayout.value.spectrum ?? splitTop) ? MIN_TRACE : 0;
+    // None at all is the trace switched off, which the Display panel shows
+    // and undoes; the height it had is kept for when it comes back.
+    if (next === 0) {
+      if (display.value.showSpectrum) display.value = { ...display.value, showSpectrum: false };
+      return;
+    }
     // Dragged open while the trace is switched off: it is wanted again.
-    if (next > 0 && !display.value.showSpectrum) display.value = { ...display.value, showSpectrum: true };
+    if (!display.value.showSpectrum) display.value = { ...display.value, showSpectrum: true };
     setLayout({ spectrum: next });
   }
 
@@ -720,7 +728,7 @@
   {#if editingLayout.value}
     <div
       class="spectrum__split"
-      style:top="{splitTop}px"
+      style:top="max({splitTop}px, var(--split-floor))"
       role="slider"
       tabindex="0"
       aria-label="Height of the spectrum"

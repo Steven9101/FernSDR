@@ -82,8 +82,8 @@ absolutely immediate.
 
 **Physicality.** Nothing scales from zero; the dialog starts at 0.98. Popovers
 grow out of their trigger rather than their own middle, so the tooltip sets its
-`transform-origin` from the placement Floating UI actually resolved - which may
-not be the one asked for, if it had to flip.
+`transform-origin` from the placement it actually got, which may not be the
+one asked for if it had to flip.
 
 **Reduced motion means fewer and gentler, not none.** An earlier version zeroed
 every duration, which also removed the fades that explain where a dialog came
@@ -173,7 +173,6 @@ Three, and each earns its place:
 |---|---|
 | `svelte` | the framework, the same as the admin panel's; its runes hold the state that updates a waterfall readout without re-rendering a tree |
 | `@lucide/svelte` | icons, imported one at a time |
-| `@floating-ui/dom` | tooltip placement that flips and shifts rather than sliding off a phone |
 
 Svelte replaced Preact so that both pages are one framework. That cost the
 listener page 14 kB gzipped of script: 63 kB where Preact's build was 49 kB.
@@ -210,7 +209,7 @@ discard, complete a key in the configuration, filter the log) not working.
 
 ## Tooltips
 
-`components/Tooltip.svelte`, positioned by Floating UI so it flips and shifts
+`components/Tooltip.svelte`, placed by `util/place.ts` so it flips and shifts
 rather than sliding off the edge of a phone. The `title` attribute used to do
 this job badly: the browser decides when it appears, it cannot be styled, and
 on a touch screen a long press gets the text-selection menu instead.

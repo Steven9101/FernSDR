@@ -16,7 +16,7 @@
   import { programmeType, stationName } from '../util/rds';
   import { layout, setLayout } from '../state/layout';
   import Editable from './Editable.svelte';
-  import ToolsRow from './ToolsRow.svelte';
+  import ToolsRow, { recordingNow } from './ToolsRow.svelte';
   import { parseFrequency } from '../util/frequency';
   import { digitsOf, isLeadingZero, placesFor } from './frequency-digits';
 
@@ -179,6 +179,9 @@
       <Editable label="Tools" inline container shown={layout.value.show.tools} onToggle={(tools) => setLayout({ show: { tools } })}>
         <ToolsRow />
       </Editable>
+      {#if !layout.value.show.tools && recordingNow.value}
+        <ToolsRow recordingOnly />
+      {/if}
     </div>
     {#if stationLabel || radiotext}
       <div class="frequency__rds" title={radiotext || undefined}>
