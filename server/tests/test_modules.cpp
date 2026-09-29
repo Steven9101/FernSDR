@@ -208,6 +208,26 @@ TEST_CASE(module_package_round_trips_and_rejects_damage) {
         CHECK(!parse_module_manifest(base + R"(,"requires":)" + needs + "}", parsed, error));
     }
 
+    // What the radio can be set to, for the panel's suggestions.
+    CHECK(parse_module_manifest(base + R"(,"tuning":{"ranges":[[500000,1766000000]],"rates":[2400000,2048000],"signal":"iq"}})",
+                                parsed, error));
+    CHECK_EQ(parsed.tuning.ranges.size(), 1u);
+    CHECK_EQ(parsed.tuning.rates.size(), 2u);
+    const fernsdr::Json tuning = parsed.to_json()["tuning"];
+    CHECK_EQ(tuning["ranges"][0][1].number(), 1766000000.0);
+    CHECK_EQ(tuning["rates"][0].number(), 2400000.0);
+    CHECK_EQ_STR(tuning["signal"].string(), "iq");
+    CHECK(parse_module_manifest(manifest, parsed, error));
+    CHECK(!parsed.to_json().has("tuning"));
+    for (const std::string& tuning : {std::string(R"("x")"), std::string(R"({"ranges":[],"rates":[1000],"signal":"iq"})"),
+                                      std::string(R"({"ranges":[[5,1]],"rates":[1000],"signal":"iq"})"),
+                                      std::string(R"({"ranges":[[0,1]],"rates":[10],"signal":"iq"})"),
+                                      std::string(R"({"ranges":[[0,1]],"rates":[1000],"signal":"both"})"),
+                                      std::string(R"({"ranges":[[0,1.5]],"rates":[1000],"signal":"iq"})"),
+                                      std::string(R"({"ranges":[[0,1]],"rates":[],"signal":"real"})")}) {
+        CHECK(!parse_module_manifest(base + R"(,"tuning":)" + tuning + "}", parsed, error));
+    }
+
     PackageName name;
     CHECK(parse_package_name("rtl-sdr-0.10.2-linux-aarch64.fernmod", name));
     CHECK_EQ_STR(name.id, "rtl-sdr");

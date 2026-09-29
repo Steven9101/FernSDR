@@ -50,6 +50,17 @@ struct ModuleManifest {
     // in words, such as a vendor's API and its service. Shown before a band
     // is set up with it. Optional; receivers from before it ignore it.
     std::vector<std::string> requires_;
+    // For an input module, what its radio can be set to, so that the admin
+    // panel can offer bands that fit instead of asking for numbers: the
+    // centre frequencies it tunes (ranges in Hz), the sample rates worth
+    // offering (the first the default) and whether it delivers IQ or a real
+    // signal, which covers 0 Hz to half the rate. Optional; a module without
+    // it is set up by hand.
+    struct Tuning {
+        std::vector<std::pair<double, double>> ranges;
+        std::vector<double> rates;
+        std::string signal;  // "iq" or "real"; empty when there is no tuning
+    } tuning;
 
     const ModuleSetting* setting(const std::string& key) const;
     Json to_json() const;
