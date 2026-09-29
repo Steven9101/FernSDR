@@ -41,6 +41,10 @@
     <a href="https://www.gnu.org/licenses/agpl-3.0.html" target="_blank" rel="noreferrer noopener">GNU Affero General Public License, version 3</a>.
     You may use, study, share and change it. Whoever runs a changed version for others must offer them its source.
   </p>
+  <p class="about__copyright">
+    Copyright © 2026 magicint1337,
+    <a href="https://github.com/Steven9101" target="_blank" rel="noreferrer noopener">Steven9101 on GitHub</a>.
+  </p>
 
   <ul class="about__links">
     <li><a href={sourceUrl} target="_blank" rel="noreferrer noopener">Source code of this receiver</a></li>

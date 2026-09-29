@@ -1660,6 +1660,7 @@ a {
 }
 
 .about__note { color: var(--muted-foreground); margin: var(--space-3) 0 0; }
+.about__copyright { color: var(--muted-foreground); margin: var(--space-3) 0; }
 
 .about__links,
 .about__credits {
