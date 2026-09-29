@@ -680,6 +680,24 @@ install_usb_rules() {
     cat > "$WORK/usb.rules" << RULES
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2838", MODE:="0660", GROUP:="$SERVICE_USER"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2832", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0ccd", ATTRS{idProduct}=="00a9", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0ccd", ATTRS{idProduct}=="00b3", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0ccd", ATTRS{idProduct}=="00d3", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="0ccd", ATTRS{idProduct}=="00e0", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="185b", ATTRS{idProduct}=="0620", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="185b", ATTRS{idProduct}=="0650", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1b80", ATTRS{idProduct}=="d393", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1b80", ATTRS{idProduct}=="d394", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1b80", ATTRS{idProduct}=="d395", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1b80", ATTRS{idProduct}=="d39d", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d19", ATTRS{idProduct}=="1101", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d19", ATTRS{idProduct}=="1102", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d19", ATTRS{idProduct}=="1103", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d19", ATTRS{idProduct}=="1104", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1f4d", ATTRS{idProduct}=="b803", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1f4d", ATTRS{idProduct}=="c803", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1f4d", ATTRS{idProduct}=="d286", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1f4d", ATTRS{idProduct}=="d803", MODE:="0660", GROUP:="$SERVICE_USER"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="00f3", MODE:="0660", GROUP:="$SERVICE_USER"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="00f1", MODE:="0660", GROUP:="$SERVICE_USER"
 RULES
@@ -887,6 +905,24 @@ updater_log() {
 install_mdev_rules() {
     rules="# FernSDR begin: RTL-SDR dongles and RX-888s for the receiver's group (install.sh)
 \$PRODUCT=bda/283[82]/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=ccd/a9/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=ccd/b3/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=ccd/d3/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=ccd/e0/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=185b/620/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=185b/650/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1b80/d393/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1b80/d394/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1b80/d395/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1b80/d39d/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1d19/1101/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1d19/1102/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1d19/1103/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1d19/1104/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1f4d/b803/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1f4d/c803/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1f4d/d286/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1f4d/d803/[0-9a-f]+ root:$SERVICE_USER 0660
 \$PRODUCT=4b4/f[13]/[0-9a-f]+ root:$SERVICE_USER 0660
 # FernSDR end"
     awk -v rules="$rules" '

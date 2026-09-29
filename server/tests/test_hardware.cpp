@@ -1,4 +1,5 @@
 #include "../src/core/hardware.h"
+#include "../src/util/config.h"
 #include "test_util.h"
 
 #include <sys/stat.h>
@@ -68,4 +69,27 @@ TEST_CASE(hardware_names_the_tv_drivers_that_hold_a_radio) {
     const auto found = fernsdr::drivers_in_the_way(modules.root);
     CHECK_EQ(found.size(), 1u);
     if (!found.empty()) CHECK(found[0].driver == "msi2500" && found[0].module == "sdrplay");
+}
+
+TEST_CASE(hardware_every_recognised_radio_is_opened_by_the_receiver_after_install) {
+    // Recognised but left to root, a stick would be found by the setup flow
+    // and then refused to its module: the installers' device rules give
+    // every id the receiver knows to the receiver's group.
+    std::string install, source;
+    CHECK(fernsdr::read_text_file("../tools/install.sh", install));
+    CHECK(fernsdr::read_text_file("../tools/source-install.sh", source));
+    for (const char* module : {"rtlsdr", "rx888"}) {
+        for (const auto& [vendor, product] : fernsdr::usb_ids_of(module)) {
+            char udev[96], mdev[40];
+            std::snprintf(udev, sizeof udev, "ATTRS{idVendor}==\"%04x\", ATTRS{idProduct}==\"%04x\"", vendor, product);
+            std::snprintf(mdev, sizeof mdev, "PRODUCT=%x/%x/", vendor, product);
+            const bool in_mdev = install.find(mdev) != std::string::npos ||
+                                 (vendor == 0x0bda && install.find("PRODUCT=bda/283[82]/") != std::string::npos) ||
+                                 (vendor == 0x04b4 && install.find("PRODUCT=4b4/f[13]/") != std::string::npos);
+            if (install.find(udev) == std::string::npos || source.find(udev) == std::string::npos || !in_mdev) {
+                std::fprintf(stderr, "  %04x:%04x of %s has no device rule\n", vendor, product, module);
+                CHECK(false);
+            }
+        }
+    }
 }

@@ -11,6 +11,7 @@
 
 #include <cstdint>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "../util/json.h"
@@ -32,6 +33,10 @@ struct UsbRadio {
 std::vector<UsbRadio> find_usb_radios(const std::string& sysfs = "/sys/bus/usb/devices");
 
 Json usb_radios_json(const std::vector<UsbRadio>& radios);
+
+// The USB ids of the radios `module` drives, for keeping the installers'
+// device rules in step with what is recognised here.
+std::vector<std::pair<uint16_t, uint16_t>> usb_ids_of(const std::string& module);
 
 // A kernel driver that takes a radio for itself, with the radio it takes.
 struct DriverInTheWay {

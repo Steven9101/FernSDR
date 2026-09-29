@@ -145,6 +145,14 @@ std::vector<DriverInTheWay> drivers_in_the_way(const std::string& modules) {
     return found;
 }
 
+std::vector<std::pair<uint16_t, uint16_t>> usb_ids_of(const std::string& module) {
+    std::vector<std::pair<uint16_t, uint16_t>> ids;
+    for (const KnownRadio& radio : kRadios) {
+        if (radio.module == module && radio.product != 0) ids.emplace_back(radio.vendor, radio.product);
+    }
+    return ids;
+}
+
 Json usb_radios_json(const std::vector<UsbRadio>& radios) {
     Json list = Json::make_array();
     for (const UsbRadio& radio : radios) {
