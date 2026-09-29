@@ -8,6 +8,7 @@
    * colours and pictures (state/theme.ts), so an operator can brand the page
    * but not take the credits off it.
    */
+  import { webLink } from '../util/links';
   import { bandPlan } from '../state/bandplan';
   import { decoders, operatorTheme, site } from '../state/store';
 
@@ -19,7 +20,7 @@
   });
 
   const information = $derived(site.value);
-  const sourceUrl = $derived(information?.source_url || 'https://github.com/Steven9101/FernSDR');
+  const sourceUrl = $derived(webLink(information?.source_url) ?? 'https://github.com/Steven9101/FernSDR');
   const planSources = $derived(bandPlan.value?.sources.filter((source) => source.url) ?? []);
   const widgets = $derived(new Set((operatorTheme.value?.widgets ?? []).map((widget) => widget.type)));
   const hasMap = $derived(widgets.has('greyline') || decoders.value.length > 0);

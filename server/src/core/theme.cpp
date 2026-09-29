@@ -50,6 +50,14 @@ bool is_safe_url(const std::string& value) {
     return false;
 }
 
+// What a link may open: a web page, or a page on this receiver. A data: or
+// javascript: address would run in the listener's page, stopped today only
+// by the page's Content-Security-Policy, which a proxy or a copy of the
+// pages served elsewhere may not send.
+bool is_link_url(const std::string& value) {
+    return !value.empty() && is_safe_url(value) && value.rfind("data:", 0) != 0;
+}
+
 bool known(const char* const* list, size_t count, const std::string& value) {
     for (size_t i = 0; i < count; i++) {
         if (value == list[i]) return true;
@@ -181,6 +189,19 @@ bool validate_theme(const Json& theme, std::string& error) {
                 if (!is_safe_url(url)) {
                     error = "widget '" + type + "' needs an https:// URL";
                     return false;
+                }
+            }
+            if (type == "links") {
+                const Json& items = widget["items"];
+                if (!items.is_null() && !items.is_array()) {
+                    error = "the links widget's items must be a list";
+                    return false;
+                }
+                for (size_t j = 0; j < items.size(); j++) {
+                    if (!is_link_url(items[j]["url"].string())) {
+                        error = "each link needs an https:// address or a path on this receiver";
+                        return false;
+                    }
                 }
             }
         }

@@ -16,6 +16,7 @@
    * reach into this one either way. Only a page from this very server could
    * use it to lift the sandbox, so that one keeps scripts alone.
    */
+  import { webLink } from '../util/links';
   import Chat from './Chat.svelte';
   import Clock from './Clock.svelte';
   import Greyline from './Greyline.svelte';
@@ -101,9 +102,9 @@
           <p class="widget__text">{widget.text}</p>
         {:else if widget.type === 'links'}
           <ul class="widget__links">
-            {#each widget.items ?? [] as item}
+            {#each (widget.items ?? []).filter((item) => webLink(item.url)) as item}
               <li>
-                <a href={item.url} target="_blank" rel="noreferrer noopener">{item.label || item.url}</a>
+                <a href={webLink(item.url)} target="_blank" rel="noreferrer noopener">{item.label || item.url}</a>
               </li>
             {/each}
           </ul>

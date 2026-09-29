@@ -96,6 +96,17 @@ TEST_CASE(widgets_are_a_closed_set) {
     CHECK(!accepted(R"json({"widgets":"chat"})json"));
 }
 
+// A link opens in the listener's page: only web pages and pages on this
+// receiver, never a script or data address.
+TEST_CASE(a_links_widget_opens_only_web_pages) {
+    CHECK(accepted(R"json({"widgets":[{"type":"links","items":[{"label":"Plan","url":"https://example.org/plan"},{"label":"Here","url":"/about.html"}]}]})json"));
+    for (const char* url : {"javascript:alert(1)", "data:text/html,x", "", "vbscript:x", "https://x/\\\"onmouseover"}) {
+        CHECK(!accepted(std::string(R"json({"widgets":[{"type":"links","items":[{"label":"x","url":")json") + url +
+                        R"json("}]}]})json"));
+    }
+    CHECK(!accepted(R"json({"widgets":[{"type":"links","items":"https://example.org"}]})json"));
+}
+
 TEST_CASE(a_widget_title_cannot_carry_control_characters) {
     Json theme = Json::make_object();
     Json widgets = Json::make_array();

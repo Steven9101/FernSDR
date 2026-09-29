@@ -1,4 +1,5 @@
 <script lang="ts">
+  import { webLink } from '../util/links';
   import Panel from './Panel.svelte';
   import Rack from './Rack.svelte';
   import Segmented from './Segmented.svelte';
@@ -55,7 +56,7 @@
    * their own repository. One who has not gets the upstream link, which is the
    * right answer for them.
    */
-  const sourceUrl = $derived(site.value?.source_url);
+  const sourceUrl = $derived(webLink(site.value?.source_url));
 </script>
 
 <Panel title="Stream">

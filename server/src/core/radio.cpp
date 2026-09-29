@@ -17,6 +17,21 @@ namespace fernsdr {
 
 namespace {
 
+const char* const kFernSdrSource = "https://github.com/Steven9101/FernSDR";
+
+// Where the page's "source code" links go, as the AGPL asks: an http(s)
+// address, or the given one. Anything else, a javascript: address among them,
+// would run in the listener's page when clicked.
+std::string source_address(const std::string& value, const std::string& fallback) {
+    const bool web = value.rfind("https://", 0) == 0 || value.rfind("http://", 0) == 0;
+    if (value.empty()) return fallback;
+    if (!web || value.size() > 2048 || value.find_first_of("\"'<> \t\r\n\\") != std::string::npos) {
+        LOG_WARN("radio", "[site] source_url is not an http(s) address; using %s", fallback.c_str());
+        return fallback;
+    }
+    return value;
+}
+
 // The settings both the panel and the config file can set, by the name they
 // have in both.
 const char* const kPanelKeys[] = {
@@ -135,7 +150,7 @@ bool Radio::configure(const Config& config, std::string& error) {
         error = "[site] band_plan must be auto, none, r1, r2, r3, us, ca, gb, de, au or jp, not '" + site_.band_plan + "'";
         return false;
     }
-    site_.source_url = site.get("source_url", "https://github.com/Steven9101/FernSDR");
+    site_.source_url = source_address(site.get("source_url", ""), kFernSdrSource);
     spot_server_ = site.get("spot_server", "report.pskreporter.info:4739");
     // Before the overlay, which may hold a later limit from the panel: read
     // after it, the file's value replaced the panel's on every restart.
@@ -1041,7 +1056,7 @@ void Radio::apply_site(const Config& after) {
     if (edited("sdr_list")) site_.sdr_list = site.get_bool("sdr_list", false);
     if (edited("public_port")) site_.public_port = static_cast<int>(site.get_int("public_port", 0));
     file_record_ = record;
-    site_.source_url = site.get("source_url", site_.source_url);
+    site_.source_url = source_address(site.get("source_url", ""), site_.source_url);
     spot_server_ = site.get("spot_server", "report.pskreporter.info:4739");
     configure_spots();
     site_.max_users_per_address =
