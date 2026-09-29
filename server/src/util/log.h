@@ -80,6 +80,13 @@ inline void log_write(LogLevel lvl, const char* tag, const char* fmt, ...) {
         while (end > 0 && (static_cast<unsigned char>(msg[end]) & 0xC0) == 0x80) end--;
         if (end > 0 && static_cast<unsigned char>(msg[end]) >= 0xC0) msg[end] = '\0';
     }
+    // One message, one line: a newline or another control character in
+    // something a message quotes (an address, a station's name from a
+    // backup) would otherwise start a line of its own that looks like the
+    // receiver's, a failed sign-in say.
+    for (char* c = msg; *c; ++c) {
+        if (static_cast<unsigned char>(*c) < 0x20 || *c == 0x7f) *c = ' ';
+    }
 
     struct timespec ts;
     clock_gettime(CLOCK_REALTIME, &ts);

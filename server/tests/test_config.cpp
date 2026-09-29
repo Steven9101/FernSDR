@@ -1,4 +1,5 @@
 #include "../src/util/config.h"
+#include "../src/util/log.h"
 #include "test_util.h"
 
 #include <sys/stat.h>
@@ -183,4 +184,22 @@ TEST_CASE(config_sections_are_found_as_the_parser_finds_them) {
     CHECK(fernsdr::without_keys("[x]\n# key = 1\nkey = 2 ; note\n", [](const std::string&, const std::string& key) {
               return key == "key";
           }) == "[x]\n# key = 1\n");
+}
+
+// A message quoting something from outside, an address or a name from a
+// backup, stays one line in the log: a newline in it must not start a line
+// of its own that reads like the receiver's.
+TEST_CASE(log_a_message_stays_on_one_line) {
+    using fernsdr::LogLevel;
+    using fernsdr::LogRing;
+    const int before = fernsdr::log_level().load();
+    fernsdr::set_log_level(LogLevel::Info);
+    LOG_INFO("admin", "muted %s", "1.2.3.4\n15:00:00.000 WRN [admin] failed login\r\x1b[2J");
+    fernsdr::log_level().store(before);
+    const auto lines = LogRing::instance().snapshot();
+    CHECK(!lines.empty());
+    if (lines.empty()) return;
+    const std::string& last = lines.back();
+    CHECK(last.find("muted 1.2.3.4 15:00:00.000 WRN [admin] failed login") != std::string::npos);
+    for (char c : last) CHECK(static_cast<unsigned char>(c) >= 0x20);
 }
