@@ -280,10 +280,20 @@
 	// --- 5. listeners --------------------------------------------------------------------------
 
 	let listenersBusy = $state(false);
+	// A public receiver is offered the public list at once; one at home is not listed.
+	let publicReceiver = $state(false);
+	$effect(() => {
+		if (publicReceiver) station.sdr_list = true;
+	});
 	async function saveListeners() {
 		listenersBusy = true;
 		try {
-			await api.writeStation({ public_host: station.public_host.trim(), sdr_list: station.sdr_list });
+			const listed = publicReceiver && station.sdr_list;
+			await api.writeStation({
+				public_host: publicReceiver ? station.public_host.trim() : '',
+				sdr_list: listed,
+				...(listed ? { grid: station.grid } : {})
+			});
 			nextStep();
 		} catch (problem) {
 			toast.error((problem as ApiError).message);
@@ -496,19 +506,41 @@
 		</div>
 	{:else if step === 'listeners'}
 		<p class="text-[15px] leading-relaxed text-muted-foreground">
-			Anyone who can reach this address can listen: <span class="font-medium text-foreground">{receiverAddress}</span>.
-			At home that is everyone on your network. For listeners on the internet, your router has to pass the receiver's
-			port on to this computer, or it runs on a server; the guide shows both.
+			Anyone who can reach <span class="font-medium text-foreground">{receiverAddress}</span> can listen. At home that is
+			everyone on your network. For listeners anywhere, your router passes the receiver's port on to this computer, or it
+			runs on a server; the guide shows both.
 		</p>
-		<SettingsGroup footer="sdr-list.xyz is a public directory of web receivers. Listing needs the address people reach the receiver at from the internet.">
-			<TextRow label="Public address" bind:value={station.public_host} placeholder="Such as radio.example.org" />
-			<SettingsRow label="List it on sdr-list.xyz">
-				{#snippet control()}<Switch bind:checked={station.sdr_list} disabled={!station.public_host.trim()} aria-label="List it on sdr-list.xyz" />{/snippet}
-			</SettingsRow>
-		</SettingsGroup>
+		<div class="grid gap-3 sm:grid-cols-2" role="radiogroup" aria-label="Who can listen">
+			{#each [[false, 'Only at home', 'On your own network, for you and your family'], [true, 'Everyone on the internet', 'A public receiver, with an address people can reach']] as [value, label, detail] (label)}
+				<button
+					type="button"
+					role="radio"
+					aria-checked={publicReceiver === value}
+					class="pressable flex flex-col gap-1 rounded-2xl border-2 p-4 text-left {publicReceiver === value ? 'border-foreground bg-card' : 'border-transparent bg-card'}"
+					onclick={() => (publicReceiver = value as boolean)}
+				>
+					<span class="text-[15px] font-medium">{label}</span>
+					<span class="text-[13px] text-muted-foreground">{detail}</span>
+				</button>
+			{/each}
+		</div>
+		{#if publicReceiver}
+			<SettingsGroup footer="The public list is sdr-list.xyz, where people find web receivers by place and band. It shows the name, the place on the map and the address, nothing about who listens.">
+				<TextRow label="Public address" bind:value={station.public_host} placeholder="Such as radio.example.org" />
+				<SettingsRow label="Show it in the public list" detail="So that people can find your receiver">
+					{#snippet control()}<Switch bind:checked={station.sdr_list} aria-label="Show it in the public list" />{/snippet}
+				</SettingsRow>
+				{#if station.sdr_list && !station.grid}
+					<SettingsRow label="Place on the map" detail="The list needs it" value="Not set" onclick={() => (mapOpen = true)} />
+				{/if}
+			</SettingsGroup>
+			<LocatorPicker bind:open={mapOpen} grid={station.grid} onPick={(grid) => (station.grid = grid)} />
+		{/if}
 		<div class="flex flex-wrap gap-3">
-			<Button size="lg" class="h-11 rounded-full px-5" disabled={listenersBusy} onclick={saveListeners}>Save and finish</Button>
-			<Button variant="secondary" size="lg" class="h-11 rounded-full px-5" onclick={nextStep}>Only at home for now</Button>
+			<Button size="lg" class="h-11 rounded-full px-5" disabled={listenersBusy || (publicReceiver && (!station.public_host.trim() || (station.sdr_list && !station.grid)))} onclick={saveListeners}>
+				Save and finish
+			</Button>
+			<Button variant="ghost" size="lg" class="h-11 rounded-full px-5" onclick={() => go('bands')}>Back</Button>
 		</div>
 	{:else}
 		<p class="text-[15px] leading-relaxed text-muted-foreground">
