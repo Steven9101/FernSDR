@@ -529,8 +529,10 @@ void Supervisor::boot_check() {
 
 bool Supervisor::start_receiver(bool automatic, std::string& error) {
     const std::string current = options_.install + "/current";
+    // FERNSDR_SUPERVISED tells the receiver it is started again when it
+    // exits, so the admin panel may offer to restart it.
     std::vector<std::string> environment = {"PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin",
-                                            "LANG=C.UTF-8", "HOME=" + options_.state};
+                                            "LANG=C.UTF-8", "HOME=" + options_.state, "FERNSDR_SUPERVISED=1"};
     for (const std::string& entry : options_.updater_environment)
         if (entry.rfind("FERNSDR_UPDATE_URL=", 0) == 0) environment.push_back(entry);
     Spawned child;

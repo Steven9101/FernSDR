@@ -127,7 +127,7 @@ export const BANDWIDTH_PROFILES: BandwidthProfile[] = [
     audioFrames: 1,
     noiseMargin: 18,
     waterfallFps: 20,
-    maxWaterfallWidth: 2560,
+    maxWaterfallWidth: 2048,
     waterfallStepDb: 1,
   },
 ];

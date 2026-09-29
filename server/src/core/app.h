@@ -115,6 +115,9 @@ private:
     int max_users_;
     uint64_t next_session_id_ = 1;
     int64_t last_band_status_ms_ = 0;
+    // When the receiver stops so that its service starts it again, after
+    // the panel asked; 0 while nobody has.
+    int64_t restart_at_ms_ = 0;
     std::string last_band_status_;
     std::map<uint64_t, std::unique_ptr<Session>> sessions_;
     std::atomic<int> session_count_{0};  // sessions_.size(), kept alongside

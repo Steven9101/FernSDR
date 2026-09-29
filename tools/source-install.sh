@@ -239,6 +239,13 @@ RULES
             modprobe -r dvb_usb_rtl28xxu 2>/dev/null ||
                 warn "the DVB-T driver is in use; unplug the dongle once, or reboot"
         fi
+        # And the kernel's msi2500 driver off SDRplay's RSP1, which it takes
+        # as a TV tuner so that SDRplay's service cannot start it.
+        printf 'blacklist sdr_msi3101\nblacklist msi001\nblacklist msi2500\n' > /etc/modprobe.d/fernsdr-sdrplay.conf
+        if lsmod 2>/dev/null | grep -q '^msi2500'; then
+            modprobe -r msi2500 msi001 2>/dev/null ||
+                warn "the msi2500 driver has an SDRplay RSP1; unplug it once, or reboot"
+        fi
         if command -v udevadm >/dev/null 2>&1; then
             udevadm control --reload-rules && udevadm trigger --subsystem-match=usb || true
         fi

@@ -11,6 +11,7 @@
 #include <dirent.h>
 #include <sys/stat.h>
 
+#include "hardware.h"
 #include "protocol.h"
 #include "../util/json.h"
 #include "../util/log.h"
@@ -230,6 +231,11 @@ void Application::on_tick() {
     if (!server_) return;
 
     const int64_t now = monotonic_ms();
+    if (restart_at_ms_ > 0 && now >= restart_at_ms_) {
+        restart_at_ms_ = 0;
+        server_->stop();
+        return;
+    }
     const SiteInfo& site = radio_.site();
     const std::string problem = site.sdr_list ? listing_problem(site) : "";
     // Said once in the log, for a receiver set up in the file whose panel,
@@ -347,6 +353,19 @@ std::string query_value(const std::string& query, const std::string& key,
         position = amp + 1;
     }
     return fallback;
+}
+
+/**
+ * Why the panel cannot restart the receiver, or empty when it can: only
+ * where something starts it again once it exits, systemd (the shipped unit
+ * has Restart=always) or fernsdr --supervise. A receiver started by hand,
+ * or a container whose restart policy nobody here knows, would stay down.
+ */
+std::string restart_refusal() {
+    if (std::getenv("INVOCATION_ID") || std::getenv("FERNSDR_SUPERVISED")) return "";
+    if (std::getenv("FERNSDR_CONTAINER")) return "This receiver runs in a container: restart the container.";
+    return "Nothing would start this receiver again, since it was started by hand: restart it the way it was "
+           "started.";
 }
 
 /** Wall-clock milliseconds, which is what a mute's expiry is measured in. */
@@ -755,6 +774,43 @@ bool Application::handle_admin(const Connection& connection, const HttpRequest& 
             response = json_response(200, out.serialize(), request.keep_alive());
             return true;
         }
+    }
+
+    // The radios plugged in, the TV drivers in their way, and whether the
+    // receiver can be restarted from here: what setting up a radio needs.
+    if (request.path == "/api/admin/hardware" && request.method == "GET") {
+        Json out = Json::make_object();
+        out.set("radios", usb_radios_json(find_usb_radios()));
+        Json drivers = Json::make_array();
+        for (const DriverInTheWay& driver : drivers_in_the_way()) {
+            Json entry = Json::make_object();
+            entry.set("driver", driver.driver);
+            entry.set("radio", driver.radio);
+            entry.set("module", driver.module);
+            drivers.push_back(entry);
+        }
+        out.set("drivers", drivers);
+        const std::string refusal = restart_refusal();
+        out.set("can_restart", refusal.empty());
+        if (!refusal.empty()) out.set("restart_note", refusal);
+        response = json_response(200, out.serialize(), request.keep_alive());
+        return true;
+    }
+
+    if (request.path == "/api/admin/restart" && request.method == "POST") {
+        const std::string refusal = restart_refusal();
+        if (!refusal.empty()) {
+            response = json_response(409, json_error(refusal), request.keep_alive());
+            return true;
+        }
+        // Answered first, then stopped at the next tick: the page learns the
+        // restart was taken and waits for the receiver to come back.
+        LOG_INFO("admin", "restarting the receiver at the operator's request");
+        restart_at_ms_ = monotonic_ms() + 300;
+        Json out = Json::make_object();
+        out.set("ok", true);
+        response = json_response(200, out.serialize(), request.keep_alive());
+        return true;
     }
 
     if (request.path == "/api/admin/restart-band" && request.method == "POST") {

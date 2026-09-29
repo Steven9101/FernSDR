@@ -410,10 +410,10 @@ sys.exit(hashlib.pbkdf2_hmac("sha256", sys.argv[1].encode(), salt.encode(), int(
         fail "the password ($password) is in the output or does not match the hash ($hash)"
     fi
     if [ "$init" = openrc ]; then
-        lab grep -q '^# FernSDR begin' /etc/mdev.conf && ! lab test -e /etc/udev && lab test -f /etc/modprobe.d/fernsdr-rtlsdr.conf &&
+        lab grep -q '^# FernSDR begin' /etc/mdev.conf && ! lab test -e /etc/udev && lab test -f /etc/modprobe.d/fernsdr-rtlsdr.conf && lab test -f /etc/modprobe.d/fernsdr-sdrplay.conf &&
             pass "the dongle rules are in place, for mdev" || fail "no dongle rules for mdev"
     else
-        lab test -f /etc/udev/rules.d/61-fernsdr-usb.rules && lab test -f /etc/modprobe.d/fernsdr-rtlsdr.conf &&
+        lab test -f /etc/udev/rules.d/61-fernsdr-usb.rules && lab test -f /etc/modprobe.d/fernsdr-rtlsdr.conf && lab test -f /etc/modprobe.d/fernsdr-sdrplay.conf &&
             pass "the dongle rules are in place" || fail "no dongle rules"
     fi
     if [ "$init" != systemd ]; then

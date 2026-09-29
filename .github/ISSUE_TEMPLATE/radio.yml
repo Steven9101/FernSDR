@@ -1,0 +1,35 @@
+name: Support for my radio or a decoder
+description: Your radio is not supported yet, or you would like FernSDR to decode something (a digital mode, a signal type). Tell us what you have.
+labels: ["hardware or decoder"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you. Support for new radios and decoders is added as modules, and knowing what people have is how we decide what comes next. Until then, most radios already work through a pipe from their own program; the guide shows how.
+  - type: dropdown
+    id: kind
+    attributes:
+      label: What is it about?
+      options:
+        - A radio (SDR) that FernSDR does not support yet
+        - A decoder (for example a digital mode)
+        - Something else
+    validations:
+      required: true
+  - type: input
+    id: model
+    attributes:
+      label: Which radio or which decoder?
+      placeholder: "For example: Airspy HF+ Discovery, or WSPR"
+    validations:
+      required: true
+  - type: textarea
+    id: use
+    attributes:
+      label: What would you use it for?
+      placeholder: "For example: a public receiver for 160 m to 10 m in a club."
+  - type: textarea
+    id: details
+    attributes:
+      label: Anything else that helps
+      description: Optional. A link to the radio or the mode, the computer you would run it on, whether you could test a first version.

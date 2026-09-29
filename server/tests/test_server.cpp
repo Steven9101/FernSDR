@@ -2302,3 +2302,33 @@ TEST_CASE(broadcast_fm_is_offered_only_where_the_band_is_wide_enough) {
     CHECK(!contains(frames, "\"mode\":\"wfm\""));
     CHECK(!contains(frames, "\"type\":\"error\""));
 }
+
+TEST_CASE(admin_lists_the_radios_and_restarts_only_where_something_starts_it_again) {
+    const std::string password = "test admin hardware and restart";
+    ::unsetenv("INVOCATION_ID");
+    ::unsetenv("FERNSDR_SUPERVISED");
+    ::unsetenv("FERNSDR_CONTAINER");
+    Harness harness(15000, 120000, "[admin]\npassword_hash=" + fernsdr::hash_password(password, 1000) + "\n");
+    CHECK(harness.ok);
+    if (!harness.ok) return;
+    AdminClient admin;
+    CHECK(admin.sign_in(harness.port(), password));
+    const fernsdr::Json hardware = json_body(admin.request("GET", "/api/admin/hardware"));
+    CHECK(hardware["radios"].is_array());
+    CHECK(hardware["drivers"].is_array());
+    // Started by hand, as here: nothing would start it again.
+    CHECK(!hardware["can_restart"].boolean(true));
+    CHECK(hardware["restart_note"].string().find("by hand") != std::string::npos);
+    std::string reply = admin.request("POST", "/api/admin/restart", "{}");
+    CHECK(reply.find("409") != std::string::npos);
+    CHECK(admin.request("GET", "/api/admin/session").find("200 OK") != std::string::npos);
+
+    // Under a supervisor: answered, then the receiver stops for it to restart.
+    ::setenv("FERNSDR_SUPERVISED", "1", 1);
+    CHECK(json_body(admin.request("GET", "/api/admin/hardware"))["can_restart"].boolean(false));
+    reply = admin.request("POST", "/api/admin/restart", "{}");
+    CHECK(reply.find("200 OK") != std::string::npos);
+    ::unsetenv("FERNSDR_SUPERVISED");
+    if (harness.thread.joinable()) harness.thread.join();
+    CHECK(admin.request("GET", "/api/admin/session").empty());
+}

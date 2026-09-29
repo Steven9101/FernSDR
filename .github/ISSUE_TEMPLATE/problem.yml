@@ -1,0 +1,35 @@
+name: Something does not work
+description: Something broke, looks wrong or behaves oddly. Tell us what you saw; we will ask if we need more.
+labels: ["problem"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for reporting it. Describe it in your own words; screenshots and a link to the receiver help a lot.
+  - type: textarea
+    id: what
+    attributes:
+      label: What happened?
+      placeholder: "For example: the waterfall stopped after I switched to 40 m, but the audio kept playing."
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect instead?
+  - type: input
+    id: where
+    attributes:
+      label: Which receiver, if it is public?
+      placeholder: https://...
+  - type: input
+    id: device
+    attributes:
+      label: Your browser and device
+      placeholder: "For example: Chrome on Windows 11, or Safari on an iPhone"
+  - type: textarea
+    id: operator
+    attributes:
+      label: If you run the receiver
+      description: Optional. The FernSDR version (on the admin panel's Updates page), the radio you use, and the last lines of the log from the Log page.
+      render: text

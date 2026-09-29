@@ -1,0 +1,34 @@
+name: I would like something new
+description: A feature, a change, or something that would make listening or running a receiver easier. No technical knowledge needed.
+labels: ["idea"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thank you for taking the time. Plain words are perfect: tell us what you would like to do and why, as you would tell a friend. You do not need to know how it could be built.
+  - type: textarea
+    id: wish
+    attributes:
+      label: What would you like to be able to do?
+      placeholder: "For example: I would like to hear two frequencies at once, so I can follow a net and a DX station together."
+    validations:
+      required: true
+  - type: textarea
+    id: why
+    attributes:
+      label: Why would it help you?
+      description: What you do today instead, or what gets in the way.
+  - type: dropdown
+    id: who
+    attributes:
+      label: You are mostly
+      options:
+        - A listener
+        - Someone who runs a receiver
+        - Both
+        - A developer
+  - type: textarea
+    id: example
+    attributes:
+      label: Have you seen it somewhere else?
+      description: Another receiver, a radio or an app that does it well. A link or a screenshot helps.
