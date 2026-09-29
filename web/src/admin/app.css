@@ -7,7 +7,7 @@ the admin's own files; the receiver next door never sees a utility class.
 @import 'tailwindcss' source(none);
 @source './';
 @import 'tw-animate-css';
-@import '@fontsource-variable/inter/opsz.css';
+@import '@fontsource-variable/inter/wght.css';
 
 @custom-variant dark (&:is(.dark *));
 
