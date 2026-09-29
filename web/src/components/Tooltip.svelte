@@ -31,7 +31,7 @@
    */
   import type { Snippet } from 'svelte';
   import type { Attachment } from 'svelte/attachments';
-  import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+  import { follow, place } from '../util/place';
   import { tooltipTiming } from './tooltip-timing';
 
   /** Long enough not to fire on a tap, short enough to feel deliberate. */
@@ -155,28 +155,32 @@
     const side = placement;
     if (!open || !reference || !tooltip) return;
 
-    // autoUpdate keeps it attached while the page scrolls or the sheet is
-    // dragged; without it a tooltip over a moving panel is left behind.
-    return autoUpdate(reference, tooltip, () => {
-      void computePosition(reference, tooltip, {
-        placement: side,
-        middleware: [offset(6), flip({ padding: 8 }), shift({ padding: 8 })],
-      }).then(({ x, y, placement: resolved }) => {
-        // Set transform directly rather than through a custom property: a
-        // variable on a parent forces a style recalculation for every child.
-        tooltip.style.transform = `translate(${Math.round(x)}px, ${Math.round(y)}px)`;
-        // Grow out of the thing being described, not out of thin air. flip()
-        // may have put the tooltip on the opposite side, so the origin comes
-        // from where it actually ended up.
-        const resolvedSide = resolved.split('-')[0];
-        tooltip.style.setProperty(
-          '--tooltip-origin',
-          resolvedSide === 'top' ? 'bottom center'
-            : resolvedSide === 'bottom' ? 'top center'
-              : resolvedSide === 'left' ? 'right center'
-                : 'left center',
-        );
-      });
+    // Followed every frame while shown: the page may scroll or the sheet be
+    // dragged, and a tooltip over a moving panel must not be left behind.
+    let placed = '';
+    return follow(() => {
+      const { x, y, side: resolved } = place(
+        reference.getBoundingClientRect(),
+        { width: tooltip.offsetWidth, height: tooltip.offsetHeight },
+        side,
+        { width: window.innerWidth, height: window.innerHeight },
+      );
+      const key = `${x} ${y} ${resolved}`;
+      if (key === placed) return;
+      placed = key;
+      // Set transform directly rather than through a custom property: a
+      // variable on a parent forces a style recalculation for every child.
+      tooltip.style.transform = `translate(${x}px, ${y}px)`;
+      // Grow out of the thing being described, not out of thin air. It may
+      // have gone to the opposite side, so the origin comes from where it
+      // actually ended up.
+      tooltip.style.setProperty(
+        '--tooltip-origin',
+        resolved === 'top' ? 'bottom center'
+          : resolved === 'bottom' ? 'top center'
+            : resolved === 'left' ? 'right center'
+              : 'left center',
+      );
     });
   });
 </script>

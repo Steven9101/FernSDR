@@ -45,6 +45,7 @@
   import { watchSystemTheme } from './state/store';
   import { loadTone, tone, toneGroup } from './state/tone';
   import { loadBandPlan } from './state/bandplan';
+  import { roomOrLater } from './state/link-room';
   import { editingLayout, layout, loadLayout, setLayout } from './state/layout';
   import Editable from './components/Editable.svelte';
   import { signalForCarrier } from './util/cw';
@@ -76,8 +77,9 @@
     };
   });
 
-  // The band plan the station's operator chose, loaded after the page is up
-  // and again whenever the station details change.
+  // The band plan the station's operator chose, loaded once the link has
+  // room for it (at most twenty seconds on a slow one, where it would delay
+  // the sound) and again whenever the station details change.
   // Keyed on what decides the plan: the band list is replaced whenever its
   // listener counts change, which must not reload anything.
   const planKey = $derived(site.value
@@ -86,7 +88,7 @@
   $effect(() => {
     if (!planKey) return;
     const [choice, grid, wideband] = JSON.parse(planKey) as [string | undefined, string | undefined, boolean];
-    void loadBandPlan(choice, grid, wideband ? 31e6 : 0);
+    void roomOrLater(20000).then(() => loadBandPlan(choice, grid, wideband ? 31e6 : 0));
   });
 
   // The tone follows the mode: AM's bass boost stays with AM.

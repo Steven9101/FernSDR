@@ -9,7 +9,7 @@
    * back to the button when it closes, as a menu's does.
    */
   import type { Snippet } from 'svelte';
-  import { autoUpdate, computePosition, flip, offset, shift } from '@floating-ui/dom';
+  import { follow, place } from '../util/place';
 
   interface Props {
     /** The panel's name, for screen readers. */
@@ -32,15 +32,19 @@
     const element = panel;
     const button = anchor;
     if (!open || !element || !button) return;
-    const stop = autoUpdate(button, element, () => {
-      computePosition(button, element, {
-        placement: 'top-start',
-        strategy: 'fixed',
-        middleware: [offset(8), flip({ fallbackPlacements: ['bottom-start', 'top-end'] }), shift({ padding: 8 })],
-      }).then(({ x, y }) => {
-        element.style.left = `${x}px`;
-        element.style.top = `${y}px`;
-      });
+    let placed = '';
+    const stop = follow(() => {
+      const { x, y } = place(
+        button.getBoundingClientRect(),
+        { width: element.offsetWidth, height: element.offsetHeight },
+        'top',
+        { width: window.innerWidth, height: window.innerHeight },
+        { gap: 8, align: 'start' },
+      );
+      if (`${x} ${y}` === placed) return;
+      placed = `${x} ${y}`;
+      element.style.left = `${x}px`;
+      element.style.top = `${y}px`;
     });
     // A tool's panel is loaded on first use, so on that first opening it is
     // not there yet when the popover is: wait for it rather than leave focus
