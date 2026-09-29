@@ -1,0 +1,11 @@
+# Wakes the updater when the receiver's panel asks for a version. The updater
+# removes the request as soon as it has read it.
+[Unit]
+Description=FernSDR update requests
+
+[Path]
+PathExists=/var/lib/fernsdr/update-request
+Unit=fernsdr-update.service
+
+[Install]
+WantedBy=multi-user.target

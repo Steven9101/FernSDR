@@ -1,0 +1,149 @@
+# Builds and tests the receiver and its pages on every push and pull request.
+#
+# Actions are pinned to the commit of the release named beside them: a tag
+# can be moved, a commit cannot. Nothing here needs more than read access.
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  server:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - name: Build
+        run: make -C server -j"$(nproc)"
+      - name: Test, with each narrower instruction set as well
+        run: make -C server test
+      - name: Ed25519 against OpenSSL
+        run: make -C server ed25519-compare
+
+  web:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - run: npm ci --no-audit --no-fund
+      - name: Unit tests
+        run: npm test
+      - name: Type checks and build
+        run: npm run build
+      - name: Known vulnerabilities in what the pages ship
+        run: npm audit --omit=dev --audit-level=high
+
+  browser:
+    runs-on: ubuntu-24.04
+    needs: [server, web]
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build the receiver and the pages
+        run: |
+          make -C server -j"$(nproc)"
+          cd web && npm ci --no-audit --no-fund && npm run build
+      - name: Install Chromium for Playwright
+        working-directory: web
+        run: npx playwright install --with-deps chromium
+      - name: Start synthetic receivers
+        run: |
+          mkdir -p "$RUNNER_TEMP/receivers"
+          cd "$RUNNER_TEMP/receivers"
+          # A plain 20 m receiver, as the layout checks expect.
+          cat > plain.conf <<EOF
+          [site]
+          name = CI receiver
+          max_users = 200
+          max_users_per_address = 0
+          [server]
+          bind = 127.0.0.1
+          port = 18073
+          root = $GITHUB_WORKSPACE/web/dist
+          log_level = warn
+          [band:20m]
+          name = 20 m
+          source = test
+          sample_rate = 2048k
+          center = 14.2M
+          realtime = true
+          max_bandwidth = 12k
+          EOF
+          # The behaviour check's receiver: a notice, widgets and an archive,
+          # as docs/TESTING.md describes.
+          cat > behaviour-theme.json <<'EOF'
+          { "widgets": [
+            { "type": "chat", "title": "Chat", "height": 200 },
+            { "type": "clock", "title": "Time" },
+            { "type": "notice", "title": "About", "text": "A test receiver for the behaviour check." },
+            { "type": "links", "title": "Links", "items": [{ "label": "Band plan", "url": "https://www.iaru-r1.org/" }] },
+            { "type": "spots", "title": "Bands" } ] }
+          EOF
+          cat > behaviour.conf <<EOF
+          [site]
+          name = Behaviour check
+          operator = Test operator
+          location = Test location
+          antenna = Test antenna
+          notice = Maintenance tonight at 22 UTC
+          theme_file = $RUNNER_TEMP/receivers/behaviour-theme.json
+          max_users_per_address = 0
+          [server]
+          bind = 127.0.0.1
+          port = 18077
+          root = $GITHUB_WORKSPACE/web/dist
+          log_level = warn
+          [band:20m]
+          name = 20 m
+          source = test
+          sample_rate = 2048k
+          center = 14.2M
+          realtime = true
+          max_bandwidth = 12k
+          history = public
+          history_hours = 1
+          history_bins = 512
+          history_interval = 1
+          [band:40m]
+          name = 40 m
+          source = test
+          sample_rate = 192k
+          center = 7.1M
+          realtime = true
+          EOF
+          "$GITHUB_WORKSPACE/server/build/fernsdr" plain.conf > plain.log 2>&1 &
+          "$GITHUB_WORKSPACE/server/build/fernsdr" behaviour.conf > behaviour.log 2>&1 &
+          for port in 18073 18077; do
+            curl --silent --fail --retry 30 --retry-connrefused --retry-delay 1 "http://127.0.0.1:$port/api/health" >/dev/null
+          done
+      - name: Browser checks
+        working-directory: web
+        run: |
+          node tools/controls-check.mjs http://127.0.0.1:18073/ "$RUNNER_TEMP/controls"
+          node tools/interaction-check.mjs http://127.0.0.1:18073/ "$RUNNER_TEMP/interactions"
+          node tools/codec-check.mjs http://127.0.0.1:18073/
+          node tools/behaviour-check.mjs http://127.0.0.1:18077/ "$RUNNER_TEMP/behaviour"
+      - name: Receiver logs
+        if: failure()
+        run: cat "$RUNNER_TEMP"/receivers/*.log

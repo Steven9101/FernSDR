@@ -1,0 +1,37 @@
+# Before the receiver starts: a trial the machine went down in ends with the
+# trusted version back in place.
+[Unit]
+Description=FernSDR update, ending a trial that a restart interrupted
+Before=fernsdr.service
+After=local-fs.target
+
+[Service]
+Type=oneshot
+ExecStart=/opt/fernsdr/trusted/fernsdr --update-boot
+# Once per boot: the receiver's service wants it, and without this every
+# restart of the receiver would run it again.
+RemainAfterExit=yes
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/opt/fernsdr /var/lib/fernsdr /var/lib/fernsdr-update
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+SystemCallErrorNumber=ENOSYS
+# Root, but only for what updating takes: reading and writing the receiver's
+# directory, handing restored files back to its user, becoming that user for
+# the new version's check and stopping the check if it hangs.
+CapabilityBoundingSet=CAP_CHOWN CAP_DAC_OVERRIDE CAP_DAC_READ_SEARCH CAP_FOWNER CAP_SETUID CAP_SETGID CAP_KILL
+UMask=0022
+
+[Install]
+WantedBy=multi-user.target

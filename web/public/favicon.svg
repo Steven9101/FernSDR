@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <rect width="32" height="32" rx="7" fill="#080b11"/>
+  <!-- A spectrum trace with a carrier: what the receiver actually shows. -->
+  <path d="M3 24h4l2-3 2 3h3l2-11 2 11h3l2-5 2 5h4"
+        fill="none" stroke="#4fd6c8" stroke-width="2"
+        stroke-linecap="round" stroke-linejoin="round"/>
+</svg>

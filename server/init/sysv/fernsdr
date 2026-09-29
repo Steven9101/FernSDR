@@ -1,0 +1,83 @@
+#!/bin/sh
+### BEGIN INIT INFO
+# Provides:          fernsdr
+# Required-Start:    $local_fs $remote_fs $network
+# Required-Stop:     $local_fs $remote_fs $network
+# Default-Start:     2 3 4 5
+# Default-Stop:      0 1 6
+# Short-Description: FernSDR WebSDR
+### END INIT INFO
+#
+# FernSDR under SysV init (Devuan, MX Linux), on Slackware as rc.fernsdr,
+# and as /usr/local/sbin/fernsdr-service where install.sh knows no init.
+# `fernsdr --supervise` runs the receiver as its own user and carries out
+# the admin panel's updates. Plain sh and kill, no start-stop-daemon, so that
+# it runs wherever /etc/init.d or /etc/rc.d does. Its log:
+# /var/log/fernsdr/fernsdr.log.
+
+PROGRAM=/opt/fernsdr/trusted/fernsdr
+PIDFILE=/run/fernsdr.pid
+[ -d /run ] || PIDFILE=/var/run/fernsdr.pid
+
+if [ -r /etc/default/fernsdr ]; then
+    set -a
+    . /etc/default/fernsdr
+    set +a
+fi
+
+running() {
+    [ -r "$PIDFILE" ] || return 1
+    pid=$(cat "$PIDFILE" 2> /dev/null)
+    case "$pid" in '' | *[!0-9]*) return 1 ;; esac
+    # The number alone may be another process's by now, if the supervisor
+    # ended without removing its file.
+    kill -0 "$pid" 2> /dev/null && tr '\000' ' ' < "/proc/$pid/cmdline" 2> /dev/null | grep -q -- '--supervise'
+}
+
+start() {
+    if running; then
+        echo "FernSDR runs already"
+        return 0
+    fi
+    echo "Starting FernSDR"
+    "$PROGRAM" --supervise --daemon --pidfile "$PIDFILE"
+}
+
+stop() {
+    if ! running; then
+        echo "FernSDR does not run"
+        return 0
+    fi
+    echo "Stopping FernSDR"
+    kill -TERM "$pid"
+    # The supervisor gives the receiver 20 seconds, then what it left behind
+    # 5 more.
+    i=0
+    while kill -0 "$pid" 2> /dev/null; do
+        i=$((i + 1))
+        if [ "$i" -gt 40 ]; then
+            kill -KILL "$pid" 2> /dev/null
+            break
+        fi
+        sleep 1
+    done
+    return 0
+}
+
+case "$1" in
+    start) start ;;
+    stop) stop ;;
+    restart | force-reload) stop && start ;;
+    status)
+        if running; then
+            echo "FernSDR runs, supervisor $pid"
+        else
+            echo "FernSDR does not run"
+            exit 3
+        fi
+        ;;
+    *)
+        echo "usage: $0 start|stop|restart|status" >&2
+        exit 2
+        ;;
+esac

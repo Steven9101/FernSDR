@@ -1,0 +1,251 @@
+/*
+ * Design tokens.
+ *
+ * The vocabulary is shadcn/ui's, because it is the one most people working on
+ * a web interface already know: `background`/`foreground` pairs, `muted` for
+ * recessive surfaces and text, `border`, `input`, `ring`, `primary`,
+ * `destructive`. Nothing here is copied - shadcn is React and Tailwind and
+ * this is neither - but naming a token for its ROLE rather than its shade is
+ * the part that matters, and it is what makes a component legible without
+ * looking up what `--surface-4` was supposed to mean.
+ *
+ * The rule that follows from it: no component in this codebase writes a
+ * colour. If a value is not in this file, it does not go in a stylesheet.
+ *
+ * Dark by default, because these receivers get used at night and a bright page
+ * is genuinely unpleasant to sit in front of for an hour. Light follows the
+ * system setting, or an explicit choice.
+ */
+
+:root {
+  color-scheme: dark;
+
+  /* --- surfaces ---------------------------------------------------------
+   * Monochrome, deliberately.
+   *
+   * The chrome is grey and the only colour in the interface is information:
+   * the waterfall, the S-meter, and the handful of states that genuinely mean
+   * something (connected, warning, failed). An instrument whose controls are
+   * as colourful as its display teaches the eye to ignore both; taking the
+   * colour out of everything that is not a measurement is what makes the
+   * measurement visible.
+   *
+   * Four levels, not six. Every extra surface is a decision someone has to
+   * make on every component, and the previous palette had two nobody could
+   * tell apart.
+   */
+  /* The admin panel's greys (web/src/admin/app.css, in oklch there),
+     written in hex because the admin's theme editor edits them with colour
+     pickers: the two pages an operator moves between are one design. */
+  --background: #070707;          /* the page, the top bar, the side column */
+  --card: #131313;               /* a group of controls, sheets */
+  --popover: #161616;              /* things that float above a panel */
+  --muted: #171717;              /* recessive fills: tracks, hovers */
+  --elevated: #3d3d3d;            /* the raised chip inside a well */
+
+  --foreground: #f7f7f7;         /* primary text */
+  --muted-foreground: #a4a4a4;    /* secondary text, labels, units */
+  --subtle-foreground: #808080;   /* tertiary: hints, disabled, footnotes */
+
+  --border: #1d1d1d;            /* the default hairline */
+  --border-strong: #2f2f2f;    /* an edge that has to be seen */
+  --input: #171717;
+
+  /* --- accents ----------------------------------------------------------
+   * The "accent" is white. Selection, focus and the primary button are all
+   * marked by brightness rather than by hue, which is the monochrome move: on
+   * a grey field, brightness is the strongest signal available, and it stays
+   * legible to anyone whose colour vision differs.
+   */
+  --primary: #f7f7f7;
+  --primary-foreground: #070707;
+  --primary-muted: rgba(242, 242, 243, 0.1);
+  --ring: rgba(242, 242, 243, 0.6);
+
+  /* The exceptions, and the whole list of them. Each is a measurement or a
+   * state a person has to notice without reading: where the receiver is
+   * tuned, how strong the signal is, and whether anything is wrong. */
+  --signal: #ff8a4c;              /* the carrier marker, the S-meter's tail */
+  --warning: #e8b339;
+  --destructive: #ef5f5f;
+  --success: #4cc38a;
+
+  /* --- typography -------------------------------------------------------
+   * Two families. The sans is Inter, as in the admin panel: one variable
+   * font of 48 KB for Latin, fetched once and shown with the system's sans
+   * until it arrives. Numbers in the controls are Inter's tabular figures;
+   * the mono is kept for the stage, the dial and the axes, where a
+   * frequency whose digits change width as it counts is unreadable.
+   */
+  --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
+    'Helvetica Neue', Arial, sans-serif;
+  /* One face everywhere, numbers and code included. */
+  --font-mono: var(--font-sans);
+
+  /* A 1.2 ratio from 13px. Small steps, because an instrument panel needs
+     many levels of the same-ish size rather than a few dramatic ones. */
+  --text-2xs: 0.6875rem;  /* 11 - labels, units, footnotes */
+  --text-xs: 0.75rem;     /* 12 - dense values */
+  --text-sm: 0.8125rem;   /* 13 - the base for controls */
+  --text-base: 0.875rem;  /* 14 - body */
+  --text-lg: 1rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.75rem;
+
+  --tracking-label: 0.06em;   /* uppercase labels need air */
+  --tracking-tight: -0.01em;
+
+  /* --- spacing, on a 4px grid ------------------------------------------ */
+  --space-0-5: 0.125rem;
+  --space-1: 0.25rem;
+  --space-1-5: 0.375rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.5rem;
+  --space-6: 2rem;
+
+  /* --- shape ------------------------------------------------------------
+   * One radius, scaled. shadcn's 0.5rem base, which is the size that reads as
+   * "software" rather than as "app store screenshot".
+   */
+  --radius: 0.625rem;
+  --radius-sm: calc(var(--radius) * 0.6);
+  --radius-lg: calc(var(--radius) * 1.4);
+  --radius-xl: calc(var(--radius) * 1.8);   /* a group of controls, as in the admin panel */
+  --radius-pill: 999px;
+
+  /* The well a segmented control or the tab strip sits in: the operator's
+     wells colour (--muted, "Wells" in the admin's Appearance page) lifted a
+     little towards the text, so that it still shows on a group's surface of
+     nearly the same grey. */
+  --well: color-mix(in srgb, var(--muted), var(--foreground) 6%);
+  /* A slider's track and a switch that is off: the same tint, strong enough
+     to show the control is there. A custom property takes the value where it
+     is declared, so a scope that changes --foreground (the HUD over the
+     waterfall) declares both again. */
+  --track: color-mix(in srgb, var(--muted), var(--foreground) 18%);
+
+  /* --- elevation --------------------------------------------------------
+   * Shadows only where something genuinely floats. A shadow under a control
+   * that sits flat in a panel is decoration pretending to be depth.
+   */
+  --shadow-chip: 0 1px 2px rgba(0, 0, 0, 0.5);
+  /* A slider's knob and a switch's thumb: white in both themes, as a
+     physical one would be, and lifted off its track. */
+  --knob: #ffffff;
+  --shadow-knob: 0 1px 4px oklch(0 0 0 / 0.3), 0 0 0 0.5px oklch(0 0 0 / 0.08);
+  --shadow-popover: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --shadow-sheet: 0 -12px 40px rgba(0, 0, 0, 0.45);
+
+  /* --- motion -----------------------------------------------------------
+   * The policy is Emil Kowalski's, taken from the standards he publishes
+   * rather than paraphrased from memory. The parts that shape this file:
+   *
+   *   - a frequency table decides whether something animates at all. Anything
+   *     used 100+ times a day gets none, ever. Tuning with the arrow keys is
+   *     the clearest case in this interface, so the frequency readout has no
+   *     transition at all.
+   *   - never `ease-in` on UI: it starts slow and delays the exact moment the
+   *     user is watching. `ease-out` at 200ms feels faster than `ease-in` at
+   *     200ms.
+   *   - the built-in CSS easings are too weak; these are the strong curves.
+   *   - UI animations stay under 300ms.
+   */
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);       /* entering and exiting */
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);   /* moving on screen */
+  --ease-drawer: cubic-bezier(0.32, 0.72, 0, 1);    /* the iOS drawer curve */
+
+  /* A spring, sampled into a curve so it costs no JavaScript per frame.
+     This is beUI's SPRING_LAYOUT - stiffness 360, damping 32, mass 0.6 - the
+     physics it uses for anything that glides between two positions. Solved,
+     it is slightly overdamped (zeta 1.089), so it never overshoots: an
+     indicator that bounces past the option you picked looks like it chose
+     something else first. */
+  --ease-spring-layout: linear(0.0000, 0.0708, 0.2120, 0.3633, 0.5001, 0.6148, 0.7070, 0.7794, 0.8353, 0.8781, 0.9106, 0.9352, 0.9538, 0.9678, 0.9783, 0.9862, 0.9922, 0.9966, 1.0000);
+
+  --duration-press: 160ms;   /* button press feedback: 100-160 */
+  --duration-hover: 100ms;   /* a hover that lags reads as a slow machine */
+  --duration-tooltip: 150ms; /* small popovers: 125-200 */
+  --duration-enter: 220ms;   /* dropdowns and dialogs: 150-250 */
+  --duration-drawer: 320ms;  /* drawers: 200-500 */
+  --duration-glide: 220ms;   /* an indicator moving between options */
+
+  /* How far a pressable element sinks. Subtle: 0.95-0.98. */
+  --press-scale: 0.97;
+
+  /* The smallest thing a fingertip reliably hits. Every interactive element
+     meets this, on desktop too: a control that is awkward on a phone is a
+     control people avoid. */
+  --touch-target: 44px;
+}
+
+:root[data-color-scheme='light'] {
+  color-scheme: light;
+
+  --background: #fcfcfc;
+  --card: #f3f3f3;
+  --popover: #ffffff;
+  --muted: #f0f0f0;
+  --elevated: #ffffff;
+
+  --foreground: #121212;
+  --muted-foreground: #5b5b5b;
+  --subtle-foreground: #696969;
+
+  --border: #e5e5e5;
+  --border-strong: #d4d4d4;
+  --input: #e8e8e8;
+
+  /* Inverted, for the same reason: brightness is the signal, and on a light
+     field the bright end is dark. */
+  --primary: #121212;
+  --primary-foreground: #ffffff;
+  --primary-muted: rgba(19, 19, 21, 0.08);
+  --ring: rgba(19, 19, 21, 0.45);
+
+  --signal: #c2410c;
+  --warning: #926a00;
+  --destructive: #b3261e;
+  --success: #1a7f43;
+
+  --shadow-chip: 0 1px 3px oklch(0 0 0 / 0.14);
+  --shadow-popover: 0 12px 32px rgba(15, 23, 42, 0.12);
+  --shadow-sheet: 0 -12px 40px rgba(15, 23, 42, 0.12);
+}
+
+/*
+ * The waterfall is always dark. Its colour maps are designed against a dark
+ * ground and a light one reads as washed out no matter the ramp.
+ *
+ * Which means the HUD over it is always on a dark ground too, whatever theme
+ * the page is in. These do not flip with the theme: in light mode the page's
+ * foreground is near-black, and a near-black readout over the waterfall is an
+ * invisible readout. Found by looking at a screenshot of the light theme,
+ * after the HUD moved onto the display.
+ */
+:root {
+  --waterfall-empty: #070a0f;
+  --hud-foreground: #f4f4f5;
+  --hud-muted: rgba(255, 255, 255, 0.68);
+  --hud-subtle: rgba(255, 255, 255, 0.52);
+  --hud-border: rgba(255, 255, 255, 0.22);
+  --hud-scrim: rgba(0, 0, 0, 0.45);
+  --hud-well: rgba(0, 0, 0, 0.55);          /* a meter's track on the waterfall */
+  --hud-hover: rgba(255, 255, 255, 0.08);
+  --hud-text-shadow: 0 1px 3px rgba(0, 0, 0, 0.8);
+  --overlay: rgba(0, 0, 0, 0.6);             /* behind a dialog */
+}
+
+/*
+ * Reduced motion means fewer and gentler animations, not none: a transition
+ * that aids comprehension should survive, and only movement goes. So the
+ * durations stay - opacity and colour still cross-fade - and the rules that
+ * move or scale something are switched off individually where they appear.
+ */
+@media (prefers-reduced-motion: reduce) {
+  :root {
+    --press-scale: 1;
+    --duration-drawer: 120ms;
+  }
+}

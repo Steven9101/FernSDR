@@ -1,0 +1,42 @@
+# The receiver, as install.sh sets it up: the version `current` names, run
+# as its own user, with its configuration and everything it writes in
+# /var/lib/fernsdr.
+[Unit]
+Description=FernSDR WebSDR
+After=network-online.target fernsdr-update-boot.service
+Wants=network-online.target fernsdr-update-boot.service
+
+[Service]
+Type=exec
+User=fernsdr
+Group=fernsdr
+ExecStart=/opt/fernsdr/current/fernsdr /var/lib/fernsdr/fernsdr.conf --root /opt/fernsdr/current/web
+WorkingDirectory=/var/lib/fernsdr
+Restart=always
+RestartSec=2
+# Hardening. None of this is optional for something facing the internet.
+NoNewPrivileges=yes
+PrivateTmp=yes
+PrivateDevices=no
+DevicePolicy=closed
+DeviceAllow=char-usb_device rw
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+RestrictAddressFamilies=AF_INET AF_INET6 AF_UNIX AF_NETLINK
+RestrictNamespaces=yes
+LockPersonality=yes
+MemoryDenyWriteExecute=yes
+SystemCallArchitectures=native
+SystemCallFilter=@system-service
+# The program carries its own C library, which may be newer than this
+# systemd and try calls its filter does not know, clone3 among them. Told
+# ENOSYS, the library falls back to the older call; by default the filter
+# would kill the receiver.
+SystemCallErrorNumber=ENOSYS
+ReadWritePaths=/var/lib/fernsdr
+
+[Install]
+WantedBy=multi-user.target

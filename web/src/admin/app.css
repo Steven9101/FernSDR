@@ -1,0 +1,348 @@
+/*
+The admin panel's design, after the operator's own Reel app: neutral chrome, the primary action
+drawn in the foreground colour, and hue only where it carries meaning. Here that is the state of a
+band or a module: green receiving, amber trying again, red waiting for you. Tailwind reads only
+the admin's own files; the receiver next door never sees a utility class.
+*/
+@import 'tailwindcss' source(none);
+@source './';
+@import 'tw-animate-css';
+@import '@fontsource-variable/inter/opsz.css';
+
+@custom-variant dark (&:is(.dark *));
+
+:root {
+	--background: oklch(0.99 0 0);
+	--foreground: oklch(0.18 0 0);
+	--card: oklch(0.965 0 0);
+	--card-foreground: oklch(0.18 0 0);
+	--popover: oklch(1 0 0);
+	--popover-foreground: oklch(0.18 0 0);
+	--primary: oklch(0.18 0 0);
+	--primary-foreground: oklch(0.99 0 0);
+	--secondary: oklch(0.94 0 0);
+	--secondary-foreground: oklch(0.18 0 0);
+	--muted: oklch(0.955 0 0);
+	--muted-foreground: oklch(0.47 0 0);
+	--accent: oklch(0.93 0 0);
+	--accent-foreground: oklch(0.18 0 0);
+	--border: oklch(0 0 0 / 9%);
+	--input: oklch(0 0 0 / 14%);
+	--ring: oklch(0.58 0.19 256);
+	/* Meaning. Used as small text on a light ground: each at least 4.5:1 on a card (success 4.7,
+	warning 5.1, destructive 4.9, measured from these values). */
+	--success: oklch(0.52 0.13 150);
+	--warning: oklch(0.52 0.12 70);
+	--destructive: oklch(0.55 0.21 27);
+	/* The receiver's carrier-marker orange, for frequencies and signal traces. */
+	--signal: oklch(0.62 0.17 45);
+	--radius: 0.625rem;
+	--sidebar: oklch(0.975 0 0);
+	--sidebar-accent: oklch(0.93 0 0);
+	--sidebar-border: oklch(0 0 0 / 7%);
+}
+
+.dark {
+	--background: oklch(0.13 0 0);
+	--foreground: oklch(0.975 0 0);
+	--card: oklch(0.185 0 0);
+	--card-foreground: oklch(0.975 0 0);
+	--popover: oklch(0.2 0 0);
+	--popover-foreground: oklch(0.975 0 0);
+	--primary: oklch(0.975 0 0);
+	--primary-foreground: oklch(0.15 0 0);
+	--secondary: oklch(0.22 0 0);
+	--secondary-foreground: oklch(0.975 0 0);
+	--muted: oklch(0.205 0 0);
+	--muted-foreground: oklch(0.72 0 0);
+	--accent: oklch(0.25 0 0);
+	--accent-foreground: oklch(0.975 0 0);
+	--border: oklch(1 0 0 / 9%);
+	--input: oklch(1 0 0 / 14%);
+	--ring: oklch(0.7 0.16 256);
+	--success: oklch(0.78 0.15 150);
+	--warning: oklch(0.84 0.15 85);
+	--destructive: oklch(0.7 0.19 25);
+	--signal: oklch(0.76 0.15 50);
+	--sidebar: oklch(0.13 0 0);
+	--sidebar-accent: oklch(0.22 0 0);
+	--sidebar-border: oklch(1 0 0 / 7%);
+}
+
+@theme inline {
+	--font-sans: 'Inter Variable', ui-sans-serif, system-ui, sans-serif;
+	/* One face everywhere, code and settings included. */
+	--font-mono: var(--font-sans);
+	--ease-out-expo: cubic-bezier(0.16, 1, 0.3, 1);
+	--ease-spring: cubic-bezier(0.34, 1.4, 0.64, 1);
+	--color-background: var(--background);
+	--color-foreground: var(--foreground);
+	--color-card: var(--card);
+	--color-card-foreground: var(--card-foreground);
+	--color-popover: var(--popover);
+	--color-popover-foreground: var(--popover-foreground);
+	--color-primary: var(--primary);
+	--color-primary-foreground: var(--primary-foreground);
+	--color-secondary: var(--secondary);
+	--color-secondary-foreground: var(--secondary-foreground);
+	--color-muted: var(--muted);
+	--color-muted-foreground: var(--muted-foreground);
+	--color-accent: var(--accent);
+	--color-accent-foreground: var(--accent-foreground);
+	--color-border: var(--border);
+	--color-input: var(--input);
+	--color-ring: var(--ring);
+	--color-success: var(--success);
+	--color-warning: var(--warning);
+	--color-destructive: var(--destructive);
+	--color-signal: var(--signal);
+	--color-sidebar: var(--sidebar);
+	--color-sidebar-accent: var(--sidebar-accent);
+	--color-sidebar-border: var(--sidebar-border);
+	--radius-sm: calc(var(--radius) * 0.6);
+	--radius-md: calc(var(--radius) * 0.8);
+	--radius-lg: var(--radius);
+	--radius-xl: calc(var(--radius) * 1.4);
+	--radius-2xl: calc(var(--radius) * 1.8);
+	--radius-3xl: calc(var(--radius) * 2.2);
+}
+
+/* One horizontal gutter for every page, so titles, cards and tables share a left edge. */
+:root {
+	--gutter: 1.25rem;
+}
+
+@media (min-width: 768px) {
+	:root {
+		--gutter: 2rem;
+	}
+}
+
+@media (min-width: 1280px) {
+	:root {
+		--gutter: 3rem;
+	}
+}
+
+@layer base {
+	* {
+		@apply border-border outline-ring/50;
+	}
+	html {
+		@apply bg-background font-sans text-foreground antialiased;
+		font-optical-sizing: auto;
+		font-feature-settings: 'cv11', 'ss03';
+		/* No overflow of its own. A dialog locks scrolling with overflow: hidden on body, and
+		that only reaches the viewport while html's overflow is visible; with overflow-x set here
+		body became a scroll container of its own instead, the sticky sidebar and top bar stuck to
+		it and scrolled away with the page, and half the panel vanished behind every sheet. body's
+		overflow-x: clip below reaches the viewport the same way, so nothing scrolls sideways. */
+		scrollbar-gutter: stable;
+		scrollbar-color: color-mix(in oklab, var(--foreground) 22%, transparent) transparent;
+		-webkit-tap-highlight-color: transparent;
+	}
+	* {
+		scrollbar-width: thin;
+	}
+	body {
+		@apply min-h-dvh bg-background text-[15px] leading-normal md:text-base;
+		overflow-x: clip;
+	}
+	h1,
+	h2,
+	h3 {
+		@apply font-semibold tracking-[-0.022em] text-balance;
+	}
+	:focus-visible {
+		@apply outline-2 outline-offset-2 outline-ring;
+	}
+	/* Inside a group of rows the outline is drawn within the row: the group clips to its rounded
+	corners, and an outline outside the row would be cut off, or vanish in a group of one. */
+	[data-settings-group] :focus-visible {
+		outline-offset: -2px;
+	}
+	/* And the first and last row take the group's corners, so an outline or an inset ring drawn in
+	them follows the curve instead of being cut square by it. */
+	[data-settings-group] > div > :first-child {
+		border-top-left-radius: inherit;
+		border-top-right-radius: inherit;
+	}
+	[data-settings-group] > div > :last-child {
+		border-bottom-left-radius: inherit;
+		border-bottom-right-radius: inherit;
+	}
+	::selection {
+		@apply bg-primary/25;
+	}
+}
+
+@layer utilities {
+	/* Press feedback for anything tappable; transform only, so it never reflows. */
+	.pressable {
+		transition: transform 180ms var(--ease-out-expo);
+	}
+	.pressable:active {
+		transform: scale(0.97);
+	}
+	/*
+	Frosted glass for chrome that floats over content: blur and saturation so what is behind still
+	reads through, and a hairline along the top edge that catches the light. The fallback
+	background keeps text legible where backdrop-filter is not supported.
+	*/
+	.glass {
+		background: color-mix(in oklab, var(--background) 72%, transparent);
+		backdrop-filter: blur(24px) saturate(180%);
+		box-shadow:
+			inset 0 1px 0 0 color-mix(in oklab, white 55%, transparent),
+			inset 0 0 0 1px var(--border),
+			0 10px 40px -12px oklch(0 0 0 / 0.28);
+	}
+	:where(.dark) .glass {
+		background: color-mix(in oklab, var(--background) 62%, transparent);
+		box-shadow:
+			inset 0 1px 0 0 oklch(1 0 0 / 0.12),
+			inset 0 0 0 1px var(--border),
+			0 10px 40px -12px oklch(0 0 0 / 0.6);
+	}
+	.tabular {
+		font-variant-numeric: tabular-nums;
+	}
+	/* Loading placeholder: a soft highlight sweeping across the muted surface. */
+	.shimmer {
+		background: linear-gradient(
+			100deg,
+			transparent 20%,
+			color-mix(in oklab, var(--foreground) 6%, transparent) 50%,
+			transparent 80%
+		);
+		background-size: 200% 100%;
+		animation: shimmer 1.6s ease-in-out infinite;
+	}
+}
+
+@keyframes shimmer {
+	from {
+		background-position: 150% 0;
+	}
+	to {
+		background-position: -50% 0;
+	}
+}
+
+@media (prefers-reduced-motion: reduce) {
+	*,
+	*::before,
+	*::after {
+		animation-duration: 0.01ms !important;
+		animation-iteration-count: 1 !important;
+		transition-duration: 0.01ms !important;
+		scroll-behavior: auto !important;
+	}
+	::view-transition-group(*),
+	::view-transition-old(*),
+	::view-transition-new(*) {
+		animation: none !important;
+	}
+}
+
+/*
+Page transitions. The navigation keeps its own view-transition-name, so it stays put while its
+indicator glides, and only the page moves: towards the section picked, up into a detail opened,
+back down on return. Only transform and opacity animate, so it stays on the compositor.
+*/
+:root {
+	/* A critically damped spring: quick to start, a long soft landing, no bounce. */
+	--ease-page: linear(
+		0, 0.0265, 0.0902, 0.1734, 0.2642, 0.3554, 0.4422, 0.5221, 0.594, 0.6575, 0.7127, 0.7603,
+		0.8009, 0.8352, 0.8641, 0.8883, 0.9084, 0.9251, 0.9389, 0.9503, 0.9596, 0.9672, 0.9734,
+		0.9785, 0.9826, 0.986, 0.9887, 0.9909, 0.9927, 0.9941, 1
+	);
+}
+
+.vt-topbar {
+	view-transition-name: topbar;
+}
+
+.vt-bottomnav {
+	view-transition-name: bottomnav;
+}
+
+.vt-sidenav {
+	view-transition-name: sidenav;
+}
+
+::view-transition-group(topbar),
+::view-transition-group(bottomnav),
+::view-transition-group(sidenav),
+::view-transition-new(topbar),
+::view-transition-new(bottomnav),
+::view-transition-new(sidenav) {
+	animation: none;
+}
+
+::view-transition-old(topbar),
+::view-transition-old(bottomnav),
+::view-transition-old(sidenav) {
+	display: none;
+}
+
+::view-transition-old(root) {
+	animation: 160ms cubic-bezier(0.4, 0, 1, 1) both vt-leave;
+}
+
+::view-transition-new(root) {
+	animation:
+		240ms cubic-bezier(0, 0, 0.2, 1) 40ms both vt-fade-in,
+		560ms var(--ease-page) both vt-arrive;
+}
+
+:root[data-transition='tab-forward'] {
+	--vt-leave-to: translateY(-10px);
+	--vt-arrive-from: translateY(18px);
+}
+
+:root[data-transition='tab-back'] {
+	--vt-leave-to: translateY(10px);
+	--vt-arrive-from: translateY(-18px);
+}
+
+:root[data-transition='forward'] {
+	--vt-leave-to: scale(0.97);
+	--vt-arrive-from: translateY(28px) scale(0.99);
+}
+
+:root[data-transition='back'] {
+	--vt-leave-to: translateY(28px);
+	--vt-arrive-from: scale(0.97);
+}
+
+@keyframes vt-leave {
+	to {
+		opacity: 0;
+		transform: var(--vt-leave-to, none);
+	}
+}
+
+@keyframes vt-fade-in {
+	from {
+		opacity: 0;
+	}
+}
+
+@keyframes vt-arrive {
+	from {
+		transform: var(--vt-arrive-from, none);
+	}
+}
+
+/* Room under the last rows while the save bar is up, so none of them stays hidden behind it.
+Outside any layer, so it wins over the page's own padding utilities. */
+html[data-savebar] main {
+	padding-bottom: 14rem;
+}
+
+@media (min-width: 768px) {
+	html[data-savebar] main {
+		padding-bottom: 8rem;
+	}
+}

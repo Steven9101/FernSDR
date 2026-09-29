@@ -1,0 +1,65 @@
+# build
+build/
+server/build/
+server/build-*/
+server/dist/
+*.o
+*.d
+*.a
+*.so
+nova-sdr
+nova-tests
+
+# web
+node_modules/
+web/dist/
+web/.vite/
+*.tsbuildinfo
+
+# runtime
+*.log
+recordings/
+config.local.ini
+
+# editors / os
+.DS_Store
+.vscode/
+.idea/
+*.swp
+
+# generated cross-check vectors are committed on purpose; see server/tools/gen_vectors.cpp
+
+# Operators' local configuration, which holds the admin password hash;
+# server/fernsdr.example.conf is the tracked template.
+server/fernsdr.conf
+server/*.ini
+server/*.ini.orig
+Caddyfile
+__pycache__/
+
+# Waterfall archives: a day of one band is about 90 MB.
+*.wfa
+
+# Playwright scratch output.
+.playwright-mcp/
+
+# Benchmark captures are retained locally; publish checksums and raw events.
+bench/captures/
+bench/runs/**/*.f32
+bench/runs/**/*.wav
+bench/runs/**/*.flac
+
+# Per-receiver runtime state written by the admin panel.
+fernsdr-settings.json
+fernsdr-theme.json
+
+# Pictures an operator uploaded through the admin panel.
+fernsdr-uploads/
+
+# Generated reference audio (bench/digital/digital.py assets regenerates it).
+bench/digital/assets/
+# Working notes of the benchmark sessions, not part of the method.
+bench/planning/
+
+# The release page build.
+site/dist/

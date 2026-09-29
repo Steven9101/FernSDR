@@ -1,0 +1,22 @@
+#!/sbin/openrc-run
+# FernSDR under OpenRC (Alpine, Gentoo, Artix). `fernsdr --supervise` runs
+# the receiver as its own user and carries out the admin panel's updates;
+# supervise-daemon starts it again should it ever end. install.sh puts this
+# file in /etc/init.d. Its log: /var/log/fernsdr/fernsdr.log.
+
+name="FernSDR"
+description="FernSDR WebSDR"
+supervisor="supervise-daemon"
+command="/opt/fernsdr/trusted/fernsdr"
+command_args="--supervise"
+respawn_delay=5
+respawn_max=0
+# The supervisor gives the receiver 20 seconds to stop, then the modules it
+# leaves behind 5 more.
+retry="TERM/40/KILL/5"
+
+depend() {
+    need net localmount
+    after firewall
+    use dns
+}

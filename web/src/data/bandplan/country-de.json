@@ -1,0 +1,36 @@
+{
+  "schema": 1,
+  "id": "country-de",
+  "title": "Germany (AFuV Anlage 1, DARC)",
+  "scope": "country",
+  "region": 1,
+  "country": "de",
+  "reviewed": "2026-09-28",
+  "sources": {
+    "afuv": { "title": "Amateurfunkverordnung (AFuV), Anlage 1", "version": "zuletzt geaendert durch Art. 1 V v. 27.5.2024 (BGBl. 2024 I Nr. 175)", "date": "2024-05-27", "url": "https://www.gesetze-im-internet.de/afuv_2005/anlage_1.html" },
+    "darc": { "title": "DARC Vereinfachter Kurzwellen-Bandplan fuer DL", "version": "v2.01, Stand Dez. 2025", "date": "2025-12-01", "url": "https://www.darc.de/fileadmin/filemounts/referate/hf/Dokumente/Bandplan_DL_vereinfacht_v2.01_Querformat.pdf" }
+  },
+  "covers": [],
+  "bands": [
+    { "name": "2200 m", "low": 135.7, "high": 137.8, "status": "secondary" },
+    { "name": "630 m", "low": 472, "high": 479, "status": "secondary" },
+    { "name": "160 m", "low": 1810, "high": 2000 },
+    { "name": "80 m", "low": 3500, "high": 3800 },
+    { "name": "60 m", "low": 5351.5, "high": 5366.5, "status": "secondary" },
+    { "name": "40 m", "low": 7000, "high": 7200 },
+    { "name": "30 m", "low": 10100, "high": 10150, "status": "secondary" },
+    { "name": "20 m", "low": 14000, "high": 14350 },
+    { "name": "17 m", "low": 18068, "high": 18168 },
+    { "name": "15 m", "low": 21000, "high": 21450 },
+    { "name": "12 m", "low": 24890, "high": 24990 },
+    { "name": "10 m", "low": 28000, "high": 29700 },
+    { "name": "6 m", "low": 50000, "high": 52000, "status": "secondary" },
+    { "name": "2 m", "low": 144000, "high": 146000 },
+    { "name": "70 cm", "low": 430000, "high": 440000 },
+    { "name": "23 cm", "low": 1240000, "high": 1300000, "status": "secondary" }
+  ],
+  "segments": [],
+  "spots": [
+    { "khz": 3643, "label": "DL emergency", "mode": "lsb", "src": "darc" }
+  ]
+}

@@ -1,0 +1,52 @@
+{
+  "schema": 1,
+  "id": "country-ca",
+  "title": "Canada (ISED RBR-4, RAC band plans)",
+  "scope": "country",
+  "region": 2,
+  "country": "ca",
+  "reviewed": "2026-09-28",
+  "sources": {
+    "rbr4": { "title": "ISED RBR-4, Standards for the Operation of Radio Stations in the Amateur Radio Service", "version": "Issue 3", "date": "2022-07-27", "url": "https://ised-isde.canada.ca/site/spectrum-management-telecommunications/en/licences-and-certificates/regulations-reference-rbr/rbr-4-standards-operation-radio-stations-amateur-radio-service" },
+    "rac60": { "title": "RAC, 60 metres", "version": "web page", "date": "2022-07-28", "url": "https://www.rac.ca/60metres/" }
+  },
+  "covers": [[5250, 5450]],
+  "bands": [
+    { "name": "2200 m", "low": 135.7, "high": 137.8 },
+    { "name": "630 m", "low": 472, "high": 479 },
+    { "name": "160 m", "low": 1800, "high": 2000 },
+    { "name": "80 m", "low": 3500, "high": 4000 },
+    { "name": "60 m", "low": 5330.5, "high": 5333.5 },
+    { "name": "60 m", "low": 5346.5, "high": 5349.5 },
+    { "name": "60 m", "low": 5351.5, "high": 5366.5 },
+    { "name": "60 m", "low": 5371.5, "high": 5374.5 },
+    { "name": "60 m", "low": 5403.5, "high": 5406.5 },
+    { "name": "40 m", "low": 7000, "high": 7300 },
+    { "name": "30 m", "low": 10100, "high": 10150 },
+    { "name": "20 m", "low": 14000, "high": 14350 },
+    { "name": "17 m", "low": 18068, "high": 18168 },
+    { "name": "15 m", "low": 21000, "high": 21450 },
+    { "name": "12 m", "low": 24890, "high": 24990 },
+    { "name": "10 m", "low": 28000, "high": 29700 },
+    { "name": "6 m", "low": 50000, "high": 54000 },
+    { "name": "2 m", "low": 144000, "high": 148000 },
+    { "name": "1.25 m", "low": 219000, "high": 220000, "status": "secondary" },
+    { "name": "1.25 m", "low": 222000, "high": 225000 },
+    { "name": "70 cm", "low": 430000, "high": 450000, "status": "secondary" },
+    { "name": "33 cm", "low": 902000, "high": 928000 },
+    { "name": "23 cm", "low": 1240000, "high": 1300000 }
+  ],
+  "segments": [
+    { "low": 5330.5, "high": 5333.5, "kind": "phone", "label": "Channel 5332", "src": "rbr4", "note": "100 W ERP; USB dial 5330.5" },
+    { "low": 5346.5, "high": 5349.5, "kind": "phone", "label": "Channel 5348", "src": "rbr4", "note": "100 W ERP; USB dial 5346.5" },
+    { "low": 5351.5, "high": 5366.5, "kind": "phone", "label": "All modes, 100 W ERP", "src": "rbr4", "note": "2.8 kHz maximum; RAC: digital centred on 5357 dial" },
+    { "low": 5371.5, "high": 5374.5, "kind": "phone", "label": "Channel 5373", "src": "rbr4", "note": "100 W ERP; USB dial 5371.5" },
+    { "low": 5403.5, "high": 5406.5, "kind": "phone", "label": "Channel 5405", "src": "rbr4", "note": "100 W ERP; USB dial 5403.5" }
+  ],
+  "spots": [
+    { "khz": 5330.5, "label": "Ch 5332", "mode": "usb", "src": "rac60" },
+    { "khz": 5346.5, "label": "Ch 5348", "mode": "usb", "src": "rac60" },
+    { "khz": 5371.5, "label": "Ch 5373", "mode": "usb", "src": "rac60" },
+    { "khz": 5403.5, "label": "Ch 5405", "mode": "usb", "src": "rac60" }
+  ]
+}

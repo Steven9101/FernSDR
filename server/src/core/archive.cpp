@@ -1,0 +1,308 @@
+#include "archive.h"
+
+#include <algorithm>
+#include <cmath>
+#include <cstring>
+
+#include "../util/log.h"
+
+namespace fernsdr {
+
+namespace {
+
+constexpr char kMagic[8] = {'F', 'R', 'N', 'W', 'F', 'A', '1', '\0'};
+
+}  // namespace
+
+WaterfallArchive::~WaterfallArchive() { close(); }
+
+uint8_t WaterfallArchive::quantise(float db) {
+    if (!(db > kFloorDb)) return 0;
+    if (db >= kCeilingDb) return 255;
+    const float t = (db - kFloorDb) / (kCeilingDb - kFloorDb);
+    return static_cast<uint8_t>(t * 255.0f + 0.5f);
+}
+
+float WaterfallArchive::dequantise(uint8_t value) {
+    return kFloorDb + (kCeilingDb - kFloorDb) * (static_cast<float>(value) / 255.0f);
+}
+
+bool WaterfallArchive::read_header(Header& header) const {
+    if (!file_) return false;
+    if (std::fseek(file_, 0, SEEK_SET) != 0) return false;
+    return std::fread(&header, sizeof(header), 1, file_) == 1;
+}
+
+bool WaterfallArchive::write_header() const {
+    if (!file_) return false;
+    Header header{};
+    std::memcpy(header.magic, kMagic, sizeof(kMagic));
+    header.bins = static_cast<uint32_t>(bins_);
+    header.seconds_per_line = seconds_per_line_;
+    header.capacity = capacity_;
+    header.next_index = next_index_;
+    header.epoch_ms = epoch_ms_;
+    if (std::fseek(file_, 0, SEEK_SET) != 0) return false;
+    if (std::fwrite(&header, sizeof(header), 1, file_) != 1) return false;
+    return std::fflush(file_) == 0;
+}
+
+namespace {
+
+// The frequencies live in a file of their own because the header has no room
+// for them, and changing the header would have thrown away every archive
+// recorded before.
+std::string span_path(const std::string& path) { return path + ".span"; }
+
+// Whether the rows already in the archive were recorded for these frequencies,
+// and in `known` whether the archive says what they were recorded for at all.
+// An archive from before spans were kept, or a span nobody stated, is taken as
+// matching: there is nothing to compare, and losing a record on an upgrade
+// would be worse.
+bool span_matches(const std::string& path, double low_hz, double high_hz, size_t bins, bool& known) {
+    known = false;
+    if (!(high_hz > low_hz)) return true;
+    std::FILE* file = std::fopen(span_path(path).c_str(), "rbe");
+    if (!file) return true;
+    double low = 0.0, high = 0.0;
+    const bool read = std::fscanf(file, "%lf %lf", &low, &high) == 2;
+    std::fclose(file);
+    if (!read) return true;
+    known = true;
+    const double tolerance = (high_hz - low_hz) / static_cast<double>(bins) / 4.0;
+    return std::fabs(low - low_hz) <= tolerance && std::fabs(high - high_hz) <= tolerance;
+}
+
+void write_span(const std::string& path, double low_hz, double high_hz) {
+    if (!(high_hz > low_hz)) return;
+    const std::string target = span_path(path);
+    const std::string temporary = target + ".part";
+    std::FILE* file = std::fopen(temporary.c_str(), "wbe");
+    if (!file) return;
+    const bool written = std::fprintf(file, "%.3f %.3f\n", low_hz, high_hz) > 0;
+    if (std::fclose(file) != 0 || !written || std::rename(temporary.c_str(), target.c_str()) != 0) {
+        std::remove(temporary.c_str());
+        LOG_WARN("archive", "cannot record the frequencies of %s", path.c_str());
+    }
+}
+
+}  // namespace
+
+bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds_per_line,
+                            int retention_hours, std::string& error, double low_hz, double high_hz) {
+    close();
+    if (bins == 0 || bins > 8192) {
+        error = "the archive width must be between 1 and 8192 bins";
+        return false;
+    }
+    if (!std::isfinite(seconds_per_line) || seconds_per_line < 0.1 || seconds_per_line > 3600.0) {
+        error = "the archive interval must be between 0.1 and 3600 seconds";
+        return false;
+    }
+    if (retention_hours <= 0 || retention_hours > 24 * 365) {
+        error = "the archive must keep between 1 hour and a year";
+        return false;
+    }
+
+    bins_ = bins;
+    seconds_per_line_ = seconds_per_line;
+    capacity_ = static_cast<uint64_t>(retention_hours * 3600.0 / seconds_per_line);
+    if (capacity_ == 0) capacity_ = 1;
+    path_ = path;
+
+    // An existing file of the right shape is continued; one of the wrong shape
+    // is replaced. Reading old lines at a new width would draw nonsense, and
+    // quietly drawing nonsense is worse than losing a record nobody has looked
+    // at yet.
+    // "e" is close-on-exec, so a module started later does not inherit it.
+    file_ = std::fopen(path.c_str(), "r+be");
+    if (file_) {
+        Header header{};
+        const bool shaped = read_header(header) &&
+                            std::memcmp(header.magic, kMagic, sizeof(kMagic)) == 0 &&
+                            header.bins == bins_ && header.capacity == capacity_ &&
+                            std::fabs(header.seconds_per_line - seconds_per_line_) < 1e-9;
+        bool known = false;
+        const bool placed = span_matches(path, low_hz, high_hz, bins_, known);
+        if (shaped && placed) {
+            // The frequencies the rows were first recorded for stay, rather
+            // than following each correction: several, each too small to
+            // matter, could otherwise carry the axis a whole cell away without
+            // the archive ever starting again.
+            if (!known) write_span(path, low_hz, high_hz);
+            next_index_ = header.next_index;
+            epoch_ms_ = header.epoch_ms;
+            scratch_.assign(slot_bytes(), 0);
+            LOG_INFO("archive", "%s continued: %llu lines held of %llu", path.c_str(),
+                     static_cast<unsigned long long>(std::min(next_index_, capacity_)),
+                     static_cast<unsigned long long>(capacity_));
+            return true;
+        }
+        std::fclose(file_);
+        file_ = nullptr;
+        if (!shaped) LOG_INFO("archive", "%s was written with a different shape; starting again", path.c_str());
+        else LOG_INFO("archive", "%s was recorded for other frequencies; starting again", path.c_str());
+    }
+
+    file_ = std::fopen(path.c_str(), "w+be");
+    if (!file_) {
+        error = "cannot write " + path;
+        return false;
+    }
+    next_index_ = 0;
+    epoch_ms_ = 0;
+    if (!write_header()) {
+        error = "cannot write the archive header in " + path;
+        close();
+        return false;
+    }
+    // The file is created at full size rather than grown: the operator is told
+    // what it costs before it is switched on, and being told is worth nothing
+    // if the number only becomes true a day later.
+    if (std::fseek(file_, static_cast<long>(size_bytes() - 1), SEEK_SET) != 0 ||
+        std::fputc(0, file_) == EOF || std::fflush(file_) != 0) {
+        error = "cannot reserve " + std::to_string(size_bytes()) + " bytes for " + path;
+        close();
+        return false;
+    }
+    scratch_.assign(slot_bytes(), 0);
+    write_span(path, low_hz, high_hz);
+    LOG_INFO("archive", "%s created: %llu lines, %.1f MB", path.c_str(),
+             static_cast<unsigned long long>(capacity_),
+             static_cast<double>(size_bytes()) / 1e6);
+    return true;
+}
+
+void WaterfallArchive::close() {
+    if (file_) {
+        write_header();
+        std::fclose(file_);
+        file_ = nullptr;
+    }
+}
+
+uint64_t WaterfallArchive::size_bytes() const {
+    return sizeof(Header) + capacity_ * static_cast<uint64_t>(slot_bytes());
+}
+
+int64_t WaterfallArchive::time_of(uint64_t index) const {
+    return epoch_ms_ + static_cast<int64_t>(static_cast<double>(index) * seconds_per_line_ * 1000.0);
+}
+
+int64_t WaterfallArchive::newest_ms() const {
+    return next_index_ == 0 ? 0 : time_of(next_index_ - 1);
+}
+
+int64_t WaterfallArchive::oldest_ms() const {
+    if (next_index_ == 0) return 0;
+    const uint64_t first = next_index_ > capacity_ ? next_index_ - capacity_ : 0;
+    return time_of(first);
+}
+
+void WaterfallArchive::append(const float* bins, size_t count, int64_t now_ms) {
+    if (!file_ || count == 0) return;
+
+    if (next_index_ == 0) {
+        epoch_ms_ = now_ms;
+    } else {
+        // The archive is indexed by position, so a line is only taken when the
+        // clock says one is due. A band producing 25 lines a second would
+        // otherwise fill a day's ring in an hour.
+        const int64_t due = time_of(next_index_);
+        if (now_ms < due) return;
+        // After a suspend or a long stall, jumping the index forward keeps
+        // position and time in step: the gap stays a gap rather than being
+        // papered over with whatever arrives next.
+        const double behind = static_cast<double>(now_ms - due) / (seconds_per_line_ * 1000.0);
+        if (behind > 1.0) next_index_ += static_cast<uint64_t>(behind);
+    }
+
+    // Resample to the archive's width by taking the strongest bin in each
+    // output cell. A waterfall is read for what was there, and a peak is what
+    // was there; an average makes a narrow carrier disappear into the noise.
+    uint8_t* row = scratch_.data() + sizeof(uint64_t);
+    for (size_t i = 0; i < bins_; i++) {
+        const size_t start = count * i / bins_;
+        const size_t end = std::max(start + 1, count * (i + 1) / bins_);
+        float peak = bins[start];
+        for (size_t j = start + 1; j < end && j < count; j++) peak = std::max(peak, bins[j]);
+        row[i] = quantise(peak);
+    }
+    std::memcpy(scratch_.data(), &next_index_, sizeof(uint64_t));
+
+    const uint64_t slot = next_index_ % capacity_;
+    const long offset = static_cast<long>(sizeof(Header) + slot * slot_bytes());
+    if (std::fseek(file_, offset, SEEK_SET) != 0) return;
+    if (std::fwrite(scratch_.data(), scratch_.size(), 1, file_) != 1) return;
+
+    next_index_++;
+    // The header is rewritten every line. It is 48 bytes against a kilobyte of
+    // payload, and it is what makes the file describe itself after a crash.
+    write_header();
+}
+
+bool WaterfallArchive::read(int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,
+                            std::vector<int64_t>& times_ms, double* row_ms, size_t max_rows,
+                            size_t bin_group, size_t* out_bins) const {
+    bin_group = std::max<size_t>(1, std::min(bin_group, bins_));
+    const size_t grouped = (bins_ + bin_group - 1) / bin_group;
+    if (out_bins) *out_bins = grouped;
+    rows.clear();
+    times_ms.clear();
+    if (row_ms) *row_ms = seconds_per_line_ * 1000;
+    if (!file_ || to_ms < from_ms) return false;
+    // An archive with nothing in it yet is not a failure, it is an empty
+    // answer. Only being unable to read the file at all is a failure.
+    if (next_index_ == 0) return true;
+
+    const uint64_t first_held = next_index_ > capacity_ ? next_index_ - capacity_ : 0;
+    // Turn the requested times into indices, then clamp to what is held.
+    const double from_index = ((static_cast<double>(from_ms) - static_cast<double>(epoch_ms_)) / 1000.0) / seconds_per_line_;
+    const double to_index = ((static_cast<double>(to_ms) - static_cast<double>(epoch_ms_)) / 1000.0) / seconds_per_line_;
+    if (to_index < 0.0) return true;
+    if (from_index >= static_cast<double>(next_index_)) return true;
+
+    uint64_t begin = from_index <= 0.0 ? 0 : static_cast<uint64_t>(from_index);
+    begin = std::max(begin, first_held);
+    const uint64_t end = to_index >= static_cast<double>(next_index_ - 1)
+                             ? next_index_
+                             : static_cast<uint64_t>(std::max(0.0, std::ceil(to_index))) + 1;
+    if (begin >= end) return true;
+
+    // A public request can span the whole archive. Sample that range at a
+    // bounded number of original rows so it cannot monopolise the network
+    // thread or allocate a year's history. Timestamps still identify the
+    // actual rows, and zooming into a shorter range retrieves finer detail.
+    uint64_t limit = std::min<uint64_t>(4096, 1024 * 1024 / grouped);
+    if (max_rows > 0) limit = std::max<uint64_t>(1, std::min<uint64_t>(limit, max_rows));
+    const uint64_t stride = (end - begin - 1) / limit + 1;
+    if (row_ms) *row_ms = stride * seconds_per_line_ * 1000;
+    std::vector<uint8_t> slot(slot_bytes());
+    for (uint64_t index = begin; index < end; index += stride) {
+        const long offset =
+            static_cast<long>(sizeof(Header) + (index % capacity_) * slot_bytes());
+        if (std::fseek(file_, offset, SEEK_SET) != 0) return false;
+        if (std::fread(slot.data(), slot.size(), 1, file_) != 1) return false;
+
+        uint64_t stored = 0;
+        std::memcpy(&stored, slot.data(), sizeof(uint64_t));
+        // A slot holding a different index was never written, or belongs to an
+        // older lap of the ring. Either way it is not this line, and a gap in
+        // the record should read as a gap rather than as a row of zeroes.
+        if (stored != index) continue;
+
+        const uint8_t* bins = slot.data() + sizeof(uint64_t);
+        if (bin_group == 1) {
+            rows.insert(rows.end(), bins, bins + bins_);
+        } else {
+            for (size_t group = 0; group < grouped; group++) {
+                const size_t first = group * bin_group;
+                rows.push_back(*std::max_element(bins + first, bins + std::min(bins_, first + bin_group)));
+            }
+        }
+        times_ms.push_back(time_of(index));
+    }
+    return true;
+}
+
+}  // namespace fernsdr

@@ -1,0 +1,10 @@
+#!/bin/sh
+# FernSDR under runit (Void, Artix). `fernsdr --supervise` runs the receiver
+# as its own user and carries out the admin panel's updates. install.sh puts
+# this file in /etc/sv/fernsdr. Its log: /var/log/fernsdr/fernsdr.log.
+if [ -r /etc/default/fernsdr ]; then
+    set -a
+    . /etc/default/fernsdr
+    set +a
+fi
+exec /opt/fernsdr/trusted/fernsdr --supervise 2>&1

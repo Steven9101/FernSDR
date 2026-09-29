@@ -1,0 +1,32 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover, maximum-scale=1"
+    />
+    <meta name="color-scheme" content="dark light" />
+    <meta name="description" content="Software-defined radio receiver" />
+    <meta name="theme-color" content="#080b11" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f4f6f9" media="(prefers-color-scheme: light)" />
+    <!-- Lets the receiver be added to a phone's home screen and run full-bleed. -->
+    <meta name="mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-capable" content="yes" />
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+    <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+    <title>FernSDR</title>
+  </head>
+  <body>
+    <script src="/color-scheme.js"></script>
+    <div id="app"></div>
+    <!-- For programs that sync a transceiver with a PA3FWM WebSDR (CATSync and
+         the like): they find a WebSDR by its setfreqif() and tune it through
+         this form. See src/compat/websdr.ts. -->
+    <form id="freqform" name="freqform" hidden><input name="frequency" tabindex="-1" autocomplete="off" /></form>
+    <noscript>
+      This receiver needs JavaScript: the waterfall and the audio decoder both run in the browser.
+    </noscript>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

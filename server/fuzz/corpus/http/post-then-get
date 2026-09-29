@@ -1,0 +1,9 @@
+POST /api/admin/station HTTP/1.1
+Host: x
+Content-Type: application/json
+Content-Length: 13
+
+{"name":"x"}
+GET /a%20b?q=1 HTTP/1.1
+Host: x
+

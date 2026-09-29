@@ -1,0 +1,3571 @@
+/*
+ * FernSDR's stylesheet.
+ *
+ * Structure, and the rules it follows:
+ *
+ *   1. No colour, size or duration is written here as a literal. Everything
+ *      comes from tokens.css. A stylesheet that hardcodes one shade is a
+ *      stylesheet where the light theme is already broken.
+ *   2. Component anatomy follows the shadcn/ui and ReUI conventions - a well
+ *      with a raised chip for a toggle group, a track with a filled range for
+ *      a slider, a tab strip whose indicator sits on the strip's own border -
+ *      implemented natively rather than installed, because those libraries are
+ *      React and Tailwind and this client is plain Svelte served off the
+ *      receiver's own uplink.
+ *   3. Motion follows one policy, stated in tokens.css: hovers are 100ms,
+ *      only things that genuinely enter get an entrance, and nothing driven by
+ *      the keyboard animates at all.
+ *
+ * The layout is the part worth explaining. An earlier version gave the
+ * frequency readout and the meter a row of their own under the display, which
+ * cost 90px of waterfall on every screen and left a band of mostly-empty
+ * surface at the bottom of a phone. They are now a HUD over the display, the
+ * way they sit on a real receiver, and the waterfall gets the space back.
+ */
+
+/* ---------------------------------------------------------------------------
+ * Reset and base
+ * ------------------------------------------------------------------------- */
+
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html,
+body,
+#app {
+  height: 100%;
+  margin: 0;
+}
+
+/* Nothing in this app scrolls the document, so a drag that no element claims
+   goes straight to the browser's own gesture - and a downward one is
+   pull-to-refresh, which reloads the page in the middle of tuning. `contain`
+   only stops scroll chaining; `none` also turns off the browser's overscroll
+   action, which is the part that reloads. */
+html,
+body {
+  overscroll-behavior-y: none;
+}
+
+body {
+  font-family: var(--font-sans);
+  font-size: var(--text-base);
+  line-height: 1.5;
+  color: var(--foreground);
+  background: var(--background);
+  /* The waterfall owns dragging; the page itself should never rubber-band. */
+  overscroll-behavior: none;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+
+button {
+  font: inherit;
+  color: inherit;
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+}
+
+/*
+ * Press feedback, on every pressable element in the interface.
+ *
+ * This is the single highest-value animation in a UI and it was missing: a
+ * control that does not acknowledge the press feels dead, and 160ms of a 3%
+ * sink is enough to fix that without anyone consciously noticing it. scale()
+ * takes the element's contents with it, which is what makes it read as the
+ * whole control moving rather than a box behind it.
+ *
+ * Excluded: the frequency digits, which are dragged and nudged with the arrow
+ * keys hundreds of times a session and must stay absolutely immediate.
+ */
+button:not(.frequency__digit):active,
+.palette:active {
+  transform: scale(var(--press-scale));
+}
+
+button:not(.frequency__digit),
+.palette {
+  transition: transform var(--duration-press) var(--ease-out);
+}
+
+a {
+  color: var(--foreground);
+  text-underline-offset: 2px;
+}
+
+/* One focus treatment for the whole interface, and it is a ring rather than an
+   outline so it follows the element's own radius. Keyboard only: a ring that
+   appears on a mouse click reads as a glitch. */
+:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 2px var(--background), 0 0 0 4px var(--ring);
+  border-radius: var(--radius-sm);
+  position: relative;
+  z-index: 1;
+}
+
+/* ---------------------------------------------------------------------------
+ * Layout
+ * ------------------------------------------------------------------------- */
+
+.app {
+  display: grid;
+  height: 100dvh;
+  /* Notches and home indicators: without this the status bar sits under the
+     gesture area on a phone and the top bar under the camera cutout. */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom)
+    env(safe-area-inset-left);
+  background: var(--background);
+}
+
+.app--narrow {
+  --stage-min: max(34dvh, 240px);
+  grid-template-areas:
+    'topbar'
+    'banner'
+    'stage'
+    'sheet'
+    'status';
+  /* Without this the single column is implicitly `auto`, which sizes to the
+     widest content rather than to the viewport: the top bar, the stage and the
+     spectrum canvas all grew to 571px on a 390px phone and the page scrolled
+     sideways, putting the audio-gate button off screen. */
+  grid-template-columns: minmax(0, 1fr);
+  /* The display keeps a real share of a phone screen no matter how far the
+     control sheet is opened. */
+  grid-template-rows: auto auto minmax(var(--stage-min), 1fr) auto auto;
+}
+
+.app--wide {
+  grid-template-areas:
+    'topbar  topbar'
+    'banner  banner'
+    'stage   sidebar'
+    'status  status';
+  grid-template-columns: minmax(0, 1fr) 344px;
+  grid-template-rows: auto auto minmax(0, 1fr) auto;
+}
+
+/* The listener's choice: the controls on the left. */
+.app--wide.app--left {
+  grid-template-areas:
+    'topbar  topbar'
+    'banner  banner'
+    'sidebar stage'
+    'status  status';
+  grid-template-columns: 344px minmax(0, 1fr);
+}
+
+.app--left .sidebar {
+  border-left: none;
+  border-right: 1px solid var(--border);
+}
+
+/* ---------------------------------------------------------------------------
+ * Top bar
+ * ------------------------------------------------------------------------- */
+
+.topbar {
+  grid-area: topbar;
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  padding: var(--space-2) var(--space-4);
+  background: var(--background);
+  border-bottom: 1px solid var(--border);
+  min-height: 52px;
+  /* Without this a receiver with eight bands pushes the whole page wider than
+     a phone screen: the band strip scrolls internally, but only if it is
+     allowed to be narrower than its content. */
+  overflow: hidden;
+}
+
+.topbar__identity {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-width: 0;
+  flex-shrink: 0;
+}
+
+.topbar__name {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 40vw;
+}
+
+.topbar__operator {
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.topbar__actions {
+  margin-left: auto;
+  display: flex;
+  gap: var(--space-1);
+  flex-shrink: 0;
+}
+
+/* ---------------------------------------------------------------------------
+ * Bands
+ *
+ * ReUI's "item" anatomy: a row that is a button, with a label and a trailing
+ * value, and selection shown by surface rather than by colour.
+ * ------------------------------------------------------------------------- */
+
+.bands {
+  display: flex;
+  gap: var(--space-1);
+  overflow-x: auto;
+  scrollbar-width: none;
+  /* Shrinkable, and narrower than its content: that is what makes the strip
+     scroll instead of stretching the top bar. */
+  flex: 1 1 auto;
+  min-width: 0;
+  /* A fade at the trailing edge, so it is visible that there are more bands
+     than fit rather than the list just appearing to end. */
+  mask-image: linear-gradient(to right, #000 0, #000 calc(100% - 24px), transparent 100%);
+  scroll-snap-type: x proximity;
+}
+
+.bands__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  white-space: nowrap;
+  transition: background var(--duration-hover) linear, color var(--duration-hover) linear;
+}
+
+.bands::-webkit-scrollbar {
+  display: none;
+}
+
+.bands__item {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-sm);
+  border: 1px solid transparent;
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  white-space: nowrap;
+  transition: background var(--duration-hover) linear, color var(--duration-hover) linear;
+}
+
+.bands__item:hover {
+  background: var(--well);
+  color: var(--foreground);
+}
+
+.bands__item.is-active {
+  background: var(--elevated);
+  box-shadow: var(--shadow-chip);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.bands__item.is-down {
+  color: var(--destructive);
+  text-decoration: line-through;
+}
+
+/* Off the air by its hours: waiting, not broken. */
+.bands__item.is-scheduled {
+  color: var(--subtle-foreground);
+  cursor: default;
+}
+
+.bands__listeners {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+  font-variant-numeric: tabular-nums;
+  color: var(--subtle-foreground);
+}
+
+/* On a wide screen the sidebar carries the band list, so the header's
+   scrolling strip would be a second copy of the same navigation. */
+@media (min-width: 1024px) {
+  .bands {
+    display: none;
+  }
+}
+
+/* In the sheet the list is the whole panel, so it loses the sidebar's border
+   and height cap. */
+.sheet .band-list {
+  border-top: none;
+  max-height: none;
+  padding: 0;
+}
+
+/* --- band list: the sidebar's own shape ---------------------------------- */
+
+.band-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  padding: var(--space-3);
+  border-top: 1px solid var(--border);
+  max-height: 40%;
+  min-height: 0;
+  flex-shrink: 0;
+}
+
+.band-list__item {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto 34px;
+  align-items: baseline;
+  gap: var(--space-2);
+  min-height: 36px;
+  padding: var(--space-2) var(--space-3);
+  text-align: left;
+  border-radius: var(--radius-lg);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  transition: background var(--duration-hover) linear;
+}
+
+.band-list__item:hover {
+  background: var(--well);
+  color: var(--foreground);
+}
+
+.band-list__item.is-active {
+  background: var(--elevated);
+  box-shadow: var(--shadow-chip);
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+.band-list__item.is-down {
+  color: var(--subtle-foreground);
+}
+
+.band-list__name {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-1-5);
+  min-width: 0;
+}
+
+.band-list__label {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* What the band listens with: quiet, so the name stays the thing read. */
+.band-list__kind {
+  flex-shrink: 0;
+  padding: 0 5px;
+  border-radius: var(--radius);
+  border: 1px solid var(--border);
+  font-size: var(--text-2xs);
+  font-weight: 500;
+  line-height: 16px;
+  color: var(--muted-foreground);
+  white-space: nowrap;
+}
+
+.band-list__unit {
+  color: var(--subtle-foreground);
+}
+
+.band-list__search {
+  flex-shrink: 0;
+  height: 32px;
+  margin: 0 var(--space-1);
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+.band-list__empty {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.band-list__range,
+.band-list__listeners {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  font-weight: 400;
+  color: var(--muted-foreground);
+}
+
+.band-list__title {
+  flex-shrink: 0;
+  margin: 0;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+/* The rows on one surface, as a group of controls is. Only they scroll, so
+   the title and the search stay put in a long list. */
+.band-list__rows {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 3px;
+  border-radius: var(--radius-xl);
+  background: var(--card);
+}
+
+.band-list__listeners {
+  min-width: 22px;
+  text-align: right;
+}
+
+.band-list__item.is-down .band-list__listeners {
+  color: var(--destructive);
+}
+
+.band-list__item.is-scheduled {
+  color: var(--subtle-foreground);
+  cursor: default;
+}
+
+.band-list__item.is-scheduled:hover {
+  background: transparent;
+  color: var(--subtle-foreground);
+}
+
+/* A band waiting for its hours shows when it comes on where the count
+   would be, quiet: the row keeps its height and the columns their places. */
+.band-list__item.is-scheduled .band-list__listeners {
+  color: var(--subtle-foreground);
+}
+
+/* ---------------------------------------------------------------------------
+ * Stage: the display and tuning controls
+ * ------------------------------------------------------------------------- */
+
+.stage {
+  /* The stage is dark in both themes: a focus ring in the light theme's
+     dark ink would vanish on it. */
+  --ring: var(--hud-muted);
+  grid-area: stage;
+  position: relative;
+  min-height: 0;
+  background: var(--waterfall-empty);
+  overflow: hidden;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr) auto;
+}
+
+.spectrum {
+  position: relative;
+  min-height: 0;
+  cursor: crosshair;
+  /* The canvas claims every gesture; see SpectrumDisplay for why. */
+  user-select: none;
+  -webkit-user-select: none;
+}
+
+.spectrum:focus-visible {
+  /* The global focus rule raises controls above their neighbours. Raising
+     the full canvas would cover the tuning readout and volume controls. */
+  z-index: auto;
+  outline: 2px solid var(--ring);
+  outline-offset: -2px;
+}
+
+.spectrum__waterfall,
+.spectrum__overlay {
+  position: absolute;
+  inset: 0;
+  display: block;
+}
+
+.spectrum__overlay {
+  pointer-events: none;
+}
+
+/* History takes a while to fill a screen at ten lines a second, and saying so
+   beats leaving a new visitor looking at a black rectangle. But a badge
+   centred in that rectangle points at the emptiness; the note belongs at the
+   edge, where a status line belongs. Top right specifically: bottom left
+   collided with the frequency readout as soon as the HUD wrapped to two rows
+   on a phone, and the top right corner is the one place on this display that
+   nothing else ever claims. */
+.spectrum__filling {
+  position: absolute;
+  right: var(--space-3);
+  top: var(--space-2);
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  color: var(--hud-subtle);
+  font-size: var(--text-xs);
+  pointer-events: none;
+  font-weight: 500;
+}
+
+
+/*
+ * The HUD.
+ *
+ * Reserve its height in the stage. An absolute overlay can cover the filter
+ * and ruler when a phone's control sheet leaves only a short display above it.
+ */
+.stage-controls {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  pointer-events: none;
+  z-index: 5;
+}
+
+.tuner {
+  width: 100%;
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-4);
+  padding: var(--space-3);
+  pointer-events: none;
+  background: var(--waterfall-empty);
+}
+
+.tuner > *,
+.tuner button,
+.tuner input {
+  pointer-events: auto;
+}
+
+/*
+ * Everything in the HUD is on the waterfall, which is dark in both themes, so
+ * the HUD keeps its own light-on-dark palette rather than following the page.
+ */
+.tuner {
+  --foreground: var(--hud-foreground);
+  --muted-foreground: var(--hud-muted);
+  --subtle-foreground: var(--hud-subtle);
+  --border: var(--hud-border);
+  --border-strong: var(--hud-border);
+  --primary: var(--hud-foreground);
+  --muted: var(--hud-scrim);
+  --card: var(--hud-scrim);
+  --well: color-mix(in srgb, var(--hud-foreground) 10%, transparent);
+  --track: color-mix(in srgb, var(--hud-foreground) 24%, transparent);
+  color: var(--hud-foreground);
+}
+
+.tuner__side {
+  display: flex;
+  align-items: center;
+  gap: var(--space-4);
+  flex: 0 1 auto;
+  min-width: 0;
+  justify-content: flex-end;
+}
+
+/* ---------------------------------------------------------------------------
+ * Frequency readout
+ * ------------------------------------------------------------------------- */
+
+.frequency {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+  min-width: 0;
+}
+
+.frequency__digits {
+  display: flex;
+  align-items: baseline;
+  gap: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: clamp(1.75rem, 6vw, 2.375rem);
+  font-weight: 550;
+  line-height: 1;
+  /* The same face and tracking as every other number here and in the admin
+     panel; tabular figures keep each digit's button the same width. */
+  letter-spacing: -0.02em;
+  text-shadow: var(--hud-text-shadow);
+}
+
+.frequency__digit {
+  position: relative;
+  padding: var(--space-1) 0.01em;
+  border-radius: var(--radius-sm);
+  color: var(--foreground);
+  /* No transition. Tuning happens with the arrow keys hundreds of times a
+     session, and a readout that fades between values feels like a machine
+     thinking about it. */
+  touch-action: none;
+}
+
+.frequency__digit:hover {
+  background: var(--hud-hover);
+}
+
+.frequency__digit:active {
+  background: var(--primary-muted);
+}
+
+/* A hint that the top half increments and the bottom half decrements. */
+.frequency__digit::after {
+  content: '';
+  position: absolute;
+  inset-inline: 15%;
+  top: 1px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--primary);
+  opacity: 0;
+}
+
+.frequency__digit:hover::after {
+  opacity: 0.7;
+}
+
+.frequency__digit--dim {
+  color: var(--subtle-foreground);
+}
+
+.frequency__separator {
+  color: var(--subtle-foreground);
+  padding-inline: 0.06em;
+  /* Punctuation, not data: at full weight it competes with the digits. */
+  opacity: 0.6;
+}
+
+.frequency__unit {
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  color: var(--muted-foreground);
+  margin-left: var(--space-2);
+  align-self: center;
+}
+
+.frequency__meta {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+}
+
+.frequency__edit {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  color: var(--hud-foreground);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  transition: background var(--duration-hover) linear;
+}
+
+.frequency__edit:hover {
+  background: var(--track);
+}
+
+.frequency__band {
+  display: inline-flex;
+  align-items: center;
+  min-height: 32px;
+  color: var(--hud-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+}
+
+/* RDS: the station's name and programme type, its radiotext under them.
+   The text is one line, cut with an ellipsis; the whole of it is in the
+   element's title. */
+.frequency__rds {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-0-5);
+  min-width: 0;
+  max-width: 36rem;
+}
+
+.frequency__station {
+  display: flex;
+  align-items: baseline;
+  gap: var(--space-2);
+  margin: 0;
+  font-size: var(--text-sm);
+}
+
+.frequency__ps {
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.frequency__pty {
+  font-size: var(--text-xs);
+  color: var(--hud-muted);
+}
+
+.frequency__radiotext {
+  margin: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  font-size: var(--text-xs);
+  color: var(--hud-muted);
+}
+
+.frequency--editing {
+  flex: 1 1 240px;
+}
+
+.frequency__input {
+  width: 100%;
+  max-width: 320px;
+  height: var(--touch-target);
+  padding: 0 var(--space-3);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xl);
+  color: var(--foreground);
+  background: var(--well);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius-lg);
+}
+
+.frequency__input:focus-visible {
+  border-color: var(--primary);
+}
+
+.frequency__hint {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+}
+
+/* ---------------------------------------------------------------------------
+ * S-meter
+ * ------------------------------------------------------------------------- */
+
+.smeter {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  min-width: 140px;
+  flex: 0 1 240px;
+}
+
+.smeter__bar {
+  position: relative;
+  height: 8px;
+  border-radius: var(--radius-pill);
+  background: var(--hud-well);
+  border: 1px solid var(--hud-border);
+  overflow: hidden;
+}
+
+.smeter__fill {
+  height: 100%;
+  border-radius: var(--radius-pill);
+  background: linear-gradient(90deg, var(--primary) 0%, var(--primary) 58%,
+    var(--signal) 62%, var(--warning) 100%);
+  /* Linear, and short. The meter is an instrument: it should track the signal,
+     not ease toward it. */
+  transition: width 80ms linear;
+}
+
+.smeter__tick {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1px;
+  background: var(--border-strong);
+}
+
+.smeter__tick--plus {
+  background: var(--muted-foreground);
+}
+
+.smeter__readout {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 0 var(--space-2);
+  min-width: 0;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+}
+
+.smeter__units {
+  font-size: var(--text-sm);
+  font-weight: 600;
+  color: var(--foreground);
+}
+
+.smeter__dbfs {
+  color: var(--subtle-foreground);
+  white-space: nowrap;
+}
+
+.smeter__squelch {
+  color: var(--subtle-foreground);
+}
+
+.smeter__squelch.is-open {
+  color: var(--success);
+}
+
+/* SAM's carrier loop, beside the reading and in the Receive panel: a dot
+   that says locked or searching at a glance, and the offset in words. */
+.smeter__pll,
+.carrier-lock {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+}
+
+.smeter__pll {
+  font-size: var(--text-xs);
+  white-space: nowrap;
+}
+
+.smeter__pll.is-locked,
+.carrier-lock.is-locked {
+  color: var(--foreground);
+}
+
+.smeter__pll-dot,
+.carrier-lock__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  flex: none;
+  background: var(--warning);
+}
+
+.is-locked > .smeter__pll-dot,
+.is-locked > .carrier-lock__dot {
+  background: var(--success);
+}
+
+.carrier-lock {
+  font-size: var(--text-sm);
+}
+
+/* Room for the longer word, so that "Locked" and "Searching" leave the row
+   the same. */
+.carrier-lock__word {
+  min-width: 9ch;
+}
+
+/* Wide enough for "searching" and for an offset up to "+999.9 Hz", so the
+   chip holds one width whatever it says. */
+.smeter__pll-offset {
+  display: inline-block;
+  min-width: 9ch;
+}
+
+.volume {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  flex: 0 1 180px;
+  min-width: 120px;
+}
+
+/* ---------------------------------------------------------------------------
+ * Icon button
+ * ------------------------------------------------------------------------- */
+
+.icon-button {
+  display: grid;
+  place-items: center;
+  width: var(--touch-target);
+  height: var(--touch-target);
+  border-radius: var(--radius-sm);
+  color: var(--muted-foreground);
+  transition: background var(--duration-hover) linear, color var(--duration-hover) linear;
+}
+
+.icon-button:hover {
+  background: var(--muted);
+  color: var(--foreground);
+}
+
+.icon-button.is-active {
+  color: var(--primary);
+}
+
+/* --- tooltip -------------------------------------------------------------
+ * Positioned by Floating UI, so `position: fixed` at the origin and moved by a
+ * transform. No entrance animation: a tooltip that fades in after its delay has
+ * already made the reader wait twice.
+ */
+.tooltip {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  /* Set from the resolved placement, so it grows out of the thing it
+     describes rather than out of its own centre. */
+  transform-origin: var(--tooltip-origin, center);
+  max-width: 260px;
+  padding: var(--space-1-5) var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--popover);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-popover);
+  color: var(--muted-foreground);
+  font-size: var(--text-2xs);
+  line-height: 1.4;
+  pointer-events: none;
+  width: max-content;
+}
+
+/*
+ * Only the first tooltip animates. Once someone is reading tooltips, making
+ * each one fade in again is making them wait twice - so a warm tooltip is
+ * simply there. Never scale from 0: nothing in the real world appears out of
+ * nothing.
+ */
+.tooltip[data-cold='true'] {
+  animation: tooltip-in var(--duration-tooltip) var(--ease-out);
+}
+
+@keyframes tooltip-in {
+  from {
+    opacity: 0;
+    scale: 0.94;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tooltip[data-cold='true'] {
+    animation: tooltip-fade var(--duration-tooltip) var(--ease-out);
+  }
+
+  @keyframes tooltip-fade {
+    from { opacity: 0; }
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Sidebar and sheet
+ * ------------------------------------------------------------------------- */
+
+.sidebar {
+  grid-area: sidebar;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--background);
+  border-left: 1px solid var(--border);
+}
+
+/* The panels' tabs as the admin panel draws a choice between a few: one
+   well, the chosen one raised in it. */
+.sidebar__tabs,
+.sheet__tabs {
+  display: flex;
+  gap: 2px;
+  margin: var(--space-3) var(--space-3) 0;
+  padding: 3px;
+  border-radius: calc(var(--radius) * 1.2);
+  background: var(--well);
+  flex-shrink: 0;
+}
+
+/* Equal columns, as the admin's segmented control has: five with the
+   operator's chat still fit the column at this size. */
+.sidebar__tab,
+.sheet__tab {
+  flex: 1 1 0;
+  min-width: 0;
+  padding: 0 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  height: 34px;
+  border-radius: calc(var(--radius) * 0.9);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  transition: color var(--duration-hover) linear, background var(--duration-hover) linear;
+}
+
+.sidebar__tab:hover,
+.sheet__tab:hover {
+  color: var(--foreground);
+}
+
+.sidebar__tab.is-active,
+.sheet__tab.is-active {
+  color: var(--foreground);
+  font-weight: 600;
+  background: var(--elevated);
+  box-shadow: var(--shadow-chip);
+}
+
+.sidebar__body,
+.sheet__body {
+  flex: 1;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  /* Extra room at the foot so the last control clears a home indicator instead
+     of sitting under it. */
+  padding: var(--space-3) var(--space-3) var(--space-5);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.sheet {
+  grid-area: sheet;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: var(--card);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-lg) var(--radius-lg) 0 0;
+  box-shadow: var(--shadow-sheet);
+  max-height: min(68dvh, calc(100dvh - 34dvh - 5rem - var(--banner-height, 0px)));
+  /* The grip and the tab row must always fit, however short the viewport, or a
+     phone in landscape clips the controls out of existence: grip, the tabs'
+     well and its margins. */
+  min-height: calc(var(--touch-target) * 2 + 20px);
+}
+
+/* Only when it is not being dragged: during a drag the sheet must track the
+   finger exactly, and a transition would make it lag behind. */
+.sheet[data-dragging='false'] {
+  /* The iOS drawer curve, which is what a sheet is expected to move on.
+     Height rather than transform is a compromise: the sheet genuinely resizes
+     its contents, and transform would scale them instead of reflowing. It is
+     the one place here that animates a layout property. */
+  transition: height var(--duration-drawer) var(--ease-drawer);
+}
+
+.sheet__grip {
+  display: grid;
+  place-items: center;
+  /* The drag handle is the one control on a phone that is used by feel rather
+     than by aim, and a 22px band is thinner than a thumb. A miss did not just
+     fail to drag: the gesture fell through to the browser, which read a
+     downward swipe as pull-to-refresh and reloaded the page mid-tune. The bar
+     stays 4px; only the target grows. */
+  min-height: var(--touch-target);
+  flex-shrink: 0;
+  cursor: grab;
+  /* Belt and braces with the inline touch-action: never let this gesture reach
+     the browser. */
+  touch-action: none;
+}
+
+.sheet__grip-bar {
+  width: 36px;
+  height: 4px;
+  border-radius: var(--radius-pill);
+  background: var(--border-strong);
+}
+
+/* Peeking still shows the tabs: controls a user cannot see are controls they
+   will not find. */
+.sheet[data-snap='peek'] .sheet__body {
+  display: none;
+}
+
+/* ---------------------------------------------------------------------------
+ * Panels and fields
+ * ------------------------------------------------------------------------- */
+
+.panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.panel__header {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  min-height: 0;
+  padding: 0 var(--space-3);
+}
+
+.panel__title {
+  /* The tab above already names the panel; a heading repeating it was pure
+     duplication. Kept in the accessibility tree, out of the picture. */
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  overflow: hidden;
+  clip-path: inset(50%);
+  white-space: nowrap;
+}
+
+.panel__meta {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.panel__body {
+  display: flex;
+  flex-direction: column;
+}
+
+.panel__body > * + * {
+  margin-top: var(--space-4);
+}
+
+/*
+ * A rack, not a settings form.
+ *
+ * The previous version stacked a label, a full-width control and - for two of
+ * them - a paragraph of explanation, six times down a column at identical
+ * weight. That is what a preferences dialog looks like. Every instrument this
+ * is meant to resemble, from a transceiver's front panel to an audio plugin,
+ * puts the label, the control and the value on ONE line and packs the rows
+ * tight, so the eye reads a bank of settings at a glance rather than scrolling
+ * a list of paragraphs.
+ */
+/* Drawn the way the admin panel draws a settings group: a quiet heading
+   above, and the rows on one filled surface. The rows stay packed as an
+   instrument's are. */
+.rack {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+.rack__head {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: 0 var(--space-3);
+}
+
+.rack__title {
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.rack__aside {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  text-align: right;
+}
+
+.rack__caption {
+  margin: 0;
+  padding: 0 var(--space-1);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  color: var(--muted-foreground);
+  /* Three lines: the longest description at the narrowest column. */
+  min-height: calc(1.45em * 3);
+}
+
+.rack__body {
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+}
+
+/* One row: label, control, value. Sentence case, not uppercase - a column of
+   uppercase micro-labels is the look of a template, and it is harder to read
+   at this size than the thing it is imitating. */
+.field {
+  display: grid;
+  grid-template-columns: 68px minmax(0, 1fr) auto;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 30px;
+}
+
+.field:not(:has(> .field__value)) {
+  grid-template-columns: 68px minmax(0, 1fr);
+}
+
+.field--stacked {
+  /* Label and value still share a line; only the control drops below. An
+     earlier version left the value orphaned under the control, which read as a
+     stray number nobody had placed. */
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas:
+    'label value'
+    'control control';
+  align-items: center;
+  gap: var(--space-1) var(--space-2);
+  padding-block: var(--space-1);
+}
+
+.field--stacked .field__label { grid-area: label; }
+.field--stacked .field__value { grid-area: value; }
+.field--stacked .field__control { grid-area: control; }
+
+.field__label {
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  white-space: nowrap;
+}
+
+.field__control {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+}
+
+.field__control--end {
+  justify-content: flex-end;
+}
+
+.field__value {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  text-align: right;
+  white-space: nowrap;
+  min-width: 46px;
+}
+
+/* --- toggle group (shadcn/ReUI anatomy: a well with a raised chip) -------- */
+
+.segmented {
+  position: relative;   /* the chip is placed against this box */
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  width: 100%;
+  border-radius: calc(var(--radius) * 1.2);
+  background: var(--well);
+}
+
+/* The selection indicator, as one element that moves between the options
+   rather than a background each option paints for itself. beUI's
+   shared-layout-bg does this with motion's shared layout and binds it to
+   hover; here it is bound to the selection, which is what the mode, filter
+   and AGC groups actually express - and hover cannot express anything on the
+   phone this receiver is mostly used from.
+
+   Two things follow from moving one element instead of swapping two. The eye
+   tracks where the selection went, so a mis-tap is visible as a movement
+   rather than inferred from a comparison. And the chip enters on its mark
+   with a blur, which reads as it arriving rather than the panel repainting. */
+.segmented__chip {
+  position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 0;
+  border-radius: calc(var(--radius) * 0.9);
+  background: var(--elevated);
+  box-shadow: var(--shadow-chip);
+  pointer-events: none;
+  animation: chip-arrive var(--duration-enter) var(--ease-out);
+  transition:
+    transform var(--duration-glide) var(--ease-spring-layout),
+    width var(--duration-glide) var(--ease-spring-layout),
+    height var(--duration-glide) var(--ease-spring-layout);
+}
+
+@keyframes chip-arrive {
+  from { opacity: 0; filter: blur(6px); }
+  to   { opacity: 1; filter: blur(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* Movement goes, the fade stays: the chip appears on the new option instead
+     of travelling to it, and still announces itself by arriving. */
+  .segmented__chip {
+    transition: none;
+    animation-name: chip-arrive-still;
+  }
+  @keyframes chip-arrive-still {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/* Eight modes in a flex row leave the last one alone on a second line with a
+   hole beside it. A grid fills both rows evenly. */
+.segmented--wrap {
+  display: grid;
+  grid-template-columns: repeat(var(--segmented-columns, 4), minmax(0, 1fr));
+}
+
+.segmented__item {
+  position: relative;   /* above the chip */
+  z-index: 1;
+  flex: 1 1 0;
+  min-width: 36px;
+  min-height: 30px;
+  padding: 0 var(--space-1-5);
+  border-radius: calc(var(--radius) * 0.9);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: color var(--duration-hover) linear, background var(--duration-hover) linear;
+}
+
+.segmented__item:hover {
+  color: var(--foreground);
+}
+
+.segmented--disabled {
+  opacity: 0.5;
+}
+
+.segmented--disabled .segmented__item {
+  cursor: not-allowed;
+}
+
+.segmented__item.is-active {
+  font-weight: 600;
+  /* The chip behind it draws the raised surface - deliberately not a block of
+     accent colour. Mode, filter and AGC are all "one of these is selected";
+     if each is a saturated fill, the panel has no focal point and the accent
+     stops meaning anything. */
+  color: var(--foreground);
+}
+
+/* --- slider -------------------------------------------------------------- */
+
+.slider {
+  --thumb-size: 18px;
+  width: 100%;
+  height: 26px;
+  appearance: none;
+  background: none;
+  cursor: pointer;
+}
+
+.slider--compact {
+  height: 24px;
+}
+
+/* The admin panel's slider: a thin track and a white knob with a shadow,
+   white in both themes as a physical knob would be. */
+.slider::-webkit-slider-runnable-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--track);
+}
+
+.slider::-moz-range-track {
+  height: 6px;
+  border-radius: var(--radius-pill);
+  background: var(--track);
+}
+
+.slider::-webkit-slider-thumb {
+  appearance: none;
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  margin-top: calc((6px - var(--thumb-size)) / 2);
+  border-radius: 50%;
+  background: var(--knob);
+  border: 0;
+  box-shadow: var(--shadow-knob);
+}
+
+.slider::-moz-range-thumb {
+  width: var(--thumb-size);
+  height: var(--thumb-size);
+  border-radius: 50%;
+  background: var(--knob);
+  border: 0;
+  box-shadow: var(--shadow-knob);
+}
+
+.slider:focus-visible::-webkit-slider-thumb {
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+.slider:focus-visible::-moz-range-thumb {
+  box-shadow: 0 0 0 4px var(--ring);
+}
+
+/* --- switch -------------------------------------------------------------- */
+
+/* As in the admin panel: green when on, a white thumb in both themes. */
+.switch {
+  position: relative;
+  flex-shrink: 0;
+  width: 40px;
+  height: 24px;
+  border-radius: var(--radius-pill);
+  background: var(--track);
+  transition: background var(--duration-hover) linear;
+}
+
+.switch.is-on {
+  background: var(--success);
+}
+
+.switch__thumb {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background: var(--knob);
+  box-shadow: var(--shadow-knob);
+  transition: transform var(--duration-glide) var(--ease-out);
+}
+
+.switch.is-on .switch__thumb {
+  transform: translateX(16px);
+}
+
+/* --- palette picker ------------------------------------------------------ */
+
+.palette-grid {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-1);
+  width: 100%;
+}
+
+.palette {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 2px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--muted);
+  transition: border-color var(--duration-hover) linear;
+}
+
+.palette:hover {
+  border-color: var(--border-strong);
+}
+
+.palette.is-active {
+  border-color: var(--primary);
+}
+
+.palette__swatch {
+  height: 14px;
+  border-radius: calc(var(--radius-sm) - 2px);
+}
+
+.palette__label {
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+}
+
+/* --- statistics list ----------------------------------------------------- */
+
+.stats {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.stats__row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-size: var(--text-xs);
+}
+
+.stats__row dt {
+  color: var(--subtle-foreground);
+}
+
+.stats__row dd {
+  margin: 0;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted-foreground);
+  text-align: right;
+}
+
+.stats__note {
+  color: var(--subtle-foreground);
+}
+
+.stats__caption {
+  margin: var(--space-2) 0 0;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.stats__note--warn {
+  color: var(--warning);
+}
+
+.source-offer {
+  padding: 0 var(--space-3);
+  margin: 0;
+  font-size: var(--text-2xs);
+  line-height: 1.5;
+  color: var(--subtle-foreground);
+}
+
+.source-offer a {
+  color: var(--muted-foreground);
+}
+
+.source-offer a:hover {
+  color: var(--primary);
+}
+
+/* ---------------------------------------------------------------------------
+ * Notices, banner, status
+ * ------------------------------------------------------------------------- */
+
+.notice {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  border-radius: var(--radius-lg);
+  background: var(--well);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+  line-height: 1.45;
+}
+
+.notice--info {
+  color: var(--foreground);
+}
+
+.banner {
+  grid-area: banner;
+  padding: var(--space-2) var(--space-3);
+  background: var(--muted);
+  border-bottom: 1px solid var(--border);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+}
+
+.banner--action {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-2) var(--space-3);
+  color: var(--foreground);
+}
+
+.banner--error {
+  background: color-mix(in srgb, var(--destructive) 14%, transparent);
+  border-color: color-mix(in srgb, var(--destructive) 40%, transparent);
+  color: var(--destructive);
+}
+
+.status {
+  grid-area: status;
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+  padding: var(--space-1) var(--space-3);
+  min-height: 30px;
+  background: var(--background);
+  border-top: 1px solid var(--border);
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+
+.status__state {
+  color: var(--muted-foreground);
+}
+
+.status__site,
+.status__antenna,
+.status__detail {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.status__spacer {
+  flex: 1;
+}
+
+.status__stat {
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* The credit and the way to the licence, source and data sources. */
+.status__about {
+  padding: 2px var(--space-1);
+  border-radius: var(--radius-sm);
+  color: var(--muted-foreground);
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.status__about:hover { color: var(--foreground); }
+
+.about {
+  width: min(480px, calc(100vw - 2 * var(--space-4)));
+  max-height: 80dvh;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: var(--popover);
+  color: var(--foreground);
+  box-shadow: var(--shadow-popover);
+  font-size: var(--text-sm);
+  line-height: 1.55;
+}
+
+.about::backdrop { background: var(--overlay); }
+
+.about a { color: var(--foreground); text-underline-offset: 2px; }
+
+.about__lead,
+.about__note {
+  margin: 0 0 var(--space-3);
+}
+
+.about__note { color: var(--muted-foreground); margin: var(--space-3) 0 0; }
+
+.about__links,
+.about__credits {
+  margin: 0;
+  padding-left: 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.about__credits { color: var(--muted-foreground); }
+
+.about__sources summary {
+  cursor: pointer;
+}
+
+.about__sources ul {
+  margin: var(--space-1) 0 0;
+  padding-left: 1.1em;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.about__heading {
+  margin: var(--space-4) 0 var(--space-1-5);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  color: var(--muted-foreground);
+}
+
+/* ---------------------------------------------------------------------------
+ * Audio gate
+ *
+ * Browsers will not start audio without a gesture, so this is the one thing
+ * standing between a visitor and the receiver working. It gets the only
+ * accent-filled button in the interface.
+ * ------------------------------------------------------------------------- */
+
+/* Floats over the waterfall just above the dial rather than taking a row:
+   when the first click takes it away the display keeps its size, where it
+   used to grow by the prompt's height and redraw. */
+.audio-gate {
+  position: absolute;
+  bottom: calc(100% + var(--space-2));
+  left: 50%;
+  transform: translateX(-50%);
+  width: min(560px, calc(100% - 24px));
+  pointer-events: auto;
+}
+
+.audio-gate__card {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  text-align: left;
+  gap: var(--space-4);
+  padding: var(--space-3) var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-popover);
+}
+
+.audio-gate__icon {
+  display: grid;
+  place-items: center;
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--primary-muted);
+  color: var(--primary);
+  flex-shrink: 0;
+}
+
+.audio-gate__body {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+
+.audio-gate__action {
+  flex: none;
+  white-space: nowrap;
+}
+
+.audio-gate__title {
+  margin: 0;
+  font-size: var(--text-base);
+  font-weight: 600;
+}
+
+.audio-gate__text {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+@media (max-width: 480px) {
+  .audio-gate__icon {
+    display: none;
+  }
+  .audio-gate__card {
+    gap: var(--space-2);
+    padding: var(--space-3);
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Buttons and dialog
+ * ------------------------------------------------------------------------- */
+
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  min-height: 38px;
+  padding: 0 var(--space-4);
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  color: var(--foreground);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: background var(--duration-hover) linear;
+}
+
+.button:hover {
+  background: var(--track);
+}
+
+/* The small pill, wherever a secondary action sits in a row. */
+.button--small {
+  min-height: 32px;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+}
+
+.button--primary {
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.button--primary:hover {
+  background: color-mix(in srgb, var(--primary) 88%, white);
+}
+
+/* The arrow slides out on hover: the one motion flourish, on the one control
+   whose whole job is to be pressed. Borrowed in spirit from beUI's expanding
+   arrow button, implemented in six lines of CSS rather than by installing
+   React and a motion library. */
+.button__arrow {
+  display: inline-flex;
+  transition: transform var(--duration-hover) var(--ease-out);
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .button:hover .button__arrow {
+    transform: translateX(3px);
+  }
+}
+
+.button--large {
+  min-height: 46px;
+  padding: 0 var(--space-5);
+}
+
+.button--danger {
+  border-color: color-mix(in srgb, var(--destructive) 50%, transparent);
+  color: var(--destructive);
+  background: transparent;
+}
+
+.button--danger:hover {
+  background: color-mix(in srgb, var(--destructive) 14%, transparent);
+}
+
+.modal {
+  position: fixed;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  padding: var(--space-4);
+  background: var(--overlay);
+  z-index: 20;
+  animation: fernsdr-fade var(--duration-enter) var(--ease-out);
+}
+
+.modal__card {
+  width: min(460px, 100%);
+  max-height: 80dvh;
+  overflow-y: auto;
+  padding: var(--space-4);
+  border-radius: var(--radius-lg);
+  background: var(--popover);
+  border: 1px solid var(--border-strong);
+  box-shadow: var(--shadow-popover);
+  animation: fernsdr-rise var(--duration-enter) var(--ease-out);
+}
+
+/* Entrances only. A dialog that appears instantly is genuinely disorienting -
+   the eye has no idea where it came from - which is the stated purpose these
+   two have, and the reason nothing else here animates. */
+@keyframes fernsdr-fade {
+  from { opacity: 0; }
+}
+
+@keyframes fernsdr-rise {
+  from { opacity: 0; transform: translateY(6px) scale(0.98); }
+}
+
+/* Gentler, not gone: the fade explains where the dialog came from, the rise
+   and the scale are movement and go. */
+@media (prefers-reduced-motion: reduce) {
+  .modal__card {
+    animation-name: fernsdr-fade;
+  }
+}
+
+.modal__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: var(--space-3);
+}
+
+.modal__title {
+  margin: 0;
+  font-size: var(--text-lg);
+  font-weight: 600;
+}
+
+.shortcuts {
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+}
+
+.shortcuts__row {
+  display: grid;
+  grid-template-columns: 96px 1fr;
+  gap: var(--space-3);
+  align-items: baseline;
+  font-size: var(--text-sm);
+}
+
+.shortcuts__row dd {
+  margin: 0;
+  color: var(--muted-foreground);
+}
+
+/* Browsers set these in their monospace face; this page has one face. */
+code,
+pre,
+samp {
+  font-family: inherit;
+}
+
+kbd {
+  display: inline-block;
+  padding: 2px var(--space-2);
+  border-radius: var(--radius-sm);
+  background: var(--muted);
+  border: 1px solid var(--border-strong);
+  border-bottom-width: 2px;
+  font-family: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+}
+
+/* ---------------------------------------------------------------------------
+ * Narrow screens
+ * ------------------------------------------------------------------------- */
+
+@media (max-width: 1023px) {
+  .tuner {
+    flex-wrap: wrap;
+    gap: var(--space-2);
+    padding: var(--space-3) var(--space-3) var(--space-2);
+  }
+
+  .tuner__side {
+    flex: 1 1 100%;
+    justify-content: space-between;
+  }
+
+  .frequency__digits {
+    font-size: clamp(1.6rem, 9vw, 2.25rem);
+  }
+
+  /* The band strip is what people use; the site name is also in the status
+     bar, so it yields the space. */
+  .topbar__name {
+    max-width: 30vw;
+  }
+
+  .topbar__operator {
+    display: none;
+  }
+}
+
+/* Landscape on a phone. Vertical space is the scarce resource, so the chrome
+   collapses to a single row and the display keeps everything else. */
+@media (max-height: 560px) and (orientation: landscape) {
+  .app--narrow {
+    --stage-min: 34dvh;
+  }
+  .topbar {
+    min-height: 38px;
+    padding-block: var(--space-1);
+  }
+
+  .frequency__digits {
+    font-size: 1.375rem;
+  }
+
+  .frequency__meta,
+  .frequency__radiotext,
+  .status__site,
+  .status__antenna {
+    display: none;
+  }
+
+  /* Do not wrap the meter onto its own row: that row costs more height than
+     everything in it is worth here. */
+  .tuner {
+    flex-wrap: nowrap;
+    padding: var(--space-4) var(--space-3) var(--space-1);
+  }
+
+  .tuner__side {
+    flex: 0 1 auto;
+  }
+
+  .smeter {
+    min-width: 100px;
+  }
+
+  .sheet {
+    max-height: 50dvh;
+  }
+}
+
+/* ---------------------------------------------------------------------------
+ * Operator widgets
+ *
+ * Everything here renders operator-supplied text as text. The one component
+ * that renders an operator-supplied document is the embed, and it is
+ * sandboxed; see components/Widgets.tsx.
+ * ------------------------------------------------------------------------- */
+
+.widgets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.widget {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1-5);
+}
+
+.widget__head {
+  margin: 0;
+  padding: 0 var(--space-3);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  color: var(--muted-foreground);
+}
+
+.widget__body {
+  border-radius: var(--radius-xl);
+  background: var(--card);
+  overflow: hidden;
+}
+
+.widget__text {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--muted-foreground);
+  white-space: pre-wrap;
+}
+
+.widget__links {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+  font-size: var(--text-xs);
+}
+
+.widget__links a { color: var(--muted-foreground); }
+.widget__links a:hover { color: var(--primary); }
+
+.widget__image {
+  display: block;
+  width: 100%;
+  height: auto;
+}
+
+.widget__frame {
+  display: block;
+  width: 100%;
+  border: none;
+  background: var(--muted);
+}
+
+.widget__reveal {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  width: 100%;
+  border-radius: var(--radius-lg);
+  background: var(--well);
+  color: var(--foreground);
+  transition: background var(--duration-hover) linear;
+}
+
+.widget__reveal:hover {
+  background: var(--track);
+}
+
+.widget__reveal-title {
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.widget__reveal-host {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+/* The station card: the region around the receiver, then its details. */
+.station-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5, 0.625rem);
+  padding: var(--space-3);
+}
+
+.station-card__map {
+  display: block;
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  border-radius: var(--radius-lg);
+}
+
+.station-card__facts {
+  display: grid;
+  gap: var(--space-1);
+  margin: 0;
+}
+
+.station-card__facts > div {
+  display: grid;
+  grid-template-columns: 5.5rem minmax(0, 1fr);
+  gap: var(--space-2);
+  font-size: var(--text-sm);
+}
+
+.station-card__facts dt {
+  color: var(--muted-foreground);
+}
+
+.station-card__facts dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.station-card__coords {
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+/* The clock: UTC large, the listener's own time beside it. */
+.clock {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--space-3);
+  padding: var(--space-3);
+}
+
+.clock__main,
+.clock__local {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.clock__local {
+  align-items: flex-end;
+  text-align: right;
+}
+
+.clock__time {
+  font-size: 1.75rem;
+  font-weight: 600;
+  letter-spacing: -0.02em;
+  line-height: 1.1;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock__seconds {
+  color: var(--muted-foreground);
+  font-weight: 500;
+}
+
+.clock__local-time {
+  font-size: var(--text-lg);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.clock__zone {
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+}
+
+/* The day and night map, and a line under it. */
+.greyline {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.greyline__map {
+  width: 100%;
+  aspect-ratio: 2 / 1;
+  border-radius: var(--radius-lg);
+  background: var(--well);
+}
+
+.greyline__caption {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 2px var(--space-2);
+  margin: 0;
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.greyline__key {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+}
+
+.greyline__dot {
+  display: inline-block;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+}
+
+.greyline__dot.is-sun { background: var(--warning); }
+.greyline__dot.is-station { background: var(--signal); margin-left: var(--space-1); }
+
+/* --- decodes ------------------------------------------------------------
+ *
+ * A dense table, like the log it is: fixed-width time, numbers right-aligned
+ * so a column of SNRs can be read down, and the message as the one thing to
+ * click, which tunes to it.
+ */
+
+.decodes__filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--space-1-5);
+}
+
+.decodes__filters .tool__input { flex: 1 1 8rem; }
+.decodes__channel { flex: 1 1 10rem; }
+
+.history__action.is-pressed {
+  background: var(--primary);
+  color: var(--background);
+}
+
+.decodes__body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  min-height: 0;
+}
+
+.history--expanded .decodes__body {
+  flex: 1 1 auto;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+@media (min-width: 1100px) {
+  .history--expanded .decodes__body {
+    grid-template-columns: minmax(0, 5fr) minmax(0, 6fr);
+    grid-template-rows: minmax(0, 1fr);
+    align-items: start;
+  }
+}
+
+.decodes__map { padding: 0; }
+
+.decodes__dot { background: var(--muted-foreground); }
+.decodes__dot.is-cq { background: var(--primary); }
+
+.decodes__scroll {
+  max-height: min(50dvh, 420px);
+  overflow: auto;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+
+.history--expanded .decodes__scroll {
+  max-height: none;
+  height: 100%;
+}
+
+.decodes__table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: var(--text-xs);
+  font-variant-numeric: tabular-nums;
+}
+
+.decodes__table th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  padding: var(--space-1) var(--space-2);
+  background: var(--card);
+  color: var(--muted-foreground);
+  font-weight: 500;
+  text-align: left;
+  white-space: nowrap;
+}
+
+.decodes__table td {
+  padding: 1px var(--space-2);
+  border-top: 1px solid var(--border);
+  white-space: nowrap;
+  color: var(--muted-foreground);
+}
+
+.decodes__table .is-number { text-align: right; }
+
+.decodes__message {
+  width: 100%;
+  padding: 3px 0;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-xs);
+  color: var(--foreground);
+  text-align: left;
+}
+
+.decodes__message:hover { text-decoration: underline; }
+
+.decodes__table tr.is-cq .decodes__message { font-weight: 600; }
+
+.widget__bars {
+  margin: 0;
+  padding: var(--space-2) var(--space-3);
+  list-style: none;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.widget__bar {
+  display: grid;
+  grid-template-columns: 64px minmax(0, 1fr) 28px;
+  align-items: center;
+  gap: var(--space-2);
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+}
+
+.widget__bar-track {
+  height: 5px;
+  border-radius: var(--radius-pill);
+  background: var(--muted);
+  overflow: hidden;
+}
+
+.widget__bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--primary);
+}
+
+.widget__bar-value {
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+  color: var(--subtle-foreground);
+}
+
+/* --- chat ---------------------------------------------------------------- */
+
+.chat {
+  display: flex;
+  flex-direction: column;
+}
+
+.chat__log {
+  height: var(--chat-height, 260px);
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  padding: var(--space-2) var(--space-3);
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-1);
+}
+
+.chat__line {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.45;
+  /* Long callsign-free ramblings and pasted URLs both have to wrap rather than
+     widen the panel. */
+  overflow-wrap: anywhere;
+}
+
+.chat__name {
+  color: var(--primary);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+  margin-right: var(--space-2);
+}
+
+.chat__text { color: var(--muted-foreground); }
+
+/*
+ * A frequency somebody mentioned, as somewhere to go.
+ *
+ * Underlined rather than coloured like a link: the chat is already full of
+ * coloured callsigns, and a second colour there would read as decoration. The
+ * mono figures are the tell that this is a frequency, and the underline is the
+ * tell that it does something.
+ */
+.chat__spot {
+  padding: 0;
+  border: 0;
+  background: none;
+  font: inherit;
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+  color: var(--foreground);
+  text-decoration: underline;
+  text-decoration-color: var(--border-strong, var(--border));
+  text-underline-offset: 2px;
+  cursor: pointer;
+}
+
+.chat__spot:hover,
+.chat__spot:focus-visible {
+  color: var(--primary);
+  text-decoration-color: currentColor;
+}
+
+/* On a thumb an underlined run of text is a sixteen pixel target inside a
+   sentence. With a coarse pointer it becomes a chip instead: bigger to hit,
+   and obviously a control rather than emphasis. */
+@media (pointer: coarse) {
+  .chat__spot {
+    padding: 3px 6px;
+    margin: 0 1px;
+    border-radius: var(--radius-sm);
+    background: var(--muted);
+    text-decoration: none;
+  }
+}
+
+/* Alongside the message box, so sharing where you are listening is one tap
+   rather than a dozen. */
+.chat__share {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-lg);
+  background: var(--well);
+  color: var(--muted-foreground);
+}
+
+.chat__share:hover,
+.chat__share:focus-visible {
+  color: var(--foreground);
+}
+
+.chat__refusal {
+  margin: 0;
+  padding: 0 var(--space-3) var(--space-1);
+  font-size: var(--text-2xs);
+  color: var(--warning);
+}
+
+.chat__identify,
+.chat__compose {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  padding: var(--space-2);
+  border-top: 1px solid var(--border);
+  /* Pinned to the bottom of whatever is scrolling, so the box you type in is
+     never the thing that scrolled out of view. */
+  position: sticky;
+  bottom: 0;
+  background: var(--card);
+  z-index: 1;
+}
+
+.chat__empty {
+  margin: 0;
+  font-size: var(--text-sm);
+  color: var(--muted-foreground);
+}
+
+.chat__name-input::placeholder,
+.chat__input::placeholder {
+  text-transform: none;
+  color: var(--subtle-foreground);
+}
+
+.chat__identify {
+  border-bottom: none;
+}
+
+.chat__name-input,
+.chat__input {
+  flex: 1;
+  min-width: 0;
+  height: 38px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  /* 16px exactly. Below that, iOS Safari zooms the page when the field takes
+     focus, and the listener is left panned into a corner of their own
+     receiver with no obvious way back. */
+  font-size: 16px;
+}
+
+.chat__name-input {
+  font-variant-numeric: tabular-nums;
+  text-transform: uppercase;
+}
+
+/* Who you are, once you have said: a chip rather than a field, because a
+   permanent name box costs a third of the width on a phone. */
+.chat__as {
+  flex-shrink: 0;
+  max-width: 84px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  height: 38px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+}
+
+.chat__as:hover { color: var(--foreground); }
+
+.chat__send {
+  flex-shrink: 0;
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 38px;
+  border-radius: var(--radius-pill);
+  background: var(--primary);
+  color: var(--primary-foreground);
+}
+
+.chat__send:disabled {
+  background: var(--muted);
+  color: var(--subtle-foreground);
+  cursor: default;
+}
+
+/*
+ * Widgets in the sheet.
+ *
+ * On a phone the sheet is the whole control surface and a widget has to live
+ * inside it, not set its own height and hope. The chat is the one that matters:
+ * with the operator's 260px log and a compose row underneath, the box you type
+ * in ended up below the fold of a half-open sheet - which is a chat you can
+ * read and cannot use.
+ */
+@media (max-width: 1023px) {
+  .sheet__body .widgets,
+  .sheet__body .widget,
+  .sheet__body .chat {
+    display: flex;
+    flex-direction: column;
+    flex: 1 1 auto;
+    min-height: 0;
+  }
+
+  .sheet__body .chat__log {
+    flex: 1 1 auto;
+    height: auto;
+    min-height: 72px;
+  }
+
+  /* One widget fills the sheet; several go back to their own heights and
+     scroll, because sharing the space equally between a chat and a clock helps
+     nobody. */
+  .sheet__body .widgets:has(.widget:nth-child(2)) .chat__log {
+    height: var(--chat-height, 260px);
+    flex: 0 0 auto;
+  }
+}
+
+/* The gate's last resort: when a press does not take, say what the browser
+   actually did. "Nothing happens" is not a report anyone can act on. */
+.audio-gate__diagnostics {
+  margin: var(--space-1) 0 0;
+  font-size: var(--text-2xs);
+  color: var(--subtle-foreground);
+  word-break: break-word;
+}
+
+/* --- morphing panel swap (Rare UI family-drawer anatomy) ----------------- */
+
+/*
+ * The container carries an explicit pixel height set by MorphPanel, so it can
+ * travel between two view heights rather than snapping. `--morph-duration` is
+ * written per swap from how far it has to go.
+ */
+.morph {
+  position: relative;
+  overflow: hidden;
+  /* The sheet body is a flex column, so without this the container is shrunk
+     to whatever room is left and `overflow: hidden` quietly eats the bottom of
+     the panel - with nothing to scroll, because the box reports itself as
+     full. It has to keep the height it was measured for and let the sheet
+     scroll around it. */
+  flex: 0 0 auto;
+  transition: height var(--morph-duration, 200ms) cubic-bezier(0.26, 0.08, 0.25, 1);
+}
+
+/*
+ * The incoming view fades up from slightly small. The scale is what makes it
+ * read as one view replacing another instead of the text simply changing:
+ * 0.96 is enough to see and too little to look like a zoom.
+ */
+.morph__view.is-entering {
+  animation: morph-in var(--morph-duration, 200ms) cubic-bezier(0.26, 0.08, 0.25, 1);
+}
+
+@keyframes morph-in {
+  from { opacity: 0; transform: scale(0.96); }
+  to   { opacity: 1; transform: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  /* The fade explains the swap and stays; the height travel and the scale are
+     movement, so they go. */
+  .morph {
+    transition: none;
+  }
+  .morph__view.is-entering {
+    animation-name: morph-in-still;
+  }
+  @keyframes morph-in-still {
+    from { opacity: 0; }
+    to   { opacity: 1; }
+  }
+}
+
+/* --- waterfall archive ---------------------------------------------------
+ *
+ * Drawn exactly like the live waterfall above it, because it is the same
+ * picture of the same band at a different time and nothing should have to be
+ * learned twice.
+ */
+
+.history {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border-radius: var(--radius-xl);
+  background: var(--card);
+}
+
+.history__controls {
+  display: flex;
+  gap: 2px;
+  padding: 3px;
+  border-radius: calc(var(--radius) * 1.2);
+  background: var(--well);
+}
+
+.history__span {
+  flex: 1 1 0;
+  min-height: 30px;
+  border-radius: calc(var(--radius) * 0.9);
+  color: var(--muted-foreground);
+  font-size: var(--text-sm);
+  font-weight: 500;
+  transition: color var(--duration-hover) linear, background var(--duration-hover) linear;
+}
+
+.history__span:hover { color: var(--foreground); }
+
+.history__span.is-active {
+  background: var(--elevated);
+  color: var(--foreground);
+  font-weight: 600;
+  box-shadow: var(--shadow-chip);
+}
+
+.history__navigation {
+  display: flex;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.history__navigation > span { flex: 1; }
+
+/* The admin panel's secondary button: a filled pill, no outline. */
+.history__action {
+  min-height: 32px;
+  padding: 4px 12px;
+  font-size: var(--text-sm);
+  font-weight: 500;
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  color: var(--foreground);
+  transition: background var(--duration-hover) linear;
+}
+
+.history__action:hover:not(:disabled) { background: var(--track); }
+
+.history__action:disabled { color: var(--muted-foreground); }
+
+.history__plot {
+  display: grid;
+  grid-template-columns: 3.25rem minmax(0, 1fr);
+  grid-template-rows: auto minmax(120px, min(30dvh, 260px));
+  gap: var(--space-1);
+}
+
+.history__canvas {
+  grid-column: 2;
+  width: 100%;
+  height: 100%;
+  min-height: 0;
+  object-fit: fill;
+  image-rendering: pixelated;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--waterfall-empty);
+}
+
+.history__frequency,
+.history__times {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-2);
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+  color: var(--subtle-foreground);
+}
+
+.history__frequency { grid-column: 2; }
+/* Marks at their own times, not spread evenly: each label sits on the row it
+   names, with a short line pointing at the picture. */
+.history__times {
+  grid-column: 1;
+  grid-row: 2;
+  position: relative;
+  display: block;
+}
+
+.history__tick {
+  position: absolute;
+  right: 6px;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+.history__tick::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -6px;
+  width: 4px;
+  border-top: 1px solid var(--border-strong);
+}
+
+.history__tick.is-day {
+  color: var(--foreground);
+  font-weight: 600;
+}
+
+/* The full day's pieces, one under the other, each as tall as its hours. */
+.history__tiles {
+  grid-column: 2;
+  display: flex;
+  flex-direction: column;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border);
+  background: var(--waterfall-empty);
+  overflow: hidden;
+}
+
+.history__tile {
+  display: block;
+  width: 100%;
+  image-rendering: pixelated;
+}
+
+.history__tile.is-failed {
+  opacity: 0.3;
+}
+
+/* The full day: as tall as the hours need, scrolled, the frequencies kept in
+   view at the top. */
+.history__plot--tall {
+  overflow-y: auto;
+  grid-template-rows: auto var(--plot-height) !important;
+}
+
+.history__plot--tall .history__frequency {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  background: var(--background);
+}
+
+/* Full size, in a dialog over the page: the plot takes what the controls
+   leave. */
+.history-dialog {
+  width: 100vw;
+  max-width: none;
+  height: 100dvh;
+  max-height: none;
+  margin: 0;
+  padding: max(var(--space-4), env(safe-area-inset-top, 0px)) var(--space-4) var(--space-4);
+  border: 0;
+  background: var(--background);
+  color: var(--foreground);
+}
+
+.history-dialog::backdrop {
+  background: var(--background);
+}
+
+.history--expanded {
+  height: 100%;
+  padding: 0;
+  background: none;
+}
+
+.history--expanded .history__plot {
+  flex: 1 1 auto;
+  min-height: 0;
+  grid-template-rows: auto minmax(0, 1fr);
+}
+
+.history__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  line-height: 1.5;
+  color: var(--subtle-foreground);
+}
+
+/* --- signal meter faces --------------------------------------------------
+ *
+ * Four ways to show one number, chosen by the operator in the theme. The bar
+ * is the default and unchanged; the rest read the same calibrated value.
+ */
+
+/* An analogue movement. Only the needle moves, and it settles rather than
+   snapping, because a real one has mass. This is not the tuning path: the
+   level behind it is already smoothed over tens of milliseconds, so easing it
+   costs nothing anyone can feel. */
+.smeter__dial {
+  width: 100%;
+  max-width: 210px;
+  height: auto;
+  display: block;
+}
+
+.smeter__arc {
+  stroke: var(--border-strong, var(--border));
+  stroke-width: 1;
+}
+
+.smeter__mark {
+  stroke: var(--muted-foreground);
+  stroke-width: 1.2;
+}
+
+/* Above S9 the scale is the one place colour means something on this meter,
+   as it does on the bar. */
+.smeter__mark--over {
+  stroke: var(--warning);
+  stroke-width: 1.6;
+}
+
+.smeter__needle {
+  stroke: var(--foreground);
+  stroke-width: 1.6;
+  stroke-linecap: round;
+}
+
+/* Turned about the pivot at (50, 46) in the dial's own units. Each reading
+   starts a fresh ease towards it, so at ten readings a second the needle
+   glides; the peak pointer falls more slowly, as a held one does. */
+.smeter__turn {
+  transform-box: view-box;
+  transform-origin: 50px 46px;
+  transition: transform 0.4s ease-out;
+}
+
+.smeter__turn--needle {
+  transition: transform 0.18s cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+.smeter__mark--minor {
+  stroke-width: 0.8;
+}
+
+.smeter__pivot {
+  fill: var(--foreground);
+}
+
+/* A plain reading, for a receiver used as an instrument rather than watched. */
+.smeter--numeric .smeter__readout {
+  gap: var(--space-3);
+}
+
+.smeter--numeric .smeter__units {
+  font-size: var(--text-lg);
+}
+
+/* A bare strip: the level, no scale. For a small screen, where the ticks
+   crowd the bar into illegibility. */
+.smeter--strip .smeter__bar {
+  height: 4px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smeter__turn { transition: none; }
+}
+
+/* The scrub: how far back the window ends. Right is now, left is as far as
+   the archive reaches, and it cannot be dragged past that. */
+.history__scrub {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) 5.5rem;
+  align-items: center;
+  gap: var(--space-2);
+}
+
+.history__scrub .slider {
+  width: 100%;
+}
+
+.history__when {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+  color: var(--subtle-foreground);
+  text-align: right;
+}
+
+/* Where the signal reached recently, falling back at 20 dB a second: slow
+   enough to read a passing burst, fast enough not to be stale. */
+.smeter__peak {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 2px;
+  border-radius: 1px;
+  background: var(--foreground);
+  opacity: 0.55;
+  pointer-events: none;
+  transition: left var(--duration-hover) linear;
+}
+
+/* The trailing pointer on the analogue face. Lighter than the needle it
+   follows, and it moves with the same settle, because it is the same
+   measurement one step behind. */
+.smeter__peak-needle {
+  stroke: var(--foreground);
+  stroke-width: 1.4;
+  stroke-linecap: round;
+  opacity: 0.45;
+  transition: all var(--duration-enter) var(--ease-spring-layout);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .smeter__peak-needle { transition: none; }
+}
+
+/* The printed scale. A dial without numerals is a shape, not an instrument:
+   the ticks say where, and only the numbers say what. */
+.smeter__numeral {
+  fill: var(--muted-foreground);
+  font-size: 5.5px;
+  font-variant-numeric: tabular-nums;
+}
+
+.smeter__numeral--over { fill: var(--warning); }
+
+/* Above S9 the arc itself carries the distinction, as it is printed on a real
+   dial, rather than leaving it to the tick colour alone. */
+.smeter__arc--over {
+  stroke: var(--warning);
+  stroke-width: 1.6;
+  opacity: 0.7;
+}
+
+/* --- the trace ------------------------------------------------------------
+ *
+ * A meter answers "how strong now". On HF that is rarely the question: a
+ * signal at S9 and sinking is a different thing from one at S9 and rising,
+ * and neither a bar nor a needle can tell them apart.
+ */
+
+/*
+ * The same ground the bar stands on. `--input` is a page surface and the
+ * meter is inside the HUD, which keeps a fixed light-on-dark palette because
+ * the waterfall behind it is dark in either theme: taking a page token here
+ * put a white box over the waterfall and hid the trace in it.
+ */
+.smeter__trace {
+  width: 100%;
+  height: 34px;
+  display: block;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hud-border);
+  background: var(--hud-well);
+}
+
+.smeter__trace--waiting {
+  height: 34px;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--hud-border);
+  background: var(--hud-well);
+}
+
+.smeter__trace-line {
+  stroke: var(--hud-foreground);
+  stroke-width: 1.2;
+  vector-effect: non-scaling-stroke;
+  stroke-linejoin: round;
+}
+
+/* S9, which is the line a report is judged against. */
+.smeter__trace-rule {
+  stroke: var(--warning);
+  stroke-width: 1;
+  vector-effect: non-scaling-stroke;
+  opacity: 0.45;
+  stroke-dasharray: 3 3;
+}
+
+/* On the numeric face the peak is a figure, not a marker: a face that exists
+   to be read exactly should not make you estimate the value you write down. */
+.smeter__peak-value {
+  font-variant-numeric: tabular-nums;
+  font-size: var(--text-2xs);
+  color: var(--subtle-foreground);
+}
+
+
+/* A fingertip needs 44px; a mouse does not, and the side column stays
+   dense there. */
+@media (pointer: coarse) {
+  .sidebar__tab,
+  .sheet__tab,
+  .segmented__item,
+  .history__span,
+  .history__action,
+  .bands__item,
+  .band-list__item,
+  .button,
+  .frequency__edit {
+    min-height: var(--touch-target);
+  }
+
+  .field,
+  .slider,
+  .frequency__digit {
+    min-height: var(--touch-target);
+  }
+}
+
+
+/* --- space weather widget -----------------------------------------------
+ *
+ * Dense, as an instrument's status panel is: the NOAA scales and the time in
+ * one line, eight figures in two rows, the bands as a strip of cells whose
+ * colour is the answer, and the sources in one line under it.
+ */
+.space {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2-5, 0.625rem);
+  padding: var(--space-3);
+}
+
+.space__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-2);
+}
+
+.space__scales {
+  display: flex;
+  gap: var(--space-1);
+}
+
+.space__scale {
+  display: inline-flex;
+  align-items: center;
+  height: 20px;
+  padding: 0 var(--space-1-5);
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  color: var(--muted-foreground);
+  font-size: var(--text-2xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.space__scale.is-raised {
+  color: var(--warning);
+  background: color-mix(in srgb, var(--warning) 16%, transparent);
+}
+
+.space__scale.is-severe {
+  color: var(--destructive);
+  background: color-mix(in srgb, var(--destructive) 16%, transparent);
+}
+
+.space__when {
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.space__stats {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: var(--space-2) var(--space-2);
+  margin: 0;
+}
+
+.space__stats > div {
+  min-width: 0;
+}
+
+.space__stats dt {
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+}
+
+.space__stats dd {
+  display: flex;
+  align-items: center;
+  gap: var(--space-1);
+  margin: 0;
+  font-size: var(--text-sm);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.space__stats dd.is-raised {
+  color: var(--warning);
+}
+
+.space__spark {
+  width: 40px;
+  height: 16px;
+  vertical-align: -2px;
+  fill: var(--track);
+}
+
+.space__spark .is-storm {
+  fill: var(--warning);
+}
+
+.space__bands {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 3px;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.space__band {
+  position: relative;
+  display: grid;
+  place-items: center;
+  height: 26px;
+  border-radius: calc(var(--radius) * 0.7);
+  background: var(--well);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+.space__band.is-open {
+  background: color-mix(in srgb, var(--success) 22%, transparent);
+  color: var(--foreground);
+}
+
+.space__band.is-marginal {
+  background: color-mix(in srgb, var(--warning) 22%, transparent);
+  color: var(--foreground);
+}
+
+/* Open nearby (NVIS): a small mark in the corner, so the cell's colour stays
+   the answer for distance. */
+.space__nearby {
+  position: absolute;
+  top: 3px;
+  right: 3px;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
+  background: var(--foreground);
+  opacity: 0.7;
+}
+
+.space__legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 2px var(--space-2);
+  margin: 0;
+  font-size: var(--text-2xs);
+  color: var(--muted-foreground);
+}
+
+.space__key {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  margin-right: 3px;
+  border-radius: 2px;
+  background: var(--well);
+}
+
+.space__key.is-open { background: color-mix(in srgb, var(--success) 60%, transparent); }
+.space__key.is-marginal { background: color-mix(in srgb, var(--warning) 60%, transparent); }
+
+.space__nearby.is-key {
+  position: static;
+  display: inline-block;
+  margin-right: 3px;
+}
+
+.space__source {
+  margin: 0;
+  font-size: var(--text-2xs);
+  line-height: 1.45;
+  color: var(--muted-foreground);
+}
+
+/* --- tools under the dial -------------------------------------------------
+ *
+ * Round buttons the size of the chips beside them, in the HUD's well; each
+ * opens a popover or, for recording, shows its running time in place.
+ */
+/* A choice from a long list inside a field row, like the tone squelch's. */
+.field__select {
+  height: 28px;
+  width: 100%;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+}
+
+.layout__reset {
+  align-self: flex-start;
+  margin-top: var(--space-1);
+}
+
+/* The filter's edges as numbers, in the Receive panel's full controls. */
+.edges {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1-5);
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.edges__input {
+  width: 5.5em;
+  height: 28px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--text-sm);
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.tools {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  pointer-events: auto;
+}
+
+.tools__button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-1);
+  min-width: 32px;
+  height: 32px;
+  padding: 0 var(--space-2);
+  border-radius: var(--radius-pill);
+  background: var(--well);
+  color: var(--hud-muted);
+  font-size: var(--text-xs);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--duration-hover) linear, color var(--duration-hover) linear;
+}
+
+.tools__button:hover,
+.tools__button.is-open {
+  background: var(--track);
+  color: var(--hud-foreground);
+}
+
+.tools__button svg {
+  width: 15px;
+  height: 15px;
+  fill: currentColor;
+}
+
+.tools__dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--destructive);
+  opacity: 0.85;
+}
+
+.tools__button.is-linked {
+  color: var(--hud-foreground);
+  box-shadow: inset 0 0 0 1.5px var(--success, currentColor);
+}
+
+.tools__button.is-recording {
+  color: var(--hud-foreground);
+  background: color-mix(in srgb, var(--destructive) 28%, transparent);
+}
+
+.tools__button.is-recording .tools__dot {
+  animation: tools-pulse 1.6s ease-in-out infinite;
+}
+
+@keyframes tools-pulse {
+  50% { opacity: 0.35; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tools__button.is-recording .tools__dot { animation: none; }
+}
+
+.tools__problem {
+  font-size: var(--text-2xs);
+  color: var(--warning);
+}
+
+@media (pointer: coarse) {
+  .tools__button {
+    min-width: var(--touch-target);
+    height: var(--touch-target);
+  }
+}
+
+/* A panel anchored to a tool's button, in the page's colours. */
+.popover {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 30;
+  width: min(340px, calc(100vw - 16px));
+  max-height: min(70dvh, 520px);
+  overflow: auto;
+  border-radius: var(--radius-xl);
+  background: var(--popover);
+  color: var(--foreground);
+  box-shadow: var(--shadow-popover);
+  border: 1px solid var(--border);
+  animation: popover-in var(--duration-enter) var(--ease-out);
+}
+
+@keyframes popover-in {
+  from { opacity: 0; transform: translateY(4px); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .popover { animation: none; }
+}
+
+.tool {
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-2);
+  padding: var(--space-3);
+}
+
+.tool__row {
+  display: flex;
+  gap: var(--space-1-5);
+  align-items: center;
+}
+
+.tool__input {
+  flex: 1;
+  min-width: 0;
+  height: 32px;
+  padding: 0 var(--space-3);
+  border-radius: var(--radius-lg);
+  border: 1px solid var(--border-strong);
+  background: transparent;
+  color: var(--foreground);
+  font: inherit;
+  font-size: var(--text-sm);
+}
+
+/* Station and report, then note and the button: a callsign and Enter logs. */
+.tool__form {
+  display: grid;
+  grid-template-columns: 1fr 6rem;
+  gap: var(--space-1-5);
+}
+
+/* A labelled control in a tool's panel: the label above, small. */
+.tool__field {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+  flex: 1;
+}
+
+.tool__field--narrow {
+  flex: 0 0 3.5rem;
+}
+
+.tool__label {
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.tool__pair {
+  display: flex;
+  gap: var(--space-1-5);
+}
+
+/* In a column, flex: 1 would size the height and not the width. */
+.tool__field .tool__input {
+  flex: none;
+}
+
+select.tool__input {
+  padding-right: var(--space-2);
+}
+
+.tool__input:disabled {
+  opacity: 0.6;
+}
+
+.tool__note--problem {
+  color: var(--warning);
+}
+
+.tool__list {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  margin: 0;
+  padding: 3px;
+  list-style: none;
+  border-radius: var(--radius-lg);
+  background: var(--card);
+}
+
+.tool__item {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+}
+
+.tool__go {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: var(--space-2);
+  padding: var(--space-1-5) var(--space-2);
+  border-radius: var(--radius);
+  text-align: left;
+}
+
+.tool__go:hover {
+  background: var(--well);
+}
+
+/* A log entry: read, not clicked, and two lines since the detail is long. */
+.tool__go--static {
+  flex-direction: column;
+  align-items: stretch;
+  gap: 1px;
+}
+
+.tool__go--static:hover {
+  background: none;
+}
+
+.tool__go--static .tool__detail {
+  flex-shrink: 1;
+  overflow-wrap: anywhere;
+}
+
+.tool__name {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: var(--text-sm);
+  font-weight: 500;
+}
+
+.tool__detail {
+  flex-shrink: 0;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+  font-variant-numeric: tabular-nums;
+}
+
+.tool__icon {
+  width: 28px;
+  height: 28px;
+  border-radius: var(--radius);
+  color: var(--muted-foreground);
+  font-size: var(--text-xs);
+}
+
+.tool__icon:hover {
+  background: var(--well);
+  color: var(--foreground);
+}
+
+.tool__footer {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--space-1-5);
+}
+
+.tool__loading {
+  margin: 0;
+  padding: var(--space-3);
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.tool__note {
+  margin: 0;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}

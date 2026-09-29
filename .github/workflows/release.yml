@@ -1,0 +1,115 @@
+# Builds a release: the program for x86_64, aarch64 and armhf with the tests
+# run on each (ARM under qemu-user), the archives with the pages, their
+# signed manifest and install.sh. Only ever started by hand. See
+# docs/RELEASING.md.
+#
+# The pages are built with npm in a job of their own and handed on as files.
+# The program, which every receiver's updater later runs as root, is built
+# in the job that signs, where nothing runs but this repository's code and
+# the system's compilers; the key is given to the signing step alone.
+#
+# Without `publish` it is a rehearsal: tools/build-release.sh makes a key for
+# the run and builds everything to trust it, so the rehearsal's files, kept
+# as the run's artifact for a week, install and update like a release while
+# no receiver anywhere trusts them. With `publish`, the release job runs in
+# the `release` environment, whose secret FERNSDR_RELEASE_KEY is the signing
+# key; `sign` refuses a key whose public half src/update/release_keys.h does
+# not carry. The release is published as the version the source says, tagged
+# at the commit it was built from.
+#
+# Actions are pinned to the commit of the release named beside them.
+name: Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      publish:
+        description: Publish the release (without it, a rehearsal with a key made for the run)
+        type: boolean
+        default: false
+
+permissions:
+  contents: read
+
+jobs:
+  pages:
+    runs-on: ubuntu-24.04
+    defaults:
+      run:
+        working-directory: web
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+        with:
+          node-version: 22
+      - name: Build the pages
+        run: npm ci --ignore-scripts --no-audit --no-fund && npm run build
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: pages
+          path: web/dist
+          retention-days: 1
+
+  rehearsal:
+    if: ${{ !inputs.publish }}
+    needs: pages
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pages
+          path: ${{ runner.temp }}/pages
+      - name: Cross compilers and qemu-user
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu g++-arm-linux-gnueabihf qemu-user
+      - name: Build, test and sign with a key made for the run
+        env:
+          FERNSDR_WEB_DIST: ${{ runner.temp }}/pages
+        run: tools/build-release.sh rehearsal "$RUNNER_TEMP/release"
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: rehearsal-${{ github.run_number }}
+          path: ${{ runner.temp }}/release
+          retention-days: 7
+
+  release:
+    if: ${{ inputs.publish }}
+    needs: pages
+    runs-on: ubuntu-24.04
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: pages
+          path: ${{ runner.temp }}/pages
+      - name: Cross compilers and qemu-user
+        run: sudo apt-get update && sudo apt-get install -y --no-install-recommends g++-aarch64-linux-gnu g++-arm-linux-gnueabihf qemu-user
+      - name: Build and test
+        env:
+          FERNSDR_WEB_DIST: ${{ runner.temp }}/pages
+        run: tools/build-release.sh build "$RUNNER_TEMP/release"
+      - name: Sign
+        env:
+          FERNSDR_RELEASE_KEY: ${{ secrets.FERNSDR_RELEASE_KEY }}
+        run: tools/build-release.sh sign "$RUNNER_TEMP/release" env:FERNSDR_RELEASE_KEY
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/.*kVersion = "\(.*\)";/\1/p' server/src/version.h)
+          out=$RUNNER_TEMP/release
+          sed -n 's/^note$//p; s/^note //p' "$out/fernsdr-release-v1.txt" > "$RUNNER_TEMP/notes.md"
+          gh release create "v$version" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+            --title "FernSDR $version" --notes-file "$RUNNER_TEMP/notes.md" \
+            "$out/fernsdr-$version-linux-x86_64.tar" "$out/fernsdr-$version-linux-aarch64.tar" \
+            "$out/fernsdr-$version-linux-armhf.tar" "$out/fernsdr-release-v1.txt" \
+            "$out/fernsdr-release-v1.txt.sig" "$out/install.sh"

@@ -1,0 +1,12 @@
+FernSDR is free software under the GNU Affero General Public License,
+version 3, in LICENSE.
+
+The fernsdr program in this archive is linked statically with the GNU C
+Library (LGPL-2.1-or-later, https://www.gnu.org/software/libc/) and with the
+GCC runtime libraries libstdc++ and libgcc (GPL-3.0-or-later with the GCC
+Runtime Library Exception 3.1, https://gcc.gnu.org/). FernSDR's source, from
+which the program can be built again and linked with another C library, is
+at https://github.com/Steven9101/FernSDR.
+
+The pages in web/ include libraries and fonts whose licences are in
+web/licenses.txt and web/admin-licenses.txt.

@@ -1,0 +1,8 @@
+fernsdr-release 1
+version 0.1.1
+date 2026-10-01
+channel stable
+asset linux-aarch64 fernsdr-0.1.1-linux-aarch64.tar 10240 462ff240b21474e10b031f871eb7f3ce8c7fb6c8b66adb4cca67f6f69749423c
+asset linux-armhf fernsdr-0.1.1-linux-armhf.tar 10240 462ff240b21474e10b031f871eb7f3ce8c7fb6c8b66adb4cca67f6f69749423c
+asset linux-x86_64 fernsdr-0.1.1-linux-x86_64.tar 10240 462ff240b21474e10b031f871eb7f3ce8c7fb6c8b66adb4cca67f6f69749423c
+note Notes
