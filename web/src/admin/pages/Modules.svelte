@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { copyText } from '../../util/clipboard';
 	import { fly } from '../lib/motion';
 	import Check from '@lucide/svelte/icons/check';
 	import Copy from '@lucide/svelte/icons/copy';
@@ -138,13 +139,8 @@
 	}
 
 	async function copy(text: string) {
-		try {
-			await navigator.clipboard.writeText(text);
-			toast.success(`Copied ${text}`);
-		} catch {
-			// Clipboard access needs a secure page and permission; say what to copy instead.
-			toast.message(`Copy this into the band: ${text}`);
-		}
+		if (await copyText(text)) toast.success(`Copied ${text}`);
+		else toast.message(`Copy this into the band: ${text}`);
 	}
 </script>
 

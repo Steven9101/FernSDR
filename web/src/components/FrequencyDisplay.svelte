@@ -11,7 +11,7 @@
    * Typing works too: click the readout, type a frequency in almost any form
    * (14074, 14.074, 7.1M, 3690 kHz) and press Enter.
    */
-  import { controller, currentBand, rds, signalFreq, site, tuning } from '../state/store';
+  import { controller, currentBand, frequencyEntry, rds, signalFreq, site, tuning } from '../state/store';
   import { describeFrequency, planFor } from '../state/bandplan';
   import { programmeType, stationName } from '../util/rds';
   import { layout } from '../state/layout';
@@ -32,6 +32,20 @@
       input.focus();
       input.select();
     }
+  });
+
+  function startEditing() {
+    draft = (frequency / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
+    editing = true;
+  }
+
+  // The F key asks for the field from anywhere on the page.
+  let entryRequests = frequencyEntry.value;
+  $effect(() => {
+    const requested = frequencyEntry.value;
+    if (requested === entryRequests) return;
+    entryRequests = requested;
+    startEditing();
   });
 
   // The signal, not the carrier: in CW the two differ by the pitch, and the
@@ -86,7 +100,11 @@
     }
   }
 
+  // Enter commits, and so does leaving the field; Escape closes it first, so
+  // the blur that follows as the field is removed finds nothing to commit.
+  // Without that, Escape tuned to whatever had been typed.
   function commit() {
+    if (!editing) return;
     const parsed = parseFrequency(draft);
     editing = false;
     if (parsed !== null) controller.tune(Math.round(parsed));
@@ -148,10 +166,7 @@
       <button
         type="button"
         class="frequency__edit"
-        onclick={() => {
-          draft = (frequency / 1e6).toFixed(6).replace(/0+$/, '').replace(/\.$/, '');
-          editing = true;
-        }}
+        onclick={startEditing}
       >
         Type a frequency
       </button>

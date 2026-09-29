@@ -38,8 +38,9 @@
   import AudioGate from './components/AudioGate.svelte';
   import Banner from './components/Banner.svelte';
   import StatusBar from './components/StatusBar.svelte';
-  import { audioState, bands, controller, currentBand, decoders, dsp, muted, operatorTheme, site, tuning, viewport, volume } from './state/store';
+  import { audioState, bands, controller, currentBand, decoders, dsp, frequencyEntry, muted, operatorTheme, showNote, site, tuning, viewport, volume } from './state/store';
   import { applySharedTuning, loadPreferences, readUrlTuning, shareUrl, startPersistence } from './state/persist';
+  import { copyText } from './util/clipboard';
   import { watchSystemTheme } from './state/store';
   import { loadTone, tone, toneGroup } from './state/tone';
   import { loadBandPlan } from './state/bandplan';
@@ -173,6 +174,13 @@
         case 'N':
           controller.setDsp({ nr: dsp.value.nr > 0 ? 0 : 0.6 });
           return;
+        case 'f':
+        case 'F':
+          // Not Ctrl+F or Cmd+F, which are the browser's find.
+          if (event.ctrlKey || event.metaKey || event.altKey) return;
+          event.preventDefault();
+          frequencyEntry.value += 1;
+          return;
         case '?':
           showHelp = !showHelp;
           return;
@@ -239,16 +247,22 @@
 
   async function share() {
     const url = shareUrl();
-    try {
-      if (navigator.share) {
+    // A phone's share sheet is how a link is passed on there. On a desktop
+    // the button copies, as it says: Chrome on Windows has a share sheet too,
+    // and opened it instead.
+    if (navigator.share && window.matchMedia('(pointer: coarse)').matches) {
+      try {
         await navigator.share({ title: information?.name ?? 'FernSDR', url });
         return;
+      } catch (problem) {
+        if ((problem as DOMException).name === 'AbortError') return;
       }
-      await navigator.clipboard.writeText(url);
+    }
+    if (await copyText(url)) {
       copied = true;
       window.setTimeout(() => (copied = false), 1800);
-    } catch {
-      // The user dismissed the share sheet, or the clipboard is unavailable.
+    } else {
+      showNote('This browser does not let the page copy. The address bar holds the same link.');
     }
   }
 
@@ -310,7 +324,7 @@
             type="button"
             class="icon-button"
             onclick={share}
-            aria-label="Copy a link to this frequency"
+            aria-label={copied ? 'Link copied' : 'Copy a link to this frequency'}
           >
             {#if copied}<Check size={18} />{:else}<Link2 size={18} />{/if}
           </button>

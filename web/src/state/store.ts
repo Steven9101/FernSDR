@@ -296,6 +296,8 @@ export function watchSystemTheme(): () => void {
 }
 
 export const volume = box(0.8);
+/** Counts requests to open the typed-frequency field, from the F key. */
+export const frequencyEntry = box(0);
 export const filterLimit = box(6000);
 export const muted = box(false);
 export const audioState = box<'idle' | 'starting' | 'running' | 'suspended' | 'failed'>('idle');
@@ -358,6 +360,13 @@ export class RadioController {
    * on a filter width that matches none of the presets.
    */
   private hasServerState = false;
+  /**
+   * A passband chosen before the server said anything: a shared link's
+   * filter, or one set by hand. It is the listener's own, and the replay
+   * after the welcome sends it; without this a shared link opened in a
+   * fresh browser lost its filter width to the mode's default.
+   */
+  private passbandChosen = false;
   /** Waiting for the receiver to list its bands; see whenBandsListed(). */
   private bandsListed: (() => void) | null = null;
 
@@ -451,6 +460,7 @@ export class RadioController {
       merged.low = options.low ?? defaults.low;
       merged.high = options.high ?? defaults.high;
     }
+    if (options.low !== undefined || options.high !== undefined) this.passbandChosen = true;
     const carrier = Math.round(carrierForSignal(freq, merged.mode, merged.cwPitch));
     const next = { ...merged, freq: carrier };
     tuning.value = next;
@@ -485,6 +495,7 @@ export class RadioController {
     const maximum = Math.min(filterLimit.value, width, (band?.sample_high ?? band?.high ?? Infinity) - current.freq);
     const passband = constrainPassband(low, high, minimum, maximum, width, edge);
     if (!passband) return;
+    this.passbandChosen = true;
     const next = { ...current, ...passband };
     tuning.value = next;
     this.queueTune({
@@ -755,7 +766,7 @@ export class RadioController {
         mode: t.mode,
         cw_pitch: t.cwPitch,
         // Only restore a passband the user actually has.
-        ...(this.hasServerState ? { low: t.low, high: t.high } : {}),
+        ...(this.hasServerState || this.passbandChosen ? { low: t.low, high: t.high } : {}),
       });
     }
     const d = dsp.value;
@@ -935,12 +946,7 @@ export class RadioController {
         fps: message.viewport.fps,
       };
     }
-    if (message.note) {
-      notice.value = message.note;
-      window.setTimeout(() => {
-        if (notice.value === message.note) notice.value = site.value?.notice ?? '';
-      }, 5000);
-    }
+    if (message.note) showNote(message.note);
   }
 
   private handleBinary(packet: ServerBinary): void {
@@ -952,6 +958,14 @@ export class RadioController {
       this.waterfallSink?.(packet);
     }
   }
+}
+
+/** A passing note in the banner, for five seconds, then the site's own notice again. */
+export function showNote(text: string): void {
+  notice.value = text;
+  window.setTimeout(() => {
+    if (notice.value === text) notice.value = site.value?.notice ?? '';
+  }, 5000);
 }
 
 export const controller = new RadioController();

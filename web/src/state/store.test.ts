@@ -110,6 +110,18 @@ describe('live controls', () => {
     mock.handlers!.onMessage({ type: 'welcome', capabilities: [], site: {}, bands: listed } as unknown as ServerMessage);
     expect(tuning.value.band).toBe('30m');
   });
+  it('keeps a shared link\'s filter width through the replay after the welcome', () => {
+    const radio = new RadioController();
+    bands.value = [];
+    const band = { id: '20m', name: '20 m', center: 14.1e6, low: 14e6, high: 14.2e6, sample_rate: 192000,
+      max_bandwidth: 12000, listeners: 0, running: true };
+    // As applySharedTuning does in a fresh browser: wait for the bands, then tune.
+    radio.whenBandsListed(() => radio.tune(14_070_000, { mode: 'usb', low: 200, high: 1800 }));
+    mock.handlers!.onMessage({ type: 'welcome', capabilities: [], site: {}, bands: [band] } as unknown as ServerMessage);
+    vi.advanceTimersByTime(32);
+    const tunes = mock.send.mock.calls.map(([message]) => message).filter((message) => message.type === 'tune');
+    expect(tunes.at(-1)).toMatchObject({ band: '20m', freq: 14_070_000, low: 200, high: 1800 });
+  });
   it('keeps the site listener total separate from per-band counts', () => {
     new RadioController();
     mock.handlers!.onMessage({ type: 'band-status', bands: [

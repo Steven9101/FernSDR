@@ -1,4 +1,5 @@
 <script lang="ts">
+	import { copyText } from '../../util/clipboard';
 	import Copy from '@lucide/svelte/icons/copy';
 	import ScrollText from '@lucide/svelte/icons/scroll-text';
 	import Search from '@lucide/svelte/icons/search';
@@ -70,12 +71,8 @@
 	async function copy() {
 		// Every matching line, oldest first, the way the file has them: what a bug report wants.
 		const copied = parsed.filter(wanted).map((entry) => entry.raw);
-		try {
-			await navigator.clipboard.writeText(copied.join('\n'));
-			toast.success(`Copied ${copied.length} line${copied.length === 1 ? '' : 's'}`);
-		} catch {
-			toast.error('The browser did not allow copying. Select the lines and copy them instead.');
-		}
+		if (await copyText(copied.join('\n'))) toast.success(`Copied ${copied.length} line${copied.length === 1 ? '' : 's'}`);
+		else toast.error('The browser did not allow copying. Select the lines and copy them instead.');
 	}
 
 	const levelTone: Record<LogEntry['level'], string> = {

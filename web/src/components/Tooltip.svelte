@@ -116,7 +116,10 @@
         hide();
       },
       focus: () => {
-        open = true;
+        // Keyboard focus only: a tap focuses the button too, and a tooltip
+        // opened by that covered what had just been tapped. The browser's
+        // :focus-visible is exactly keyboard focus on a button.
+        if (element.matches(':focus-visible')) open = true;
       },
       blur: hide,
     };
