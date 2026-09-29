@@ -50,7 +50,7 @@ WORK=""
 PLATFORM=""
 VERSION="" DATE="" ARCHIVE="" SIZE="" SHA256="" SIGNATURE=""
 INSTALLED=""
-WHERE="" DOMAIN="" PLAIN_ADMIN="" HTTPS=""
+WHERE="" DOMAIN="" PLAIN_ADMIN="" HTTPS="" IN_DOCKER=""
 PASSWORD="" HASH=""
 CONFIG_WRITTEN="" MIGRATING="" MIGRATION_OPEN="" OLD_RUNNING=""
 UNITS_CHANGED="" SIGNED=""
@@ -284,7 +284,18 @@ ask_where() {
         [ -n "$answer" ] && parse_where "$answer" && break
         printf 'Answer 1, 2 with the domain (2 radio.example.org), or 3.\n' > /dev/tty
     done
-    if [ "$WHERE" = http ] && [ -z "$PLAIN_ADMIN" ]; then
+    if [ "$WHERE" = http ] && [ -z "$PLAIN_ADMIN" ] && [ -n "$IN_DOCKER" ]; then
+        {
+            printf '\nWithout a domain there is no HTTPS, and in a container an SSH tunnel does not\n'
+            printf 'reach the admin panel: Docker hands the tunnel over from its own address, which\n'
+            printf 'the receiver cannot tell from a stranger'"'"'s. The admin panel can answer plain\n'
+            printf 'HTTP from anywhere, at your own risk: anyone between you and the server, a\n'
+            printf 'public Wi-Fi or a provider, can then read it and change it to catch the password.\n\n'
+        } > /dev/tty
+        printf 'The admin panel over plain HTTP from anywhere? [y/N] ' > /dev/tty
+        IFS= read -r answer < /dev/tty || answer=""
+        case "$answer" in y | Y | yes | Yes) PLAIN_ADMIN=1 ;; esac
+    elif [ "$WHERE" = http ] && [ -z "$PLAIN_ADMIN" ]; then
         {
             printf '\nWithout a domain there is no HTTPS, so the admin panel is reached through\n'
             printf 'an SSH tunnel: ssh -L 8073:localhost:8073 you@this-server, then\n'
@@ -1318,7 +1329,13 @@ docker_wait() {
 }
 
 docker_first() {
+    IN_DOCKER=1
     ask_where
+    # Nothing is installed yet: better to stop here than to leave a receiver
+    # nobody can administer.
+    if [ "$WHERE" = http ] && [ -z "$PLAIN_ADMIN" ]; then
+        die "In a container, a server without a domain has no way to the admin panel but plain HTTP. Run this again and answer 2 with a domain, or let the admin panel answer plain HTTP (FERNSDR_SETUP=\"http admin\"), or answer 1 to the Docker question to install FernSDR as a service."
+    fi
     ensure_user
     install_usb_rules
     say "Fetching $IMAGE"

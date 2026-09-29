@@ -52,9 +52,22 @@ if [ ! -f "$CONFIG" ]; then
     password=$(head -c 32 /dev/urandom | base64 | tr -dc 'A-Za-z0-9' | head -c 20)
     hash=$(printf '%s\n' "$password" | "$PROGRAM" --hash-password 2> /dev/null | sed -n 's/^password_hash = //p')
     [ -n "$hash" ] || { echo "fernsdr: could not make the admin password" >&2; exit 1; }
+    # Behind a web server on the host, which reaches the container through
+    # a port published on the host's 127.0.0.1 only: Docker hands those
+    # connections over from the bridge's gateway, not from loopback, so the
+    # gateway is the proxy to believe. Nothing else arrives from it there.
+    proxies=loopback
+    if [ "${FERNSDR_SETUP:-home}" = internet ]; then
+        gateway=$(ip route 2> /dev/null | awk '/^default/ { print $3; exit }')
+        case "$gateway" in
+            *[!0-9.]* | '') ;;
+            *) proxies="loopback, $gateway" ;;
+        esac
+    fi
     {
-        awk '
+        awk -v proxies="$proxies" '
             /^[ \t]*\[/ { section = $0; gsub(/[][ \t]/, "", section) }
+            section == "server" && /^[ \t]*trusted_proxies[ \t]*=/ { print "trusted_proxies = " proxies; next }
             section == "server" && /^[ \t]*bind[ \t]*=/ { print "bind = 0.0.0.0"; next }
             section == "server" && /^[ \t]*root[ \t]*=/ { print "root = /opt/fernsdr/web"; next }
             { print }' /opt/fernsdr/fernsdr.example.conf
