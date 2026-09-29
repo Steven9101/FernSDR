@@ -325,20 +325,14 @@ void Session::handle_viewport(const Json& message) {
 void Session::handle_chat(const Json& message) {
     // "history" is a client asking for the backlog it missed, which happens
     // when the operator turns the chat widget on while people are listening.
+    // At most once in five seconds for a connection: a page asks when its
+    // chat appears, and the backlog is up to 80 lines of 400 bytes, which a
+    // script asking without pause would send at the uplink's full rate.
     if (message["history"].boolean(false)) {
-        Json out = Json::make_object();
-        out.set("type", "chat-history");
-        Json list = Json::make_array();
-        for (const ChatMessage& entry : radio_.chat().history()) {
-            Json item = Json::make_object();
-            item.set("id", static_cast<double>(entry.id));
-            item.set("name", entry.name);
-            item.set("text", entry.text);
-            item.set("at", static_cast<double>(entry.at_ms));
-            list.push_back(item);
-        }
-        out.set("messages", list);
-        queue_text(out.serialize());
+        const int64_t now = steady_ms();
+        if (now - last_history_ms_ < 5000) return;
+        last_history_ms_ = now;
+        queue_text(radio_.chat().history_message());
         return;
     }
 

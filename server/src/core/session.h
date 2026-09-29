@@ -163,6 +163,7 @@ private:
     uint64_t rds_sent_sequence_ = 0;
     uint64_t rds_sent_station_ = 0;
     int64_t last_rds_ms_ = -1000000;
+    int64_t last_history_ms_ = -1000000;
     void send_rds(const RdsState& rds);
     size_t transport_backlog_ = 0;
     uint8_t last_audio_generation_ = 0xFF;

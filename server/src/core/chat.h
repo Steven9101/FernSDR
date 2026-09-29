@@ -75,6 +75,12 @@ public:
     void load_mutes(const Json& list);
 
     std::vector<ChatMessage> history() const;
+    /**
+     * The `chat-history` message, made once per change: a page asks for it
+     * whenever its chat appears, and building it anew for each would let a
+     * script that keeps asking cost the receiver its uplink.
+     */
+    std::string history_message() const;
 
     /**
      * Turns the chat on or off. Off, every post is refused with a reason and
@@ -93,6 +99,7 @@ private:
     mutable std::mutex mutex_;
     bool enabled_ = true;
     std::deque<ChatMessage> messages_;
+    mutable std::string history_message_;  // empty until made, and again after a change
     // By network_key() of the address rather than by session: a session ends
     // with every reload, and sixteen of them from one address each had a rate
     // of their own.

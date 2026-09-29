@@ -188,6 +188,8 @@ struct ServerConfig {
     int request_timeout_ms = 120000;
     // Beyond this much unsent data the client is not keeping up at all.
     size_t max_output_bytes = 2 * 1024 * 1024;
+    // All HTTP answers queued and not yet read, together.
+    size_t http_backlog_bytes = 64 * 1024 * 1024;
     // WebSocket endpoint path.
     std::string websocket_path = "/ws";
     // CIDRs whose X-Forwarded-For / X-Real-IP headers are believed.  Anyone
@@ -269,6 +271,7 @@ private:
     void queue(Connection& connection, const uint8_t* data, size_t size);
     void update_interest(Connection& connection);
     size_t output_limit(const Connection& connection) const;
+    size_t http_backlog() const;
     void drop(Connection& connection, const char* reason);
     void reap_idle();
 

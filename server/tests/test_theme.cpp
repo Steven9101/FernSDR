@@ -786,3 +786,35 @@ TEST_CASE(a_history_shape_saved_from_the_panel_keeps_its_record_across_a_restart
     ::unlink(config_path.c_str());
     ::rmdir(directory);
 }
+
+// Invisible characters that turn a line around or make one name look like
+// another are dropped; the text around them, other scripts included, stays.
+TEST_CASE(chat_text_loses_invisible_direction_and_zero_width_characters) {
+    CHECK_EQ_STR(fernsdr::clean_chat_text("Ann\xE2\x80\xAE" "evil", 24), "Annevil");        // U+202E
+    CHECK_EQ_STR(fernsdr::clean_chat_text("A\xE2\x80\x8B" "B\xEF\xBB\xBF" "C", 24), "ABC");  // U+200B, U+FEFF
+    CHECK_EQ_STR(fernsdr::clean_chat_text("x\xE2\x81\xA6" "y\xE2\x80\xA8" "z\xC2\x85", 24), "xyz");  // U+2066, U+2028, U+0085
+    CHECK_EQ_STR(fernsdr::clean_chat_text("Grüße, Привет, 你好", 400), "Grüße, Привет, 你好");
+}
+
+// Moving from /64 to /64 inside one /48, as anyone with a tunnel broker's
+// /48 can, gets four times one address's rate and no more; and the whole
+// chat has a ceiling however many addresses post.
+TEST_CASE(chat_rate_holds_across_a_48_and_across_everyone) {
+    fernsdr::ChatRoom room;
+    fernsdr::ChatMessage out;
+    std::string error;
+    int taken = 0;
+    for (int i = 0; i < 100; i++) {
+        const std::string address = "2001:db8:1:" + std::to_string(i) + "::1";
+        taken += room.post(1, address, "x", "hello", 1000, out, error);
+    }
+    CHECK_EQ(taken, 24);
+    taken = 0;
+    for (int i = 0; i < 200; i++) {
+        const std::string address = "198.51." + std::to_string(i / 250) + "." + std::to_string(i % 250 + 1);
+        taken += room.post(1, address, "x", "hello", 1000, out, error);
+    }
+    CHECK_EQ(taken, 60 - 24);
+    // The next window starts afresh.
+    CHECK(room.post(1, "203.0.113.5", "x", "hello", 12000, out, error));
+}

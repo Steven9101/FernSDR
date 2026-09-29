@@ -1285,6 +1285,117 @@ TEST_CASE(server_sends_an_allowed_large_response_to_a_slow_reader) {
     thread.join();
 }
 
+// A client that asked to close after the answer, does not read it, and sends
+// one byte more: the server has stopped reading, and epoll, which reports
+// level, must not be asked about those unread bytes, or it answers at once,
+// forever, and the network thread every listener's audio goes through spins.
+TEST_CASE(server_does_not_spin_on_a_closing_client_that_does_not_read) {
+    struct Handler : fernsdr::ServerHandler {
+        bool on_connect(fernsdr::Connection&) override { return true; }
+        void on_text(fernsdr::Connection&, const std::string&) override {}
+        void on_disconnect(fernsdr::Connection&) override {}
+        void on_flush() override {}
+        void on_tick() override {}
+        // Larger than the kernel's buffers take, so that some of it waits in
+        // the server's own queue, as the admin page's bundle does behind a
+        // slow link.
+        bool on_http(fernsdr::Connection& connection, const fernsdr::HttpRequest&, std::string& response) override {
+            response = fernsdr::build_http_response(200, "text/plain", std::string(8 * 1024 * 1024, 'b'), {}, false);
+            connection.allow_output(response.size());
+            return true;
+        }
+    } handler;
+    fernsdr::ServerConfig config;
+    config.bind_address = "127.0.0.1";
+    config.port = 0;
+    fernsdr::Server server(config, handler);
+    std::string error;
+    CHECK(server.start(error));
+    if (!error.empty()) return;
+    std::thread thread([&] { server.run(); });
+    const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+    const int small = 4096;
+    ::setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &small, sizeof(small));
+    sockaddr_in address{};
+    address.sin_family = AF_INET;
+    address.sin_port = htons(static_cast<uint16_t>(server.bound_port()));
+    address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+    CHECK(::connect(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0);
+    const std::string request = "GET /big HTTP/1.0\r\nHost: localhost\r\n\r\n";
+    CHECK(::send(fd, request.data(), request.size(), MSG_NOSIGNAL) == static_cast<ssize_t>(request.size()));
+    wait_ms(200);
+    // Once the server has stopped reading.
+    CHECK(::send(fd, "X", 1, MSG_NOSIGNAL) == 1);
+    wait_ms(100);
+    const auto cpu = [] {
+        timespec now{};
+        ::clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &now);
+        return now.tv_sec + now.tv_nsec / 1e9;
+    };
+    const double before = cpu();
+    wait_ms(1000);
+    const double spent = cpu() - before;
+    CHECK(spent < 0.3);
+    ::close(fd);
+    server.stop();
+    thread.join();
+}
+
+// Clients that ask for large answers and read none of them hold what they
+// asked for, up to a limit each; together they hold no more than the backlog,
+// and a large answer beyond it is refused until there is room.
+TEST_CASE(server_holds_all_unread_http_answers_to_one_backlog) {
+    struct Handler : fernsdr::ServerHandler {
+        bool on_connect(fernsdr::Connection&) override { return true; }
+        void on_text(fernsdr::Connection&, const std::string&) override {}
+        void on_disconnect(fernsdr::Connection&) override {}
+        void on_flush() override {}
+        void on_tick() override {}
+        bool on_http(fernsdr::Connection&, const fernsdr::HttpRequest&, std::string& response) override {
+            response = fernsdr::build_http_response(200, "text/plain", std::string(6 * 1024 * 1024, 'b'), {}, true);
+            return true;
+        }
+    } handler;
+    fernsdr::ServerConfig config;
+    config.bind_address = "127.0.0.1";
+    config.port = 0;
+    config.max_connections_per_address = 0;
+    // Answers larger than the kernel's socket buffers (4 MB here), so that
+    // some of each waits in the server, as behind a slow link.
+    config.max_output_bytes = 16 * 1024 * 1024;
+    config.http_backlog_bytes = 8 * 1024 * 1024;
+    fernsdr::Server server(config, handler);
+    std::string error;
+    CHECK(server.start(error));
+    if (!error.empty()) return;
+    std::thread thread([&] { server.run(); });
+    std::vector<int> sockets;
+    int refused = 0;
+    for (int i = 0; i < 12; i++) {
+        const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+        const int small = 4096;
+        ::setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &small, sizeof(small));
+        sockaddr_in address{};
+        address.sin_family = AF_INET;
+        address.sin_port = htons(static_cast<uint16_t>(server.bound_port()));
+        address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        CHECK(::connect(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0);
+        const std::string request = "GET /big HTTP/1.1\r\nHost: localhost\r\n\r\n";
+        CHECK(::send(fd, request.data(), request.size(), MSG_NOSIGNAL) == static_cast<ssize_t>(request.size()));
+        wait_ms(50);
+        char head[64] = {0};
+        const ssize_t got = ::recv(fd, head, sizeof(head) - 1, MSG_DONTWAIT);
+        if (got > 0 && std::string(head).find(" 503 ") != std::string::npos) refused++;
+        sockets.push_back(fd);
+    }
+    // The first few are answered; the rest wait.
+    CHECK(refused > 0);
+    CHECK(refused < 12);
+    for (int fd : sockets) ::close(fd);
+    server.stop();
+    thread.join();
+}
+
 TEST_CASE(server_completes_the_handshake_and_sends_a_welcome) {
     Harness harness;
     CHECK(harness.ok);
@@ -2191,6 +2302,53 @@ TEST_CASE(session_warns_a_minute_before_the_listener_timeout_and_expires_once) {
     // Past the limit: expired, and reported once.
     CHECK(session.check_inactivity(limit, answered + limit + 1) == fernsdr::Session::Inactivity::Expired);
     CHECK(session.check_inactivity(limit, answered + limit + 5000) == fernsdr::Session::Inactivity::None);
+}
+
+// The chat's backlog is up to 80 lines of 400 bytes, and asking for it is
+// 36: answered once in five seconds per connection, a script that keeps
+// asking cannot turn the receiver's uplink into its own.
+// Up to a megabyte of history for a request of a hundred bytes, read from
+// disk: an address may read 16 MB at once and a megabyte a second after
+// that, and is told to wait beyond it.
+TEST_CASE(server_holds_one_address_to_a_budget_for_the_waterfall_archive) {
+    char directory[] = "/tmp/fernsdr-history-budget-XXXXXX";
+    CHECK(::mkdtemp(directory) != nullptr);
+    {
+        Harness harness(15000, 120000,
+                        "history = public\nhistory_path = " + std::string(directory) +
+                            "/h.wfa\nhistory_bins = 4096\nhistory_interval = 0.1\n");
+        CHECK(harness.ok);
+        if (!harness.ok) return;
+        wait_ms(3500);
+        int answered = 0;
+        bool refused = false;
+        for (int i = 0; i < 600 && !refused; i++) {
+            const std::string reply = TestClient(harness.port()).http_get("/api/history?band=demo&from=0");
+            if (reply.find("200 OK") != std::string::npos) answered++;
+            refused = reply.find("429") != std::string::npos && reply.find("Retry-After: 5") != std::string::npos;
+        }
+        CHECK(answered > 3);
+        CHECK(refused);
+    }
+    ::unlink((std::string(directory) + "/h.wfa").c_str());
+    ::unlink((std::string(directory) + "/h.wfa.span").c_str());
+    ::rmdir(directory);
+}
+
+TEST_CASE(session_answers_a_chat_backlog_request_once_in_a_while) {
+    fernsdr::Radio radio;
+    fernsdr::Session session(1, radio);
+    const auto backlogs = [&] {
+        std::vector<std::string> texts;
+        std::vector<std::vector<uint8_t>> binaries;
+        session.collect(texts, binaries);
+        int found = 0;
+        for (const std::string& text : texts) found += text.find("\"chat-history\"") != std::string::npos;
+        return found;
+    };
+    backlogs();
+    for (int i = 0; i < 50; i++) session.handle_text(R"({"type":"chat","history":true})");
+    CHECK_EQ(backlogs(), 1);
 }
 
 TEST_CASE(session_counts_what_a_person_does_not_what_the_page_does) {

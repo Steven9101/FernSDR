@@ -2397,6 +2397,8 @@ kbd {
 }
 
 .chat__name {
+  /* A name set in one direction cannot carry the message after it along. */
+  unicode-bidi: isolate;
   color: var(--primary);
   font-variant-numeric: tabular-nums;
   font-size: var(--text-2xs);

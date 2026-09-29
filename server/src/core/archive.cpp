@@ -1,5 +1,8 @@
 #include "archive.h"
 
+#include <fcntl.h>
+#include <unistd.h>
+
 #include <algorithm>
 #include <cmath>
 #include <cstring>
@@ -244,28 +247,65 @@ void WaterfallArchive::append(const float* bins, size_t count, int64_t now_ms) {
 bool WaterfallArchive::read(int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,
                             std::vector<int64_t>& times_ms, double* row_ms, size_t max_rows,
                             size_t bin_group, size_t* out_bins) const {
-    bin_group = std::max<size_t>(1, std::min(bin_group, bins_));
-    const size_t grouped = (bins_ + bin_group - 1) / bin_group;
+    Reading reading;
+    if (!begin_read(reading)) {
+        rows.clear();
+        times_ms.clear();
+        return false;
+    }
+    return read(reading, from_ms, to_ms, rows, times_ms, row_ms, max_rows, bin_group, out_bins);
+}
+
+WaterfallArchive::Reading::~Reading() {
+    if (fd >= 0) ::close(fd);
+}
+
+bool WaterfallArchive::begin_read(Reading& out) const {
+    if (!file_) return false;
+    // Lines still in the stream's buffer are not in the file yet; the next
+    // line's seek writes them. Read now, they are the gap they would be.
+    out.fd = ::fcntl(::fileno(file_), F_DUPFD_CLOEXEC, 0);
+    if (out.fd < 0) return false;
+    out.bins = bins_;
+    out.seconds_per_line = seconds_per_line_;
+    out.capacity = capacity_;
+    out.next_index = next_index_;
+    out.epoch_ms = epoch_ms_;
+    return true;
+}
+
+bool WaterfallArchive::read(const Reading& from, int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,
+                            std::vector<int64_t>& times_ms, double* row_ms, size_t max_rows,
+                            size_t bin_group, size_t* out_bins) {
+    const size_t bins = from.bins;
+    bin_group = std::max<size_t>(1, std::min(bin_group, bins));
+    const size_t grouped = (bins + bin_group - 1) / bin_group;
     if (out_bins) *out_bins = grouped;
     rows.clear();
     times_ms.clear();
-    if (row_ms) *row_ms = seconds_per_line_ * 1000;
-    if (!file_ || to_ms < from_ms) return false;
+    if (row_ms) *row_ms = from.seconds_per_line * 1000;
+    if (from.fd < 0 || to_ms < from_ms || from.capacity == 0) return false;
     // An archive with nothing in it yet is not a failure, it is an empty
     // answer. Only being unable to read the file at all is a failure.
-    if (next_index_ == 0) return true;
+    const uint64_t next_index = from.next_index;
+    if (next_index == 0) return true;
+    const auto time_of = [&](uint64_t index) {
+        return from.epoch_ms + static_cast<int64_t>(static_cast<double>(index) * from.seconds_per_line * 1000.0);
+    };
 
-    const uint64_t first_held = next_index_ > capacity_ ? next_index_ - capacity_ : 0;
+    const uint64_t first_held = next_index > from.capacity ? next_index - from.capacity : 0;
     // Turn the requested times into indices, then clamp to what is held.
-    const double from_index = ((static_cast<double>(from_ms) - static_cast<double>(epoch_ms_)) / 1000.0) / seconds_per_line_;
-    const double to_index = ((static_cast<double>(to_ms) - static_cast<double>(epoch_ms_)) / 1000.0) / seconds_per_line_;
+    const double from_index =
+        ((static_cast<double>(from_ms) - static_cast<double>(from.epoch_ms)) / 1000.0) / from.seconds_per_line;
+    const double to_index =
+        ((static_cast<double>(to_ms) - static_cast<double>(from.epoch_ms)) / 1000.0) / from.seconds_per_line;
     if (to_index < 0.0) return true;
-    if (from_index >= static_cast<double>(next_index_)) return true;
+    if (from_index >= static_cast<double>(next_index)) return true;
 
     uint64_t begin = from_index <= 0.0 ? 0 : static_cast<uint64_t>(from_index);
     begin = std::max(begin, first_held);
-    const uint64_t end = to_index >= static_cast<double>(next_index_ - 1)
-                             ? next_index_
+    const uint64_t end = to_index >= static_cast<double>(next_index - 1)
+                             ? next_index
                              : static_cast<uint64_t>(std::max(0.0, std::ceil(to_index))) + 1;
     if (begin >= end) return true;
 
@@ -276,13 +316,12 @@ bool WaterfallArchive::read(int64_t from_ms, int64_t to_ms, std::vector<uint8_t>
     uint64_t limit = std::min<uint64_t>(4096, 1024 * 1024 / grouped);
     if (max_rows > 0) limit = std::max<uint64_t>(1, std::min<uint64_t>(limit, max_rows));
     const uint64_t stride = (end - begin - 1) / limit + 1;
-    if (row_ms) *row_ms = stride * seconds_per_line_ * 1000;
-    std::vector<uint8_t> slot(slot_bytes());
+    if (row_ms) *row_ms = stride * from.seconds_per_line * 1000;
+    const size_t slot_bytes = sizeof(uint64_t) + bins;
+    std::vector<uint8_t> slot(slot_bytes);
     for (uint64_t index = begin; index < end; index += stride) {
-        const long offset =
-            static_cast<long>(sizeof(Header) + (index % capacity_) * slot_bytes());
-        if (std::fseek(file_, offset, SEEK_SET) != 0) return false;
-        if (std::fread(slot.data(), slot.size(), 1, file_) != 1) return false;
+        const off_t offset = static_cast<off_t>(sizeof(Header) + (index % from.capacity) * slot_bytes);
+        if (::pread(from.fd, slot.data(), slot.size(), offset) != static_cast<ssize_t>(slot.size())) return false;
 
         uint64_t stored = 0;
         std::memcpy(&stored, slot.data(), sizeof(uint64_t));
@@ -291,13 +330,13 @@ bool WaterfallArchive::read(int64_t from_ms, int64_t to_ms, std::vector<uint8_t>
         // the record should read as a gap rather than as a row of zeroes.
         if (stored != index) continue;
 
-        const uint8_t* bins = slot.data() + sizeof(uint64_t);
+        const uint8_t* level = slot.data() + sizeof(uint64_t);
         if (bin_group == 1) {
-            rows.insert(rows.end(), bins, bins + bins_);
+            rows.insert(rows.end(), level, level + bins);
         } else {
             for (size_t group = 0; group < grouped; group++) {
                 const size_t first = group * bin_group;
-                rows.push_back(*std::max_element(bins + first, bins + std::min(bins_, first + bin_group)));
+                rows.push_back(*std::max_element(level + first, level + std::min(bins, first + bin_group)));
             }
         }
         times_ms.push_back(time_of(index));

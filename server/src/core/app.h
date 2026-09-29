@@ -61,7 +61,16 @@ private:
     /** /api/admin/modules and below, once the caller is signed in. */
     void handle_modules(const HttpRequest& request, std::string& response);
     /** The waterfall archive. Public or admin-only, as the operator chose. */
-    bool handle_history(const HttpRequest& request, std::string& response);
+    bool handle_history(Connection& connection, const HttpRequest& request, std::string& response);
+    // What each address may still read from the waterfall archives, in bytes:
+    // 16 MB at once, then a megabyte a second. Kept by the network thread.
+    struct HistoryBudget {
+        int64_t bytes = 0;
+        int64_t updated_ms = 0;
+    };
+    static constexpr int64_t kHistoryBurstBytes = 16 * 1024 * 1024;
+    static constexpr int64_t kHistoryBytesPerMs = 1024;
+    std::map<std::string, HistoryBudget> history_budgets_;
     bool handle_decodes(const HttpRequest& request, std::string& response);
 
     /**

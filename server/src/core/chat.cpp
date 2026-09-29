@@ -10,7 +10,35 @@ namespace {
 
 // Six messages in ten seconds is conversational; anything faster is a script.
 constexpr int kBurst = 6;
+// An IPv6 /64 is one household, and a /48 is free from a tunnel broker: a
+// script moving from /64 to /64 in its /48 meets this, and the whole chat
+// meets the last, so that no number of addresses floods every listener.
+constexpr int kWideBurst = 24;
+constexpr int kEveryoneBurst = 60;
 constexpr int64_t kWindowMs = 10000;
+
+}  // namespace
+
+namespace {
+
+// The code point of the UTF-8 character at the start of `text`, already
+// known to be valid and `bytes` long.
+uint32_t code_point(std::string_view text, size_t bytes) {
+    const auto b = [&](size_t i) { return static_cast<uint32_t>(static_cast<unsigned char>(text[i])); };
+    if (bytes == 1) return b(0);
+    if (bytes == 2) return ((b(0) & 0x1F) << 6) | (b(1) & 0x3F);
+    if (bytes == 3) return ((b(0) & 0x0F) << 12) | ((b(1) & 0x3F) << 6) | (b(2) & 0x3F);
+    return ((b(0) & 0x07) << 18) | ((b(1) & 0x3F) << 12) | ((b(2) & 0x3F) << 6) | (b(3) & 0x3F);
+}
+
+// Characters that show nothing and change how the rest is shown: direction
+// overrides and isolates, which can turn the line around, zero-width ones,
+// which make a name look like another's, line separators and the C1
+// controls. A chat line is plain text; none of them belongs in it.
+bool invisible(uint32_t c) {
+    return (c >= 0x80 && c <= 0x9F) || c == 0xAD || (c >= 0x200B && c <= 0x200F) ||
+           (c >= 0x2028 && c <= 0x202E) || (c >= 0x2060 && c <= 0x206F) || c == 0xFEFF;
+}
 
 }  // namespace
 
@@ -29,6 +57,7 @@ std::string clean_chat_text(const std::string& value, size_t limit) {
             if (!out.empty() && out.back() != ' ') out += ' ';
             continue;
         }
+        if (bytes > 1 && invisible(code_point(std::string_view(value).substr(at - bytes), bytes))) continue;
         // Truncating a multibyte character would poison every recipient's
         // WebSocket text stream, including subsequent chat-history replies.
         if (out.size() + bytes > limit) break;
@@ -69,16 +98,21 @@ bool ChatRoom::post(uint64_t session, const std::string& address, const std::str
     for (auto it = rates_.begin(); it != rates_.end();) {
         it = now_ms - it->second.window_started_ms > kWindowMs ? rates_.erase(it) : std::next(it);
     }
-    Rate& rate = rates_[network_key(address)];
-    if (now_ms - rate.window_started_ms > kWindowMs) {
-        rate.window_started_ms = now_ms;
-        rate.count = 0;
+    const std::string wide = wide_network_key(address);
+    std::vector<std::pair<Rate*, int>> limits = {{&rates_["n " + network_key(address)], kBurst},
+                                                 {&rates_["*"], kEveryoneBurst}};
+    if (!wide.empty()) limits.push_back({&rates_["w " + wide], kWideBurst});
+    for (auto& [rate, burst] : limits) {
+        if (now_ms - rate->window_started_ms > kWindowMs) {
+            rate->window_started_ms = now_ms;
+            rate->count = 0;
+        }
+        if (rate->count >= burst) {
+            error = "you are sending faster than anyone can read; wait a moment";
+            return false;
+        }
     }
-    if (rate.count >= kBurst) {
-        error = "you are sending faster than anyone can read; wait a moment";
-        return false;
-    }
-    rate.count++;
+    for (auto& limit : limits) limit.first->count++;
 
     out.id = next_id_++;
     out.name = clean_name;
@@ -86,6 +120,7 @@ bool ChatRoom::post(uint64_t session, const std::string& address, const std::str
     out.at_ms = now_ms;
     messages_.push_back(out);
     if (messages_.size() > kHistory) messages_.pop_front();
+    history_message_.clear();
     return true;
 }
 
@@ -95,10 +130,33 @@ std::vector<ChatMessage> ChatRoom::history() const {
     return {messages_.begin(), messages_.end()};
 }
 
+std::string ChatRoom::history_message() const {
+    std::lock_guard<std::mutex> lock(mutex_);
+    if (history_message_.empty()) {
+        Json out = Json::make_object();
+        out.set("type", "chat-history");
+        Json list = Json::make_array();
+        if (enabled_) {
+            for (const ChatMessage& entry : messages_) {
+                Json item = Json::make_object();
+                item.set("id", static_cast<double>(entry.id));
+                item.set("name", entry.name);
+                item.set("text", entry.text);
+                item.set("at", static_cast<double>(entry.at_ms));
+                list.push_back(item);
+            }
+        }
+        out.set("messages", list);
+        history_message_ = out.serialize();
+    }
+    return history_message_;
+}
+
 void ChatRoom::set_enabled(bool enabled) {
     std::lock_guard<std::mutex> lock(mutex_);
     if (!enabled) messages_.clear();
     enabled_ = enabled;
+    history_message_.clear();
 }
 
 bool ChatRoom::enabled() const {

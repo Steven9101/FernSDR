@@ -84,6 +84,30 @@ public:
               std::vector<int64_t>& times_ms, double* row_ms = nullptr,
               size_t max_rows = 0, size_t bin_group = 1, size_t* out_bins = nullptr) const;
 
+    /**
+     * What a read needs, taken while the band's lock is held, so that the
+     * reading itself, thousands of seeks on a slow card perhaps, holds nothing
+     * the band's own thread waits for. It carries a descriptor of its own for
+     * the file: the archive may be closed or reopened meanwhile, and a slot
+     * written since reads as the gap it was, by its index.
+     */
+    struct Reading {
+        int fd = -1;
+        size_t bins = 0;
+        double seconds_per_line = 1.0;
+        uint64_t capacity = 0;
+        uint64_t next_index = 0;
+        int64_t epoch_ms = 0;
+        Reading() = default;
+        Reading(const Reading&) = delete;
+        Reading& operator=(const Reading&) = delete;
+        ~Reading();
+    };
+    bool begin_read(Reading& out) const;
+    static bool read(const Reading& from, int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,
+                     std::vector<int64_t>& times_ms, double* row_ms = nullptr, size_t max_rows = 0,
+                     size_t bin_group = 1, size_t* out_bins = nullptr);
+
     size_t bins() const { return bins_; }
     double seconds_per_line() const { return seconds_per_line_; }
     size_t capacity() const { return capacity_; }

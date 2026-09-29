@@ -114,11 +114,17 @@ bool Application::on_connect(Connection& connection) {
     const int per_address = radio_.site().max_users_per_address;
     if (per_address > 0 && server_) {
         const std::string network = network_key(connection.remote_address());
-        int from_there = 0;
+        // An IPv6 /48 may hold four times as many, as the connection limit
+        // allows it: one household with several /64s is normal, and a /48 is
+        // what a tunnel broker hands anyone for free.
+        const std::string wide = wide_network_key(connection.remote_address());
+        int from_there = 0, from_wide = 0;
         server_->for_each_connection([&](Connection& other) {
-            if (other.user_data && network_key(other.remote_address()) == network) from_there++;
+            if (!other.user_data) return;
+            if (network_key(other.remote_address()) == network) from_there++;
+            if (!wide.empty() && wide_network_key(other.remote_address()) == wide) from_wide++;
         });
-        if (from_there >= per_address) {
+        if (from_there >= per_address || from_wide >= 4 * per_address) {
             // Said plainly in the log, because the usual cause is not a greedy
             // listener but a proxy missing from trusted_proxies, which makes
             // everyone arrive from the proxy's own address.
@@ -387,7 +393,7 @@ std::string json_error(const std::string& message) {
 
 }  // namespace
 
-bool Application::handle_history(const HttpRequest& request, std::string& response) {
+bool Application::handle_history(Connection& connection, const HttpRequest& request, std::string& response) {
     if (request.path != "/api/history") return false;
 
     const std::string band_id = query_value(request.query, "band");
@@ -401,6 +407,31 @@ bool Application::handle_history(const HttpRequest& request, std::string& respon
     if (access == "off") {
         response =
             json_response(404, json_error("this band keeps no history"), request.keep_alive());
+        return true;
+    }
+    // Up to a megabyte an answer for a request of a hundred bytes, read from
+    // disk: a budget per address (an IPv6 /48 as one), which a page looking
+    // back through a day never meets, and a script asking without pause does
+    // within seconds. The operator is not held to it.
+    const bool operator_asks = admin_ && admin_->enabled() && admin_->authorised(request);
+    const std::string wide = wide_network_key(connection.remote_address());
+    const std::string who = wide.empty() ? network_key(connection.remote_address()) : wide;
+    const int64_t steady = monotonic_ms();
+    // Addresses whose budget has filled again are forgotten, before this one
+    // is looked up, so the map holds only those still paying off.
+    if (history_budgets_.size() > 4096) {
+        for (auto it = history_budgets_.begin(); it != history_budgets_.end();) {
+            const int64_t refilled = it->second.bytes + (steady - it->second.updated_ms) * kHistoryBytesPerMs;
+            it = refilled >= kHistoryBurstBytes ? history_budgets_.erase(it) : std::next(it);
+        }
+    }
+    HistoryBudget& budget = history_budgets_[who];
+    if (budget.updated_ms == 0) budget = {kHistoryBurstBytes, steady};
+    budget.bytes = std::min(kHistoryBurstBytes, budget.bytes + (steady - budget.updated_ms) * kHistoryBytesPerMs);
+    budget.updated_ms = steady;
+    if (!operator_asks && budget.bytes <= 0) {
+        response = build_http_response(429, "application/json", json_error("too much history too quickly; wait a moment"),
+                                       {{"Retry-After", "5"}, {"Cache-Control", "no-store"}}, request.keep_alive());
         return true;
     }
     // "private" means the operator wants the record kept but not published, so
@@ -479,6 +510,7 @@ bool Application::handle_history(const HttpRequest& request, std::string& respon
     body += header;
     body.append(reinterpret_cast<const char*>(rows.data()), rows.size());
 
+    if (!operator_asks) budget.bytes -= static_cast<int64_t>(body.size());
     response = build_http_response(200, "application/octet-stream", body,
                                    {{"Cache-Control", "no-store"}}, request.keep_alive());
     return true;
@@ -1969,7 +2001,7 @@ bool Application::disconnect_session(uint64_t id) {
 bool Application::on_http(Connection& connection, const HttpRequest& request,
                           std::string& response) {
     if (handle_admin(connection, request, response)) return true;
-    if (handle_history(request, response)) return true;
+    if (handle_history(connection, request, response)) return true;
     if (handle_decodes(request, response)) return true;
     // A machine-readable status endpoint: operators monitor these receivers,
     // and "is it up and how loaded is it" should not require scraping HTML.

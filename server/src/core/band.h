@@ -182,12 +182,17 @@ public:
     bool read_history(int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,
                       std::vector<int64_t>& times_ms, size_t& bins, double* row_ms = nullptr,
                       size_t max_rows = 0, size_t width = 0) const {
-        std::lock_guard<std::mutex> lock(archive_mutex_);
-        if (!archive_.is_open()) return false;
+        WaterfallArchive::Reading reading;
+        {
+            // Only while the positions are taken: the reading below may be
+            // slow, and this is the lock the band's thread takes each line.
+            std::lock_guard<std::mutex> lock(archive_mutex_);
+            if (!archive_.is_open() || !archive_.begin_read(reading)) return false;
+        }
         // Rounded up: a little under a bin per pixel does not show, and it
         // halves what a full-width picture of a wide archive costs.
-        const size_t group = width > 0 ? std::max<size_t>(1, (archive_.bins() + width - 1) / width) : 1;
-        return archive_.read(from_ms, to_ms, rows, times_ms, row_ms, max_rows, group, &bins);
+        const size_t group = width > 0 ? std::max<size_t>(1, (reading.bins + width - 1) / width) : 1;
+        return WaterfallArchive::read(reading, from_ms, to_ms, rows, times_ms, row_ms, max_rows, group, &bins);
     }
     // Frequencies on the band are RF frequencies: the sample rate as the
     // radio frequencies see it, rf_rate(), not the rate the samples are

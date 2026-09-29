@@ -83,6 +83,8 @@ void refuse_connection(int fd, const char* reason) {
 
 constexpr int kEpollTimeoutMs = 20;
 constexpr int64_t kTickIntervalMs = 100;
+// What counts as small enough to send whatever else is queued.
+constexpr size_t kSmallResponseBytes = 64 * 1024;
 
 bool set_nonblocking(int fd) {
     const int flags = fcntl(fd, F_GETFL, 0);
@@ -886,16 +888,20 @@ void Server::process_http(Connection& connection) {
         }
 
         std::string response;
-        if (handler_.on_http(connection, request, response)) {
-            queue(connection, reinterpret_cast<const uint8_t*>(response.data()), response.size());
-        } else if (serve_upload(request, response)) {
-            queue(connection, reinterpret_cast<const uint8_t*>(response.data()), response.size());
-        } else if (static_files_.serve(request, response)) {
-            queue(connection, reinterpret_cast<const uint8_t*>(response.data()), response.size());
-        } else {
+        if (!handler_.on_http(connection, request, response) && !serve_upload(request, response) &&
+            !static_files_.serve(request, response)) {
             response = build_http_response(404, "text/plain", "not found", {}, request.keep_alive());
-            queue(connection, reinterpret_cast<const uint8_t*>(response.data()), response.size());
         }
+        // Each connection may hold 2 MB its client has not read, and a few
+        // addresses can open hundreds: all of them together hold no more
+        // than http_backlog_bytes, and a large answer beyond that waits for
+        // the client to ask again. The operator's backup is not held to it.
+        if (response.size() > kSmallResponseBytes && connection.output_allowance_ == 0 &&
+            http_backlog() + response.size() > config_.http_backlog_bytes) {
+            response = build_http_response(503, "text/plain", "busy; try again in a moment", {{"Retry-After", "5"}},
+                                           request.keep_alive());
+        }
+        queue(connection, reinterpret_cast<const uint8_t*>(response.data()), response.size());
 
         if (!request.keep_alive()) connection.close_after_flush_ = true;
         if (connection.pending_bytes() > output_limit(connection)) handle_writable(connection);
@@ -1043,9 +1049,13 @@ void Server::handle_writable(Connection& connection) {
         const ssize_t sent = ::write(connection.fd_, connection.out_.data(), connection.out_.size());
         if (sent > 0) {
             connection.out_.consume(static_cast<size_t>(sent));
-            // A long download to a slow client is not an idle connection;
-            // a WebSocket's listener says so itself, with its pings.
-            if (connection.state_ == Connection::State::Http) connection.last_activity_ms_ = monotonic_ms();
+            // A long download the handler allowed, the operator's backup on a
+            // slow link, is not an idle connection. Anything else a client
+            // reads slowly stays under the idle timeout, or a trickle of
+            // reading would hold a connection for ever.
+            if (connection.state_ == Connection::State::Http && connection.output_allowance_ > 0) {
+                connection.last_activity_ms_ = monotonic_ms();
+            }
             continue;
         }
         if (sent < 0 && (errno == EAGAIN || errno == EWOULDBLOCK)) break;
@@ -1070,13 +1080,26 @@ void Server::handle_writable(Connection& connection) {
     update_interest(connection);
 }
 
+size_t Server::http_backlog() const {
+    size_t total = 0;
+    for (const auto& entry : connections_) {
+        if (entry.second->state_ == Connection::State::Http) total += entry.second->pending_bytes();
+    }
+    return total;
+}
+
 size_t Server::output_limit(const Connection& connection) const {
     return std::max(config_.max_output_bytes, connection.output_allowance_);
 }
 
 void Server::update_interest(Connection& connection) {
     epoll_event event{};
-    event.events = EPOLLIN | (connection.want_write_ ? EPOLLOUT : 0u);
+    // Input only while handle_readable still reads it: epoll reports level,
+    // so bytes a closing connection sent after its request, which nobody
+    // reads, would wake the loop at once on every pass and spin the thread
+    // every listener's audio goes through. A hang-up is reported regardless.
+    const bool reading = !connection.close_after_flush_ && connection.state_ != Connection::State::Closing;
+    event.events = (reading ? EPOLLIN : 0u) | (connection.want_write_ ? EPOLLOUT : 0u);
     event.data.fd = connection.fd_;
     epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, connection.fd_, &event);
 }

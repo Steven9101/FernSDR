@@ -36,7 +36,10 @@ bins by their maximum until no more than about N remain (the header's `bins`
 says how many came back), so a carrier one bin wide survives a narrow
 picture. Timestamps retain gaps; rows must not be stretched
 uniformly across the requested period. Private archives require an admin
-session. Access changes are reported in `band-status`.
+session. Access changes are reported in `band-status`. Each address (an IPv6
+/48 as one) may read 16 MB of history at once and a megabyte a second after
+that; beyond it the answer is 429 with `Retry-After`. An admin session is not
+held to it.
 
 `GET /api/decodes` returns what the public decoders heard, newest last, as
 `{"epoch":"...","through":N,"decodes":[...]}`. Each decode carries `seq`, `decoder`,
@@ -240,9 +243,11 @@ Asks for a `state` reply without changing anything.
 
 Posts a line to the chat, under `name` (cut to 24 bytes of UTF-8, kept for
 the connection's later lines). A longer line is cut to 400 bytes; the
-receiver limits how often one address may post. With `history`, nothing is
-posted: the reply is a `chat-history` with the messages kept, which a page
-asks for whenever its chat appears.
+receiver limits how often one address may post (six lines in ten seconds),
+an IPv6 /48 (24) and the whole chat (60). With `history`, nothing is posted:
+the reply is a `chat-history` with the messages kept, which a page asks for
+whenever its chat appears; a connection gets it at most once in five
+seconds, and asks made sooner are not answered.
 
 ### `ping`
 
