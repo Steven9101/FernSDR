@@ -29,7 +29,8 @@ export function thirdPartyLicenses(file: string, heading: string): Plugin {
         // is not a module.
         const sources = output.type === 'chunk' ? output.moduleIds : output.originalFileNames;
         for (const id of sources) {
-          const found = packageOf(isAbsolute(id) ? id : join(root, id));
+          const path = isAbsolute(id) ? id : join(root, id);
+          const found = packageOf(path) ?? derivedFrom(path, root);
           if (found) packages.set(found.name, found.directory);
         }
       }
@@ -39,6 +40,20 @@ export function thirdPartyLicenses(file: string, heading: string): Plugin {
       this.emitFile({ type: 'asset', fileName: file, source: `${heading}\n\n${sections.join('\n\n')}\n` });
     },
   };
+}
+
+/**
+ * Files kept in the source tree that are cut from a package, with that
+ * package's licence: the listener page's Inter is a subset of the font
+ * (tools/subset-inter.py), and the OFL travels with a subset as with the whole.
+ */
+const DERIVED: { pattern: RegExp; name: string }[] = [
+  { pattern: /\/src\/assets\/fonts\/inter-[^/]+\.woff2$/, name: '@fontsource-variable/inter' },
+];
+
+function derivedFrom(path: string, root: string): { name: string; directory: string } | null {
+  const derived = DERIVED.find((entry) => entry.pattern.test(path));
+  return derived ? { name: derived.name, directory: join(root, 'node_modules', derived.name) } : null;
 }
 
 /** The package a module belongs to, from the last node_modules in its path. */

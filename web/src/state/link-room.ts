@@ -95,7 +95,7 @@ export function loadFontWhenTheLinkAllows(): void {
     // No storage: the first-visit rule every time.
   }
   const load = () => {
-    void import('@fontsource-variable/inter/wght.css');
+    void import('../styles/inter.css');
     try {
       localStorage.setItem(FONT_KEY, '1');
     } catch {
