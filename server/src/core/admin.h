@@ -117,6 +117,23 @@ public:
                                  const std::string& address, int& retry_after,
                                  AdminCaller caller = AdminCaller::Remote);
 
+    /**
+     * Checks a proof of the current password against a challenge, as
+     * login_with_proof does, without issuing a session: for a change that
+     * asks for the password again. A wrong proof counts as a failed sign-in.
+     */
+    bool proof_valid(const std::string& nonce, const std::string& proof, const std::string& address,
+                     int& retry_after, AdminCaller caller = AdminCaller::Remote);
+
+    /**
+     * Takes a new stored hash, made in the browser from the new password,
+     * and ends every session: they were signed in with the old one. False,
+     * changing nothing, when `hash` is not a hash of at least 100,000
+     * rounds with a salt of 16 bytes.
+     */
+    bool replace_password_hash(const std::string& hash);
+    static bool acceptable_password_hash(const std::string& hash);
+
     /** True when the request carries a live session cookie. */
     bool authorised(const HttpRequest& request) const;
 
@@ -213,6 +230,20 @@ std::string hide_admin_credentials(const std::string& text);
  * Everything else is returned byte for byte.
  */
 std::string restore_admin_credentials(const std::string& text, const ConfigSection& current);
+
+/**
+ * `text` with the [admin] password_hash line holding `hash` instead: a new
+ * password from the panel, written where the old one was, the rest of the
+ * file as it was.
+ */
+std::string with_admin_password_hash(const std::string& text, const std::string& hash);
+
+/**
+ * The same for a file that may have no password yet: the line replaced where
+ * there is one, put first in [admin] where the section has none, and an
+ * [admin] section added at the end where there is none.
+ */
+std::string with_admin_password(const std::string& text, const std::string& hash);
 
 /**
  * Why the configuration editor may not replace `current` (the file on disk)

@@ -163,9 +163,11 @@ if [ -n "$PREFIX" ]; then
     mkdir -p "$PREFIX/etc"
     CONFIG="$PREFIX/etc/fernsdr.conf"
 fi
+NEW_CONFIG=0
 if [ -f "$CONFIG" ]; then
     say "Keeping the existing $CONFIG"
 else
+    NEW_CONFIG=1
     say "Writing $CONFIG (synthetic band, so it works before any hardware does)"
     cp server/fernsdr.example.conf "$CONFIG"
     if [ "$PORT" != 8073 ]; then
@@ -177,6 +179,18 @@ fi
 
 BINARY="$ROOT/server/build/fernsdr"
 WEBROOT="$ROOT/web/dist"
+
+# A new configuration gets an admin password of its own, as install.sh gives
+# one: 20 characters from 32 that cannot be mistaken for one another. The
+# receiver keeps only its hash; the password is shown once, at the end.
+ADMIN_PASSWORD=""
+if [ "$NEW_CONFIG" = 1 ]; then
+    ADMIN_PASSWORD=$(od -An -N20 -tu1 /dev/urandom | awk -v alphabet=abcdefghjkmnpqrstuvwxyz023456789 '
+        { for (i = 1; i <= NF; i++) out = out substr(alphabet, $i % 32 + 1, 1) }
+        END { print substr(out, 1, 4) "-" substr(out, 5, 4) "-" substr(out, 9, 4) "-" substr(out, 13, 4) "-" substr(out, 17, 4) }')
+    printf '%s\n' "$ADMIN_PASSWORD" | "$BINARY" --set-password "$CONFIG" 2>/dev/null ||
+        { warn "could not set an admin password; set one with: $BINARY --set-password $CONFIG"; ADMIN_PASSWORD=""; }
+fi
 
 if [ -n "$PREFIX" ]; then
     say "Installing into $PREFIX"
@@ -380,6 +394,10 @@ echo "    config    $CONFIG"
 echo "    binary    $BINARY"
 [ "$CLIENT" = 1 ] && echo "    client    $WEBROOT"
 echo "    listen    http://localhost:$PORT_IN_USE"
+if [ -n "$ADMIN_PASSWORD" ]; then
+    echo "    admin     http://localhost:$PORT_IN_USE/admin, password $ADMIN_PASSWORD"
+    echo "              (change it on the Station page; this is the only time it is shown)"
+fi
 echo
 echo "The default configuration generates a synthetic 40 m band, so you can"
 echo "check the whole chain in a browser before connecting an antenna. Edit"

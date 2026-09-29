@@ -55,7 +55,7 @@ Application::Application(Radio& radio, const Config& config)
     if (!section.get("password", "").empty()) {
         LOG_WARN("admin",
                  "[admin] password= is ignored: store a hash instead. "
-                 "Run 'fernsdr --hash-password' to make one.");
+                 "Run 'fernsdr --set-password %s' to set one.", admin.config_path.c_str());
     }
     if (admin.enabled) {
         LOG_INFO("admin", "admin panel enabled at /admin%s",
@@ -67,6 +67,9 @@ Application::Application(Radio& radio, const Config& config)
         }
     } else if (!section.get("password_hash", "").empty()) {
         LOG_INFO("admin", "admin panel disabled by config");
+    } else {
+        LOG_INFO("admin", "no admin password, so no admin panel: run 'fernsdr --set-password %s' to set one",
+                 admin.config_path.c_str());
     }
     admin_ = std::make_unique<AdminAuth>(std::move(admin));
 
@@ -774,6 +777,53 @@ bool Application::handle_admin(const Connection& connection, const HttpRequest& 
             response = json_response(200, out.serialize(), request.keep_alive());
             return true;
         }
+    }
+
+    // A new admin password. The browser derives its key and makes the stored
+    // hash itself, and proves the current password against a fresh
+    // challenge, so neither password crosses the network, as at sign-in.
+    // Written where the old hash was in the file, then every session ends:
+    // the page signs in again with the new password.
+    if (request.path == "/api/admin/password" && request.method == "POST") {
+        Json body;
+        if (!Json::parse(request.body, body) || !body.is_object()) {
+            response = json_response(400, json_error("malformed request"), request.keep_alive());
+            return true;
+        }
+        const std::string hash = body["hash"].string();
+        if (!AdminAuth::acceptable_password_hash(hash)) {
+            response = json_response(400, json_error("the new password's hash is not one this receiver takes"),
+                                     request.keep_alive());
+            return true;
+        }
+        int retry_after = 0;
+        if (!admin_->proof_valid(body["nonce"].string(), body["proof"].string(), address, retry_after, caller)) {
+            Json out = Json::make_object();
+            out.set("error", "the current password is not right");
+            if (retry_after > 0) out.set("retry_after", retry_after);
+            response = json_response(retry_after > 0 ? 429 : 403, out.serialize(), request.keep_alive());
+            return true;
+        }
+        const std::string path = admin_->config().config_path;
+        std::string text, error;
+        Config written;
+        if (!read_text_file(path, text)) {
+            response = json_response(500, json_error("cannot read " + path), request.keep_alive());
+            return true;
+        }
+        const std::string changed = with_admin_password_hash(text, hash);
+        if (!written.parse(changed, error) || written.section("admin").get("password_hash") != hash ||
+            !write_text_file(path, changed, error, FileAccess::OwnerOnly)) {
+            response = json_response(500, json_error("the new password could not be written: " + error),
+                                     request.keep_alive());
+            return true;
+        }
+        admin_->replace_password_hash(hash);
+        LOG_INFO("admin", "the admin password was changed from the panel");
+        Json out = Json::make_object();
+        out.set("ok", true);
+        response = json_response(200, out.serialize(), request.keep_alive());
+        return true;
     }
 
     // The radios plugged in, the TV drivers in their way, and whether the

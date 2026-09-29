@@ -1,15 +1,18 @@
 // Entry point: read the config, bring up the bands, serve.
 #include <signal.h>
 #include <sys/prctl.h>
+#include <termios.h>
 #include <unistd.h>
 
 #include <sys/stat.h>
 
+#include <cerrno>
 #include <cstdio>
 #include <cstring>
 #include <iostream>
 #include <string>
 
+#include "core/admin.h"
 #include "core/app.h"
 #include "core/module_store.h"
 #include "core/radio.h"
@@ -56,6 +59,7 @@ void print_usage(const char* program) {
             "                       and its updates the way the systemd units do\n"
             "  -V, --version        print the version and exit\n"
             "      --allow-root     serve as root, for a container that has no other user\n"
+            "      --set-password   set the admin panel's password in the config\n"
             "      --hash-password  hash an admin password for the config\n"
             "      --install-module <file.fernmod>\n"
             "                       install a module package beside the config and exit\n"
@@ -99,12 +103,84 @@ int update_command(bool boot) {
     return outcome.result == fernsdr::UpdateOutcome::Result::Failed ? 1 : 0;
 }
 
+// One line from standard input, without echoing it when that is a terminal.
+bool read_secret(const char* prompt, std::string& out) {
+    const bool terminal = ::isatty(STDIN_FILENO) == 1;
+    struct termios before {};
+    if (terminal) {
+        fprintf(stderr, "%s", prompt);
+        ::tcgetattr(STDIN_FILENO, &before);
+        struct termios quiet = before;
+        quiet.c_lflag &= ~static_cast<tcflag_t>(ECHO);
+        ::tcsetattr(STDIN_FILENO, TCSANOW, &quiet);
+    }
+    const bool got = static_cast<bool>(std::getline(std::cin, out));
+    if (terminal) {
+        ::tcsetattr(STDIN_FILENO, TCSANOW, &before);
+        fprintf(stderr, "\n");
+    }
+    return got;
+}
+
+// fernsdr --set-password CONFIG: asks for a password, twice on a terminal,
+// and writes its hash where the old one was, or into a new [admin] section,
+// so that nobody copies a hash by hand. The file keeps its owner, which run
+// as root would otherwise become root and leave the receiver unable to read
+// it. The receiver reads the password when it starts.
+int set_password_command(const std::string& path) {
+    std::string text;
+    if (!fernsdr::read_text_file(path, text)) {
+        fprintf(stderr, "cannot read %s\n", path.c_str());
+        return 1;
+    }
+    std::string password, again;
+    if (!read_secret("New password for the admin panel: ", password) || password.empty()) {
+        fprintf(stderr, "no password given\n");
+        return 2;
+    }
+    if (password.size() < 12) {
+        fprintf(stderr, "That is %zu characters. The admin panel is reachable by anyone who can reach the\n"
+                        "receiver, so use at least 12.\n", password.size());
+        return 2;
+    }
+    if (::isatty(STDIN_FILENO) == 1 && (!read_secret("The same again: ", again) || again != password)) {
+        fprintf(stderr, "The two differ; nothing was changed.\n");
+        return 2;
+    }
+    const std::string hash = fernsdr::hash_password(password);
+    if (hash.empty()) {
+        fprintf(stderr, "cannot read randomness from /dev/urandom\n");
+        return 1;
+    }
+    struct stat before {};
+    const bool known = ::stat(path.c_str(), &before) == 0;
+    std::string error;
+    fernsdr::Config check;
+    const std::string changed = fernsdr::with_admin_password(text, hash);
+    if (!check.parse(changed, error) || check.section("admin").get("password_hash") != hash) {
+        fprintf(stderr, "the password could not be put into %s: %s\n", path.c_str(), error.c_str());
+        return 1;
+    }
+    if (!fernsdr::write_text_file(path, changed, error, fernsdr::FileAccess::OwnerOnly)) {
+        fprintf(stderr, "%s\n", error.c_str());
+        return 1;
+    }
+    if (known && ::geteuid() == 0 && ::chown(path.c_str(), before.st_uid, before.st_gid) != 0) {
+        fprintf(stderr, "the password is set, but %s could not be given back to its owner: %s\n", path.c_str(),
+                std::strerror(errno));
+        return 1;
+    }
+    fprintf(stderr, "The admin password is set in %s. Restart the receiver to use it.\n", path.c_str());
+    return 0;
+}
+
 int main(int argc, char** argv) {
     std::string config_path;
     int port_override = 0;
     std::string root_override;
     bool check_only = false;
     bool allow_root = false;
+    bool set_password = false;
     std::string install_module;
 
     for (int i = 1; i < argc; i++) {
@@ -165,6 +241,8 @@ int main(int argc, char** argv) {
             return fernsdr::supervise_command(daemon, pidfile);
         } else if (argument == "--install-module") {
             install_module = next("--install-module");
+        } else if (argument == "--set-password") {
+            set_password = true;
         } else if (argument == "--hash-password") {
             // Reads from the terminal rather than taking the password as an
             // argument: an argument would be in the shell history and visible
@@ -203,6 +281,8 @@ int main(int argc, char** argv) {
         print_usage(argv[0]);
         return 2;
     }
+
+    if (set_password) return set_password_command(config_path);
 
     fernsdr::Config config;
     std::string error;

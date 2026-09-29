@@ -3,6 +3,7 @@
 	import { toast } from 'svelte-sonner';
 	import { api, ApiError } from '../api';
 	import ChoiceSheet from '../components/ChoiceSheet.svelte';
+	import EditSheet from '../components/EditSheet.svelte';
 	import Columns from '../components/Columns.svelte';
 	import PageHeader from '../components/PageHeader.svelte';
 	import SaveBar from '../components/SaveBar.svelte';
@@ -64,6 +65,45 @@
 		band_plan: 'band plan'
 	};
 
+
+	// Changing the password: the sheet's fields, and what it is doing while
+	// the slow key derivation runs.
+	let passwordOpen = $state(false);
+	let passwordCurrent = $state('');
+	let passwordNext = $state('');
+	let passwordRepeat = $state('');
+	let passwordStep = $state('');
+	const passwordHint = $derived(
+		passwordNext && passwordNext.length < 12
+			? `${passwordNext.length} characters; at least 12.`
+			: passwordRepeat && passwordRepeat !== passwordNext
+				? 'The two new passwords differ.'
+				: passwordNext && passwordNext === passwordCurrent
+					? 'That is the password it has now.'
+					: ''
+	);
+	const passwordReady = $derived(
+		passwordCurrent.length > 0 && passwordNext.length >= 12 && passwordNext === passwordRepeat && passwordNext !== passwordCurrent
+	);
+
+	async function changePassword() {
+		// The receiver ends every session on the change and the page signs in
+		// again at once, seconds later over plain HTTP where the browser
+		// derives the key without Web Crypto. The panel's own polling in
+		// between would see the gap and sign it out, so it waits.
+		live.stop();
+		try {
+			await api.changePassword(passwordCurrent, passwordNext, (step) => (passwordStep = step));
+			toast.success('Password changed. You are signed in with the new one.');
+			passwordCurrent = passwordNext = passwordRepeat = '';
+		} catch (problem) {
+			const error = problem as ApiError;
+			throw new Error(error.status === 403 ? 'The current password is not right.' : error.message);
+		} finally {
+			passwordStep = '';
+			live.start();
+		}
+	}
 	let station = $state<Station | null>(null);
 	let saved = $state<Station | null>(null);
 	let server = $state<{ server: Record<string, unknown>; config_path: string } | null>(null);
@@ -319,6 +359,10 @@
 				</div>
 			</section>
 
+			<SettingsGroup title="Sign-in" footer="The password for this panel. At least 12 characters; neither the old nor the new one is sent over the network.">
+				<SettingsRow label="Change password" tone="font-medium" onclick={() => (passwordOpen = true)} />
+			</SettingsGroup>
+
 			{#if server}
 				<SettingsGroup title="Server" footer="Read once when the receiver starts. Change these in the configuration file, then restart the receiver.">
 					{#each serverRows as [key, label] (key)}
@@ -394,6 +438,34 @@
 			</form>
 		{/snippet}
 	</ChoiceSheet>
+
+	<EditSheet
+		bind:open={passwordOpen}
+		title="Change password"
+		description="Signs everyone out of the panel, then signs you in again with the new password."
+		action={passwordStep || 'Change'}
+		disabled={!passwordReady || passwordStep !== ''}
+		onSave={changePassword}
+	>
+		<div class="flex flex-col gap-3">
+			<label class="flex flex-col gap-1.5 text-sm font-medium">
+				Current password
+				<input type="password" autocomplete="current-password" bind:value={passwordCurrent}
+					class="h-11 rounded-xl border border-input bg-transparent px-3 text-base" />
+			</label>
+			<label class="flex flex-col gap-1.5 text-sm font-medium">
+				New password
+				<input type="password" autocomplete="new-password" bind:value={passwordNext}
+					class="h-11 rounded-xl border border-input bg-transparent px-3 text-base" />
+			</label>
+			<label class="flex flex-col gap-1.5 text-sm font-medium">
+				New password again
+				<input type="password" autocomplete="new-password" bind:value={passwordRepeat}
+					class="h-11 rounded-xl border border-input bg-transparent px-3 text-base" />
+			</label>
+			{#if passwordHint}<p class="text-[13px] text-muted-foreground">{passwordHint}</p>{/if}
+		</div>
+	</EditSheet>
 
 	<SaveBar
 		visible={changed.length > 0}

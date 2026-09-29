@@ -461,8 +461,8 @@ write_config() {
             section == "server" && /^[ \t]*root[ \t]*=/ { print "root = " root; next }
             { print }' "$1/fernsdr.example.conf"
         printf '\n[admin]\n'
-        printf '# The password is in %s, for root only. For another one,\n' "$INSTALL/admin-password"
-        printf '# %s --hash-password makes the line to put here.\n' "$INSTALL/current/fernsdr"
+        printf '# The password is in %s, for root only. Change it on the\n' "$INSTALL/admin-password"
+        printf "# admin panel's Station page, or with %s --set-password.\n" "$INSTALL/current/fernsdr"
         printf 'password_hash = %s\n' "$HASH"
         if [ "$WHERE" = home ]; then
             printf '# The admin panel over plain HTTP from the home network (docs/DEPLOYMENT.md).\n'

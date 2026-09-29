@@ -446,6 +446,24 @@ async function request<T>(path: string, options: RequestInit): Promise<T> {
   return payload as T;
 }
 
+/** What the stored hash of a new password is made with; OWASP's current figure, as the receiver's own tool uses. */
+const NEW_PASSWORD_ROUNDS = 600000;
+
+/**
+ * PBKDF2-SHA256 of `password` with the salt's hex text as its bytes, as the
+ * receiver derives it. Web Crypto derives off the UI thread; the local
+ * fallback is for pages over plain HTTP, where browsers withhold it, and
+ * uses the same published vectors.
+ */
+async function deriveKey(password: string, salt: string, iterations: number): Promise<Uint8Array> {
+  const subtle = globalThis.crypto?.subtle;
+  return subtle
+    ? new Uint8Array(await subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256',
+        salt: new TextEncoder().encode(salt), iterations },
+        await subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']), 256))
+    : pbkdf2Sha256(utf8(password), utf8(salt), iterations, 32);
+}
+
 export const api = {
   /** `exposed`: let in over plain HTTP from outside only because of [admin] plain_http_anywhere. */
   session: () => call<{ authorised: boolean; exposed?: boolean }>('/api/admin/session'),
@@ -474,14 +492,7 @@ export const api = {
         !/^[a-f0-9]{32}$/.test(challenge.nonce) || !/^[a-f0-9]{16,128}$/.test(challenge.salt)) {
       throw new ApiError('Invalid sign-in challenge', 400);
     }
-    // Web Crypto derives off the UI thread. The local fallback remains for
-    // browsers that cannot expose it, and uses the same published vectors.
-    const subtle = globalThis.crypto?.subtle;
-    const key = subtle
-      ? new Uint8Array(await subtle.deriveBits({ name: 'PBKDF2', hash: 'SHA-256',
-          salt: new TextEncoder().encode(challenge.salt), iterations: challenge.iterations },
-          await subtle.importKey('raw', new TextEncoder().encode(password), 'PBKDF2', false, ['deriveBits']), 256))
-      : pbkdf2Sha256(utf8(password), utf8(challenge.salt), challenge.iterations, 32);
+    const key = await deriveKey(password, challenge.salt, challenge.iterations);
     const proof = toHex(hmacSha256(key, utf8(challenge.nonce)));
     const result = await call<{ ok: boolean; signing_context: string }>('/api/admin/login', {
       method: 'POST',
@@ -491,6 +502,39 @@ export const api = {
     rememberKey(hmacSha256(key, utf8(`fernsdr-admin-session-v3\n${result.signing_context}`)), result.signing_context);
     key.fill(0);
     return result;
+  },
+  /**
+   * A new password, as sign-in works: neither password crosses the network.
+   * The current one proves itself against a fresh challenge; the new one
+   * becomes a stored hash here, with a salt drawn here, and only the hash
+   * goes. The receiver ends every session on the change, so this signs in
+   * again with the new password before it returns.
+   */
+  changePassword: async (current: string, next: string, onProgress?: (step: string) => void): Promise<void> => {
+    onProgress?.('Checking the current password…');
+    const challenge = await call<{ salt: string; iterations: number; nonce: string }>(
+      '/api/admin/challenge',
+      { method: 'POST' },
+    );
+    if (!Number.isInteger(challenge.iterations) || challenge.iterations < 1 || challenge.iterations > 2_000_000 ||
+        !/^[a-f0-9]{32}$/.test(challenge.nonce) || !/^[a-f0-9]{16,128}$/.test(challenge.salt)) {
+      throw new ApiError('Invalid sign-in challenge', 400);
+    }
+    const currentKey = await deriveKey(current, challenge.salt, challenge.iterations);
+    const proof = toHex(hmacSha256(currentKey, utf8(challenge.nonce)));
+    currentKey.fill(0);
+    onProgress?.('Making the new password…');
+    const salt = toHex(globalThis.crypto.getRandomValues(new Uint8Array(16)));
+    const derived = await deriveKey(next, salt, NEW_PASSWORD_ROUNDS);
+    const hash = `pbkdf2$${NEW_PASSWORD_ROUNDS}$${salt}$${toHex(derived)}`;
+    derived.fill(0);
+    await call<{ ok: boolean }>('/api/admin/password', {
+      method: 'POST',
+      body: JSON.stringify({ nonce: challenge.nonce, proof, hash }),
+    });
+    forgetKey();
+    onProgress?.('Signing in with the new password…');
+    await api.login(next);
   },
   logout: async () => {
     const result = await call<{ ok: boolean }>('/api/admin/logout', { method: 'POST' });

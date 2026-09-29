@@ -764,7 +764,7 @@ TEST_CASE(admin_the_panel_cannot_change_what_the_machine_decides) {
     CHECK(names(change("port = 8073", "port = 8074"), "[server] section"));
     CHECK(names(added("[server]\nroot = /\n"), "[server] section"));
     CHECK(names(change("catalog = a/b", "catalog = a/b c/d"), "[modules] section"));
-    CHECK(names(change("pbkdf2$1$aa$bb", "pbkdf2$1$aa$cc"), "fernsdr --hash-password"));
+    CHECK(names(change("pbkdf2$1$aa$bb", "pbkdf2$1$aa$cc"), "Station page"));
     CHECK(names(change("[admin]\n", "[admin]\nsession_hours = 168\n"), "[admin] section"));
     CHECK(names(added("[admin]\n"), "[admin] section"));
 
@@ -836,3 +836,20 @@ TEST_CASE(admin_the_panel_cannot_widen_a_network_inputs_senders) {
     CHECK(fernsdr::machine_only_change(current, candidate).find("[band:u]") != std::string::npos);
 }
 
+
+TEST_CASE(admin_password_goes_where_the_file_has_room_for_it) {
+    const std::string hash = "pbkdf2$600000$00112233445566778899aabbccddeeff$" + std::string(64, 'a');
+    // Replaced where it was, comments kept.
+    std::string text = fernsdr::with_admin_password("[site]\nname = x\n[admin]\n# ours\npassword_hash = old\nhome_network = yes\n", hash);
+    CHECK(text == "[site]\nname = x\n[admin]\n# ours\npassword_hash = " + hash + "\nhome_network = yes\n");
+    // First in an [admin] section that has none.
+    text = fernsdr::with_admin_password("[admin]\nhome_network = yes\n", hash);
+    CHECK(text == "[admin]\npassword_hash = " + hash + "\nhome_network = yes\n");
+    // A section of its own where there is none.
+    text = fernsdr::with_admin_password("[site]\nname = x", hash);
+    CHECK(text == "[site]\nname = x\n\n[admin]\npassword_hash = " + hash + "\n");
+    fernsdr::Config parsed;
+    std::string error;
+    CHECK(parsed.parse(text, error));
+    CHECK(parsed.section("admin").get("password_hash") == hash);
+}

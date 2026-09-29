@@ -393,37 +393,60 @@ bool AdminAuth::issue_challenge(const std::string& address, AdminChallenge& out,
 
 std::string AdminAuth::login_with_proof(const std::string& nonce, const std::string& proof,
                                         const std::string& address, int& retry_after, AdminCaller caller) {
+    if (!proof_valid(nonce, proof, address, retry_after, caller)) return "";
+    return issue_session(network_key(address), address, now());
+}
+
+bool AdminAuth::acceptable_password_hash(const std::string& hash) {
+    int iterations = 0;
+    std::string salt, derived_hex;
+    std::vector<uint8_t> bytes;
+    return parse_password_hash(hash, iterations, salt, derived_hex) && iterations >= 100000 && salt.size() == 32 &&
+           from_hex(salt, bytes) && from_hex(derived_hex, bytes) &&
+           hash.find_first_of(" \t\r\n\"#;") == std::string::npos;
+}
+
+bool AdminAuth::replace_password_hash(const std::string& hash) {
+    if (!acceptable_password_hash(hash)) return false;
+    config_.password_hash = hash;
+    sessions_.clear();
+    counters_.clear();
+    return true;
+}
+
+bool AdminAuth::proof_valid(const std::string& nonce, const std::string& proof, const std::string& address,
+                            int& retry_after, AdminCaller caller) {
     retry_after = 0;
-    if (!enabled()) return "";
+    if (!enabled()) return false;
 
     const int64_t now = this->now();
     const std::string network = network_key(address);
-    if (locked_out(network, caller, now, retry_after)) return "";
+    if (locked_out(network, caller, now, retry_after)) return false;
 
     // A forged, expired, answered or somebody else's challenge tested no
     // password, so it is refused without counting as a failure.
     int64_t expires_ms = 0;
-    if (!challenge_genuine(nonce, address, expires_ms) || expires_ms <= now) return "";
+    if (!challenge_genuine(nonce, address, expires_ms) || expires_ms <= now) return false;
     // Spent on sight, right or wrong: a challenge that survives a wrong answer
     // is a challenge an attacker can grind against offline and then use. What
     // is kept here is bounded by the sign-in limits, since every entry is a
     // sign-in or a counted failure.
-    if (!spent_.emplace(nonce, expires_ms).second) return "";
+    if (!spent_.emplace(nonce, expires_ms).second) return false;
 
     int iterations = 0;
     std::string salt, derived_hex;
-    if (!parse_password_hash(config_.password_hash, iterations, salt, derived_hex)) return "";
+    if (!parse_password_hash(config_.password_hash, iterations, salt, derived_hex)) return false;
     std::vector<uint8_t> key;
-    if (!from_hex(derived_hex, key) || key.size() != 32) return "";
+    if (!from_hex(derived_hex, key) || key.size() != 32) return false;
 
     uint8_t mac[32];
     hmac_sha256(key.data(), key.size(), reinterpret_cast<const uint8_t*>(nonce.data()), nonce.size(),
                 mac);
     if (!constant_time_equal(to_hex(mac, sizeof(mac)), proof)) {
         note_failure(network, now, retry_after);
-        return "";
+        return false;
     }
-    return issue_session(network, address, now);
+    return true;
 }
 
 std::string AdminAuth::token_from(const HttpRequest& request) const {
@@ -581,6 +604,36 @@ std::string hide_admin_credentials(const std::string& text) {
     });
 }
 
+std::string with_admin_password_hash(const std::string& text, const std::string& hash) {
+    return rewrite_admin_credentials(text, [&hash](const std::string& key, const std::string& raw, const std::string&) {
+        return key == "password_hash" ? hash : raw;
+    });
+}
+
+std::string with_admin_password(const std::string& text, const std::string& hash) {
+    Config parsed;
+    std::string error;
+    if (parsed.parse(text, error) && parsed.has_section("admin") &&
+        !parsed.section("admin").get("password_hash", "").empty()) {
+        return with_admin_password_hash(text, hash);
+    }
+    // After the first [admin] header, if there is one.
+    size_t start = 0;
+    while (start < text.size()) {
+        const size_t newline = text.find('\n', start);
+        const size_t end = newline == std::string::npos ? text.size() : newline;
+        if (trim(text.substr(start, end - start)) == "[admin]") {
+            const size_t after = newline == std::string::npos ? text.size() : newline + 1;
+            return text.substr(0, after) + (newline == std::string::npos ? "\n" : "") + "password_hash = " + hash + "\n" +
+                   text.substr(after);
+        }
+        start = end + 1;
+    }
+    std::string out = text;
+    if (!out.empty() && out.back() != '\n') out += '\n';
+    return out + "\n[admin]\npassword_hash = " + hash + "\n";
+}
+
 std::string restore_admin_credentials(const std::string& text, const ConfigSection& current) {
     return rewrite_admin_credentials(text, [&current](const std::string& key, const std::string& raw,
                                                       const std::string& value) {
@@ -599,8 +652,8 @@ std::string machine_only_change(const Config& current, const Config& candidate) 
         return found;
     };
     static const std::pair<const char*, const char*> kSections[] = {
-        {"admin", "it decides who may administer this receiver. For a new password, run fernsdr --hash-password "
-                  "there and put its line under [admin]."},
+        {"admin", "it decides who may administer this receiver. A new password is set on the Station page, "
+                  "under Sign-in."},
         {"modules", "it decides which programs this receiver may download and run."},
         {"server", "it decides what this receiver serves and whose forwarded addresses it believes, and only "
                    "a restart applies it."},

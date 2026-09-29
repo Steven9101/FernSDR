@@ -490,7 +490,7 @@ TEST_CASE(admin_config_editor_keeps_the_password_hash_on_the_server) {
             refused.set("text", attempt);
             const std::string response = admin.request("POST", "/api/admin/config", refused.serialize());
             CHECK(response.find("400 Bad Request") != std::string::npos);
-            CHECK(response.find("fernsdr --hash-password") != std::string::npos);
+            CHECK(response.find("Station page") != std::string::npos);
         }
         std::string after;
         CHECK(fernsdr::read_text_file(path, after));
@@ -2331,4 +2331,60 @@ TEST_CASE(admin_lists_the_radios_and_restarts_only_where_something_starts_it_aga
     ::unsetenv("FERNSDR_SUPERVISED");
     if (harness.thread.joinable()) harness.thread.join();
     CHECK(admin.request("GET", "/api/admin/session").empty());
+}
+
+TEST_CASE(admin_changes_its_password_from_the_panel_without_sending_either) {
+    using fernsdr::Json;
+    const std::string old_password = "test admin old password";
+    const std::string new_password = "test admin brand new password";
+    char directory[] = "/tmp/fernsdr-password-XXXXXX";
+    CHECK(::mkdtemp(directory) != nullptr);
+    const std::string path = std::string(directory) + "/fernsdr.conf";
+    {
+        Harness harness(15000, 120000,
+                        "[admin]\n# the panel's password\npassword_hash = " + fernsdr::hash_password(old_password, 1000) +
+                            "\nsession_hours = 8\n",
+                        path);
+        CHECK(harness.ok);
+        if (!harness.ok) return;
+        AdminClient admin;
+        CHECK(admin.sign_in(harness.port(), old_password));
+        // What the page sends: a proof of the old password against a fresh
+        // challenge, and the new hash it made itself.
+        const auto change = [&](const std::string& current, const std::string& hash) {
+            const Json challenge =
+                json_body(TestClient(harness.port()).http_request("POST", "/api/admin/challenge", "", "", admin.host));
+            uint8_t key[32], mac[32];
+            fernsdr::pbkdf2_sha256(current, challenge["salt"].string(), static_cast<int>(challenge["iterations"].number()),
+                                   key, sizeof(key));
+            const std::string nonce = challenge["nonce"].string();
+            fernsdr::hmac_sha256(key, sizeof(key), reinterpret_cast<const uint8_t*>(nonce.data()), nonce.size(), mac);
+            Json body = Json::make_object();
+            body.set("nonce", nonce);
+            body.set("proof", fernsdr::to_hex(mac, sizeof(mac)));
+            body.set("hash", hash);
+            return admin.request("POST", "/api/admin/password", body.serialize());
+        };
+        const std::string new_hash = fernsdr::hash_password(new_password, 100000);
+        // The wrong current password, or a weak hash, changes nothing.
+        CHECK(change("not the password at all", new_hash).find("403") != std::string::npos);
+        CHECK(change(old_password, fernsdr::hash_password(new_password, 1000)).find("400") != std::string::npos);
+        const std::string reply = change(old_password, new_hash);
+        CHECK(reply.find("200 OK") != std::string::npos);
+        CHECK(reply.find(new_password) == std::string::npos);
+        // Every session ended; the new password signs in, the old one not.
+        CHECK(!json_body(admin.request("GET", "/api/admin/session"))["authorised"].boolean(true));
+        CHECK(admin.request("GET", "/api/admin/state").find("401") != std::string::npos);
+        AdminClient again;
+        CHECK(!again.sign_in(harness.port(), old_password));
+        CHECK(again.sign_in(harness.port(), new_password));
+    }
+    std::string text;
+    CHECK(fernsdr::read_text_file(path, text));
+    // Written where the old hash was, the comment and the rest kept.
+    CHECK(text.find("# the panel's password\npassword_hash = pbkdf2$100000$") != std::string::npos);
+    CHECK(text.find("session_hours = 8") != std::string::npos);
+    ::unlink(path.c_str());
+    ::unlink((std::string(directory) + "/fernsdr-settings.json").c_str());
+    ::rmdir(directory);
 }

@@ -42,6 +42,9 @@ class Live {
 
   stop(): void {
     this.running = false;
+    // An answer still on its way belongs to before the stop: a 401 in it
+    // must not sign the panel out, as during a change of password.
+    this.asked++;
     window.clearTimeout(this.timer);
     document.removeEventListener('visibilitychange', this.onVisibility);
   }
