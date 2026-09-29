@@ -23,7 +23,7 @@ listening and each receiver on the same two CPU cores:
 | From the antenna to the listener's ear | 227 ms | 261 ms, UberSDR |
 | Listeners on two CPU cores | 1,600 and more | 400, PA3FWM's WebSDR |
 | Memory with four listening | 8 MB | 30 MB, PhantomSDR |
-| Sound that still arrives through 24 kbit/s | 63 % | 10 %, VertexSDR |
+| Sound that still arrives through 24 kbit/s | 63 % | 7 %, NovaSDR (VertexSDR's arrived too changed to measure) |
 | Back on time after a 15 s outage | 0.9 s | 2.0 s, PhantomSDR-Plus (sv1btl) |
 | The listener's page on a first visit | 127 kB | 130 kB, VertexSDR |
 
