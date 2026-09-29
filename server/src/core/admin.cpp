@@ -590,10 +590,20 @@ std::string rewrite_admin_credentials(const std::string& text, Rewrite rewrite) 
     return out;
 }
 
-/** A setting the receiver reads as a path on this machine. */
-bool names_a_file(const std::string& section, const std::string& key) {
-    if (section.rfind("band:", 0) == 0) return key == "path" || key == "history_path";
-    return section == "site" && key == "theme_file";
+/**
+ * A setting the receiver, or a module it runs, reads as a path on this
+ * machine, or one that sends packets somewhere: none of it is for a session
+ * that could have been stolen. A module's setting counts when its value is a
+ * path, such as the RX-888 module's firmware: modules run as the receiver's
+ * user, and a path there would make them open whatever that user can.
+ */
+bool names_a_file(const std::string& section, const std::string& key, const std::string& value) {
+    if (section.rfind("band:", 0) == 0) {
+        if (key == "path" || key == "history_path") return true;
+        return key.rfind("module.", 0) == 0 && (value.rfind('/', 0) == 0 || value.rfind('~', 0) == 0 ||
+                                               value.find("..") != std::string::npos);
+    }
+    return section == "site" && (key == "theme_file" || key == "spot_server");
 }
 
 }  // namespace
@@ -674,7 +684,7 @@ std::string machine_only_change(const Config& current, const Config& candidate) 
         for (const ConfigSection& section : config.sections()) {
             const int nth = seen[section.name()]++;
             for (const auto& [key, value] : section.values()) {
-                if (names_a_file(section.name(), key)) found[Where{section.name(), nth, key}] = value;
+                if (names_a_file(section.name(), key, value)) found[Where{section.name(), nth, key}] = value;
             }
         }
         return found;
@@ -684,7 +694,9 @@ std::string machine_only_change(const Config& current, const Config& candidate) 
         const auto was = before.find(where);
         if (was == before.end() || was->second != value) {
             return "[" + std::get<0>(where) + "] " + std::get<2>(where) +
-                   " names a file on the machine, so it can only be set in the file there.";
+                   (std::get<2>(where) == "spot_server" ? " decides where the receiver sends packets"
+                                                        : " names a file on the machine") +
+                   ", so it can only be set in the file there.";
         }
     }
 

@@ -228,6 +228,11 @@ from the rest. The same `settings`
 list goes into the package manifest, which is where FernSDR reads it: a
 package is never run to find out what it accepts.
 
+A setting whose value is a path on the machine (it starts with `/` or `~`,
+or holds `..`), such as a firmware image, can only be set in the configuration
+file on the machine, not from the admin panel: a module runs as the
+receiver's user, and a stolen panel session must not choose what it opens.
+
 `--list-devices` prints the devices it can see, and an empty list when there
 are none:
 

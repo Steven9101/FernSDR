@@ -9,6 +9,7 @@
 #include <cstring>
 
 #include <dirent.h>
+#include <arpa/inet.h>
 #include <sys/stat.h>
 
 #include "hardware.h"
@@ -1328,7 +1329,9 @@ bool Application::handle_admin(Connection& connection, const HttpRequest& reques
             return true;
         }
         const std::string who = body["address"].string();
-        if (who.empty() || who.size() > 64) {
+        in6_addr parsed{};
+        if (who.empty() || who.size() > 64 ||
+            (::inet_pton(AF_INET, who.c_str(), &parsed) != 1 && ::inet_pton(AF_INET6, who.c_str(), &parsed) != 1)) {
             response = json_response(400, json_error("which address?"), request.keep_alive());
             return true;
         }
@@ -1681,7 +1684,8 @@ bool Application::restore_backup(const Json& backup, Json& result, std::string& 
     // files a band reads, and network inputs, are refused below as the
     // configuration editor refuses them: the old paths would name nothing here.
     std::string merged = without_keys(without_sections(restored, machine), [](const std::string& section, const std::string& key) {
-        return (section.rfind("band:", 0) == 0 && key == "history_path") || (section == "site" && key == "theme_file");
+        return (section.rfind("band:", 0) == 0 && key == "history_path") ||
+               (section == "site" && (key == "theme_file" || key == "spot_server"));
     });
     if (!merged.empty() && merged.back() != '\n') merged += '\n';
     merged += "\n" + sections_of(current_text, machine);

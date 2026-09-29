@@ -1047,9 +1047,11 @@ What it does:
   Some things can only be changed in the file on the machine, and a save that
   changes them is refused: who may administer (`[admin]`), which programs may
   run (`[modules]`), what is served and whose forwarded addresses are believed
-  (`[server]`), every setting that names a file (`theme_file`, and a band's
-  `path` and `history_path`), and where a UDP band listens and whom it
-  takes samples from (its `bind`, `port`, `multicast` and `senders`). A
+  (`[server]`), every setting that names a file (`theme_file`, a band's
+  `path` and `history_path`, and a module setting whose value is a path,
+  such as the RX-888's `module.firmware`), where the receiver sends spots
+  (`spot_server`), and where a UDP band listens and whom it takes samples
+  from (its `bind`, `port`, `multicast` and `senders`). A
   stolen session is then limited to what the panel
   does while it lasts. A file setting may be deleted, which brings back its
   default, and a UDP band may be switched to another source or removed.

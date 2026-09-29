@@ -773,6 +773,17 @@ TEST_CASE(admin_the_panel_cannot_change_what_the_machine_decides) {
     CHECK(names(change("sample_rate = 2M", "sample_rate = 2M\nhistory_path = a.wfa"), "[band:a] history_path"));
     CHECK(names(added("[band:b]\nsource = file\npath = /srv/a.cu8\n"), "[band:b] path"));
     CHECK(names(added("[site]\ntheme_file = look.json\n"), "[site] theme_file"));
+
+    // A module's setting holding a path is a file too; its other settings are
+    // the panel's. Where the spots go is the machine's as well.
+    CHECK(added("[band:m]\nsource = module\nmodule = rx888\nmodule.gain = auto\nmodule.device = serial:0001\n").empty());
+    CHECK(names(added("[band:m]\nsource = module\nmodule = rx888\nmodule.firmware = /etc/shadow\n"),
+                "[band:m] module.firmware"));
+    CHECK(names(added("[band:m]\nsource = module\nmodule = rx888\nmodule.firmware = ../../x.img\n"),
+                "[band:m] module.firmware"));
+    const std::string spots = change("theme_file = look.json\n", "theme_file = look.json\nspot_server = 10.0.0.5:4739\n");
+    CHECK(names(spots, "[site] spot_server"));
+    CHECK(names(spots, "sends packets"));
 }
 
 TEST_CASE(admin_every_loopback_address_is_one_network) {

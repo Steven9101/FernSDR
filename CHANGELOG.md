@@ -203,8 +203,10 @@ The first release.
   carries. The updater runs as root in a unit of its own, never in the
   receiver, which cannot write to its own program.
 - The configuration page never shows the password hash, and cannot change
-  `[admin]`, `[modules]`, `[server]`, a setting that names a file or where a
-  UDP band listens; those are changed in the file on the machine.
+  `[admin]`, `[modules]`, `[server]`, a setting that names a file (a
+  module's setting holding a path among them), where spots are sent, or
+  where a UDP band listens; those are changed in the file on the machine.
+  The log keeps each message on one line, whatever it quotes.
 - Sign-in limits count by network and across networks. After the fifth wrong
   guess every further one doubles the lockout, up to 64 minutes, and the
   machine itself can still sign in when failures from everywhere have closed
