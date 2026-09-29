@@ -21,14 +21,18 @@
 # On debian:12, or the distribution LAB_EXTRAS names, besides:
 #   5. a manifest changed after it was signed is refused, with nothing
 #      installed;
-#   6. an internet install with a domain listens on this machine only, and
+#   6. an internet install with a domain listens on this machine only and
+#      gets Caddy from the distribution, serving the domain, and
 #      what the receiver's user leaves in place of its configuration, a link
 #      to a file of root's or a FIFO, gets it nothing from a second run;
 #   7. a receiver that tools/source-install.sh --service set up moves over
 #      with its files;
 #   8. one whose configuration the release refuses is left as it was, and
 #      one whose move fails halfway runs again as before;
-#   9. install.sh as the source has it refuses to run.
+#   9. install.sh as the source has it refuses to run;
+#  10. a server without a domain serves plain HTTP, the admin panel too when
+#      asked, and a second run with FERNSDR_NEW_PASSWORD gives the panel a
+#      new password.
 # Needs docker and python3. Changes nothing on the host but containers,
 # images and a network, all named fernsdr-install-lab, and WORKDIR. The
 # containers run privileged, which systemd in them needs under cgroup v2,
@@ -493,10 +497,13 @@ extras() {
         printf '%s\n' "$out" > "$WORK/out-internet.txt"
         conf=$(lab cat /var/lib/fernsdr/fernsdr.conf)
         if printf '%s\n' "$conf" | grep -q '^bind = 127.0.0.1$' && ! printf '%s\n' "$conf" | grep -q home_network &&
-            printf '%s\n' "$out" | grep -q '^radio.example.org {$' &&
+            printf '%s\n' "$out" | grep -q 'served over HTTPS by Caddy' &&
+            lab grep -q '^# FernSDR begin' /etc/caddy/Caddyfile && lab grep -q '^radio.example.org {$' /etc/caddy/Caddyfile &&
+            lab grep -q 'reverse_proxy 127.0.0.1:8073' /etc/caddy/Caddyfile && lab test -f /etc/caddy/Caddyfile.before-fernsdr &&
+            [ "$(lab systemctl is-active caddy)" = active ] &&
             [ "$(code "http://$name:8073/api/status")" = 000 ] &&
             [ "$(lab curl -s -o /dev/null -w '%{http_code}' -X POST http://127.0.0.1:8073/api/admin/challenge)" = 200 ]; then
-            pass "an internet install listens on this machine only, and says how to put Caddy in front"
+            pass "an internet install listens on this machine only, with Caddy from the distribution serving the domain"
         else
             fail "the internet install: $(printf '%s' "$out" | tail -n 12 | tr '\n' ' ')"
         fi
@@ -616,6 +623,49 @@ extras() {
         pass "install.sh as the source has it refuses to run"
     else
         fail "the source's install.sh: $out"
+    fi
+    [ -n "${LAB_KEEP:-}" ] || docker rm -f "$name" > /dev/null
+
+    # 10. On a server without a domain: plain HTTP for listeners, and with
+    # `admin` for the admin panel too; then a new password from a second run.
+    name=$PREFIX-http
+    boot "$name" "$distro"
+    if out=$(one_liner "$name" v010 "FERNSDR_SETUP='http admin'"); then
+        conf=$(lab cat /var/lib/fernsdr/fernsdr.conf)
+        if printf '%s\n' "$conf" | grep -q '^bind = 0.0.0.0$' && printf '%s\n' "$conf" | grep -q '^plain_http_anywhere = yes$' &&
+            ! printf '%s\n' "$conf" | grep -q home_network &&
+            printf '%s' "$out" | grep -q 'over plain HTTP, at your own risk' &&
+            [ "$(code "http://$name:8073/api/status")" = 200 ] &&
+            [ "$(code -X POST "http://$name:8073/api/admin/challenge")" = 200 ]; then
+            pass "a server without a domain serves plain HTTP, and the admin panel too when asked"
+        else
+            fail "the plain HTTP server install: $(printf '%s' "$out" | tail -n 8 | tr '\n' ' ')"
+        fi
+    else
+        fail "the plain HTTP server install failed: $(printf '%s' "$out" | tail -n 3 | tr '\n' ' ')"
+    fi
+    old=$(lab cat /opt/fernsdr/admin-password)
+    if out=$(one_liner "$name" v010 FERNSDR_NEW_PASSWORD=1); then
+        new=$(lab cat /opt/fernsdr/admin-password)
+        hash=$(lab sed -n 's/^password_hash = //p' /var/lib/fernsdr/fernsdr.conf)
+        for i in $(seq 1 30); do
+            [ "$(code "http://$name:8073/api/status")" = 200 ] && break
+            sleep 1
+        done
+        if [ -n "$new" ] && [ "$new" != "$old" ] && printf '%s' "$out" | grep -q 'has a new password' &&
+            ! printf '%s' "$out" | grep -qF "$new" &&
+            [ "$(lab stat -c '%U %a' /var/lib/fernsdr/fernsdr.conf)" = "fernsdr 600" ] &&
+            [ "$(code "http://$name:8073/api/status")" = 200 ] &&
+            python3 -c 'import hashlib, sys
+kind, iterations, salt, derived = sys.argv[2].split("$")
+sys.exit(hashlib.pbkdf2_hmac("sha256", sys.argv[1].encode(), salt.encode(), int(iterations)).hex() != derived)' \
+                "$new" "$hash"; then
+            pass "run again for a new password: the receiver checks the new one and runs"
+        else
+            fail "the new password: $(printf '%s' "$out" | tail -n 5 | tr '\n' ' ')"
+        fi
+    else
+        fail "run again for a new password failed: $(printf '%s' "$out" | tail -n 3 | tr '\n' ' ')"
     fi
     [ -n "${LAB_KEEP:-}" ] || docker rm -f "$name" > /dev/null
 }

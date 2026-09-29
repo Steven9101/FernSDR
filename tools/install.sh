@@ -48,11 +48,12 @@ WORK=""
 PLATFORM=""
 VERSION="" DATE="" ARCHIVE="" SIZE="" SHA256="" SIGNATURE=""
 INSTALLED=""
-WHERE="" DOMAIN=""
+WHERE="" DOMAIN="" PLAIN_ADMIN="" HTTPS=""
 PASSWORD="" HASH=""
 CONFIG_WRITTEN="" MIGRATING="" MIGRATION_OPEN="" OLD_RUNNING=""
 UNITS_CHANGED="" SIGNED=""
 INIT="" SVDIR="" SERVICE_CHANGED="" SERVICE_SCRIPT=""
+ACTION=update
 
 say() { printf '== %s\n' "$*"; }
 note() { printf '   %s\n' "$*"; }
@@ -216,8 +217,9 @@ valid_domain() {
     esac
 }
 
-# An answer to the question: 1 or home, or 2 or internet, which a domain may
-# follow.
+# An answer to the question: 1 or home; 2 or internet, which a domain may
+# follow; 3 or http, which `admin` may follow for the admin panel over plain
+# HTTP too.
 parse_where() {
     set -f
     # shellcheck disable=SC2086 # split into words on purpose
@@ -236,38 +238,62 @@ parse_where() {
             fi
             WHERE=internet
             ;;
+        3 | http)
+            [ $# -le 2 ] || return 1
+            if [ $# -eq 2 ]; then
+                [ "$2" = admin ] || return 1
+                PLAIN_ADMIN=1
+            fi
+            WHERE=http
+            ;;
         *) return 1 ;;
     esac
 }
 
 # The one question: where the receiver runs. At home it serves the home
-# network over plain HTTP, the admin panel included; on a server it listens
-# on this machine only, for a web server in front of it to serve over HTTPS.
+# network over plain HTTP, the admin panel included. On a server with a
+# domain it listens on this machine only and Caddy serves it over HTTPS,
+# set up here where the distribution has Caddy. On a server without one it
+# serves plain HTTP to everyone, and the admin panel only through an SSH
+# tunnel, unless the operator takes the risk of plain HTTP for it too.
 ask_where() {
     if [ -n "${FERNSDR_SETUP:-}" ]; then
         parse_where "$FERNSDR_SETUP" ||
-            die "FERNSDR_SETUP is \"$FERNSDR_SETUP\"; it takes home, internet, or internet and the server's domain."
+            die "FERNSDR_SETUP is \"$FERNSDR_SETUP\"; it takes home, internet and the server's domain, or http."
         return 0
     fi
     # Piped into sh, the script is standard input, so the answer comes from
     # the terminal itself.
     if ! (exec < /dev/tty) 2> /dev/null; then
-        die "There is no terminal to ask where the receiver runs. FERNSDR_SETUP says it instead: home, internet, or internet and the server's domain, as in FERNSDR_SETUP=\"internet radio.example.org\"."
+        die "There is no terminal to ask where the receiver runs. FERNSDR_SETUP says it instead: home, internet and the server's domain, or http, as in FERNSDR_SETUP=\"internet radio.example.org\"."
     fi
     {
         printf '\nWhere does this receiver run?\n\n'
-        printf '  1  At home. Listeners and the admin panel reach it on the home network,\n'
-        printf '     over plain HTTP.\n'
-        printf '  2  On a server on the internet. It listens on this machine only, for a\n'
-        printf '     web server such as Caddy to serve it over HTTPS.\n\n'
-        printf 'For 2, add the domain it is to be reached at, if it has one: 2 radio.example.org\n'
+        printf '  1  At home. Listeners and the admin panel reach it on the home network.\n'
+        printf '  2  On a server with a domain name, such as radio.example.org. It is\n'
+        printf '     served over HTTPS, with a certificate this installer sets up.\n'
+        printf '  3  On a server without a domain name. Listeners reach it over plain HTTP.\n\n'
+        printf 'For 2, add the domain: 2 radio.example.org\n'
     } > /dev/tty
     while :; do
         printf 'Answer: ' > /dev/tty
         IFS= read -r answer < /dev/tty || die "No answer, so nothing was installed."
-        parse_where "$answer" && break
-        printf 'That is neither 1 nor 2; for 2, a domain such as radio.example.org may follow.\n' > /dev/tty
+        case "$answer" in 2 | internet) answer="" ;; esac
+        [ -n "$answer" ] && parse_where "$answer" && break
+        printf 'Answer 1, 2 with the domain (2 radio.example.org), or 3.\n' > /dev/tty
     done
+    if [ "$WHERE" = http ] && [ -z "$PLAIN_ADMIN" ]; then
+        {
+            printf '\nWithout a domain there is no HTTPS, so the admin panel is reached through\n'
+            printf 'an SSH tunnel: ssh -L 8073:localhost:8073 you@this-server, then\n'
+            printf 'http://localhost:8073/admin. It can also answer plain HTTP from anywhere,\n'
+            printf 'at your own risk: anyone between you and the server, a public Wi-Fi or a\n'
+            printf 'provider, can then read the panel and change it to catch the password.\n\n'
+        } > /dev/tty
+        printf 'The admin panel over plain HTTP from anywhere? [y/N] ' > /dev/tty
+        IFS= read -r answer < /dev/tty || answer=""
+        case "$answer" in y | Y | yes | Yes) PLAIN_ADMIN=1 ;; esac
+    fi
     printf '\n' > /dev/tty
 }
 
@@ -453,7 +479,7 @@ new_admin_password() {
 # receiver runs.
 write_config() {
     new_admin_password "$1"
-    if [ "$WHERE" = home ]; then bind=0.0.0.0; else bind=127.0.0.1; fi
+    case "$WHERE" in home | http) bind=0.0.0.0 ;; *) bind=127.0.0.1 ;; esac
     {
         awk -v bind="$bind" -v root="$INSTALL/current/web" '
             /^[ \t]*\[/ { section = $0; gsub(/[][ \t]/, "", section) }
@@ -467,6 +493,11 @@ write_config() {
         if [ "$WHERE" = home ]; then
             printf '# The admin panel over plain HTTP from the home network (docs/DEPLOYMENT.md).\n'
             printf 'home_network = yes\n'
+        fi
+        if [ -n "$PLAIN_ADMIN" ]; then
+            printf '# The admin panel over plain HTTP from anywhere, at your own risk: anyone\n'
+            printf '# on the way can read it and catch the password (docs/DEPLOYMENT.md).\n'
+            printf 'plain_http_anywhere = yes\n'
         fi
     } > "$WORK/fernsdr.conf"
     write_as_receiver fernsdr.conf < "$WORK/fernsdr.conf"
@@ -942,6 +973,7 @@ first_install() {
     fi
     if [ -n "$MIGRATING" ]; then finish_migration; fi
     INSTALLED=$VERSION
+    setup_https
     summary
 }
 
@@ -1062,6 +1094,113 @@ update_install() {
     summary
 }
 
+# A package from the distribution's own repositories.
+install_package() {
+    if have apt-get; then
+        DEBIAN_FRONTEND=noninteractive apt-get install -y -q "$1" ||
+            { apt-get update -q && DEBIAN_FRONTEND=noninteractive apt-get install -y -q "$1"; }
+    elif have dnf; then
+        dnf install -y -q "$1"
+    elif have zypper; then
+        zypper --non-interactive --quiet install "$1"
+    elif have pacman; then
+        pacman -S --noconfirm --needed "$1"
+    else
+        return 1
+    fi
+}
+
+# Caddy's configuration with this receiver's site in it, between two lines
+# that a later run finds and replaces; whatever else the file serves stays.
+# The file as it was is kept beside it the first time. Caddy checks the new
+# one before it is put in place.
+write_caddyfile() {
+    file=/etc/caddy/Caddyfile
+    {
+        # The package's example serves a welcome page on port 80 for every
+        # name, in the way of the certificate's challenge: it goes.
+        if [ -f "$file" ] && ! grep -q 'root \* /usr/share/caddy' "$file"; then
+            awk '/^# FernSDR begin/ { skip = 1 } !skip { print } /^# FernSDR end/ { skip = 0 }' "$file"
+            printf '\n'
+        fi
+        printf '# FernSDR begin: written by its installer, which rewrites what is between\n'
+        printf '# these lines when it runs again.\n'
+        printf '%s {\n\tencode zstd gzip\n\treverse_proxy 127.0.0.1:%s {\n' "$DOMAIN" "$(receiver_port)"
+        printf '\t\t# The audio is live: nothing in between may hold it back.\n'
+        printf '\t\tflush_interval -1\n\t\theader_up X-Real-IP {remote_host}\n\t}\n}\n'
+        printf '# FernSDR end\n'
+    } > "$WORK/Caddyfile"
+    if ! caddy validate --config "$WORK/Caddyfile" --adapter caddyfile > "$WORK/caddy.log" 2>&1; then
+        warn "Caddy refused the configuration for $DOMAIN:"
+        tail -n 3 "$WORK/caddy.log" | printable >&2
+        return 1
+    fi
+    if [ -f "$file" ] && [ ! -f "$file.before-fernsdr" ]; then cp -p "$file" "$file.before-fernsdr"; fi
+    install -D -m 0644 "$WORK/Caddyfile" "$file"
+}
+
+# HTTPS for a receiver on a server with a domain: Caddy from the
+# distribution's packages serves the domain, with a certificate it gets and
+# renews by itself, and passes everything to the receiver on this machine.
+# Only under systemd, which runs Caddy as its package expects; elsewhere, or
+# without a Caddy package, the summary says how to do it by hand.
+setup_https() {
+    [ "$WHERE" = internet ] && [ -n "$DOMAIN" ] && [ "$INIT" = systemd ] || return 0
+    if ! have caddy; then
+        say "Installing Caddy, for HTTPS"
+        if ! install_package caddy > "$WORK/caddy.log" 2>&1 || ! have caddy; then
+            warn "This distribution's packages have no Caddy; the summary says how to set up HTTPS by hand."
+            return 0
+        fi
+    fi
+    say "Setting up HTTPS for $DOMAIN"
+    write_caddyfile || return 0
+    systemctl enable caddy > /dev/null 2>&1 || true
+    if systemctl reload-or-restart caddy > "$WORK/caddy.log" 2>&1; then
+        HTTPS=1
+    else
+        warn "Caddy did not start; journalctl -u caddy says why."
+    fi
+}
+
+# Run again on a receiver already here, with someone at the terminal: to
+# update it, or for a new password when the old one is lost.
+ask_rerun() {
+    ACTION=update
+    if [ -n "${FERNSDR_NEW_PASSWORD:-}" ]; then
+        ACTION=password
+        return 0
+    fi
+    [ -z "${FERNSDR_SETUP:-}" ] && (exec < /dev/tty) 2> /dev/null || return 0
+    {
+        printf '\nFernSDR %s is installed. What now?\n\n' "$INSTALLED"
+        printf '  1  Update it to the newest release\n'
+        printf '  2  A new password for the admin panel, when the old one is lost\n\n'
+        printf 'Answer [1]: '
+    } > /dev/tty
+    IFS= read -r answer < /dev/tty || answer=1
+    case "$answer" in 2) ACTION=password ;; esac
+}
+
+# A new admin password, in place of the one in the configuration; the
+# receiver restarts to take it.
+new_password() {
+    read_config
+    new_admin_password "$INSTALL/trusted"
+    awk -v hash="$HASH" '
+        /^[ \t]*\[/ { section = $0; gsub(/[][ \t]/, "", section) }
+        section == "admin" && /^[ \t]*password_hash[ \t]*=/ && !done { print "password_hash = " hash; done = 1; next }
+        { print }' "$WORK/config" > "$WORK/fernsdr.conf"
+    write_as_receiver fernsdr.conf < "$WORK/fernsdr.conf"
+    ensure_password "$INSTALL/trusted"
+    restart_service
+    printf '\n'
+    say "The admin panel has a new password"
+    if [ -t 1 ]; then note "Password:      $PASSWORD"; fi
+    note "It is also in $INSTALL/admin-password, for root only."
+    printf '\n'
+}
+
 firewall_hint() {
     if have firewall-cmd && firewall-cmd --state > /dev/null 2>&1; then
         note "firewalld is on. For other machines to reach the receiver:"
@@ -1077,6 +1216,12 @@ summary() {
     case "$bind" in
         127.* | localhost | ::1 | '[::1]')
             site=${DOMAIN:-radio.example.org}
+            if [ -n "$HTTPS" ]; then
+                printf '\nFernSDR %s runs, served over HTTPS by Caddy. Caddy gets the certificate\n' "$INSTALLED"
+                printf 'once %s points at this machine and ports 80 and 443 are open.\n\n' "$DOMAIN"
+                note "Listeners:     https://$site"
+                note "Admin panel:   https://$site/admin"
+            else
             printf '\nFernSDR %s runs, on this machine only, for a web server in front of it\n' "$INSTALLED"
             printf 'to serve over HTTPS. With Caddy (https://caddyserver.com/docs/install),\n'
             if [ -n "$DOMAIN" ]; then
@@ -1089,14 +1234,20 @@ summary() {
             printf '\n%s {\n\treverse_proxy 127.0.0.1:%s\n}\n\n' "$site" "$port"
             note "Listeners:     https://$site"
             note "Admin panel:   https://$site/admin"
+            fi
             ;;
         *)
             address=$(this_address)
             case "$bind" in 0.0.0.0 | :: | '[::]') ;; *) address=$bind ;; esac
             printf '\nFernSDR %s runs.\n\n' "$INSTALLED"
             note "Listeners:     http://$address:$port"
-            if [ "$(config_value admin home_network no)" = yes ]; then
+            if [ "$(config_value admin plain_http_anywhere no)" = yes ]; then
+                note "Admin panel:   http://$address:$port/admin, over plain HTTP, at your own risk"
+            elif [ "$(config_value admin home_network no)" = yes ]; then
                 note "Admin panel:   http://$address:$port/admin, from the home network"
+            elif [ "$WHERE" = http ]; then
+                note "Admin panel:   through an SSH tunnel: ssh -L $port:localhost:$port you@$address,"
+                note "               then http://localhost:$port/admin"
             else
                 note "Admin panel:   http://127.0.0.1:$port/admin on this machine, or over HTTPS"
                 note "               through a web server in front of it; from the home network"
@@ -1116,6 +1267,7 @@ summary() {
     note "Configuration: $STATE/fernsdr.conf"
     note "Log:           $(log_command)"
     note "Updates:       the admin panel's Updates page, or this installer again"
+    note "Lost password: run this installer again and answer 2"
     if [ "$INIT" = none ]; then
         printf '\n'
         warn "Nothing starts FernSDR when this machine starts: its init is none of systemd,"
@@ -1163,6 +1315,13 @@ main() {
         die "$INSTALL/etc holds a receiver that tools/source-install.sh set up, which only systemd runs. Move $INSTALL/etc/fernsdr.conf to $STATE/fernsdr.conf by hand if it is to be kept, move $INSTALL away, then run this again."
     fi
     if [ -z "$MIGRATING" ] && [ ! -f "$STATE/fernsdr.conf" ]; then ask_where; fi
+    if [ -n "$INSTALLED" ]; then
+        ask_rerun
+        if [ "$ACTION" = password ]; then
+            new_password
+            exit 0
+        fi
+    fi
     read_release
     if [ -n "$INSTALLED" ]; then
         update_install
