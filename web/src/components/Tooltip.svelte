@@ -121,7 +121,10 @@
         // :focus-visible is exactly keyboard focus on a button.
         if (element.matches(':focus-visible')) open = true;
       },
-      blur: hide,
+      // Just after, not during: a button that has focus as it is taken off
+      // the page, as when the page's edit mode closes, is blurred while the
+      // page is being drawn, and a tooltip may not change its state then.
+      blur: () => queueMicrotask(hide),
     };
     for (const [type, listener] of Object.entries(listeners)) element.addEventListener(type, listener as EventListener);
     return () => {
