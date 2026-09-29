@@ -2,6 +2,7 @@
 #include <signal.h>
 #include <sys/prctl.h>
 #include <termios.h>
+#include <grp.h>
 #include <unistd.h>
 
 #include <sys/stat.h>
@@ -124,10 +125,42 @@ bool read_secret(const char* prompt, std::string& out) {
 
 // fernsdr --set-password CONFIG: asks for a password, twice on a terminal,
 // and writes its hash where the old one was, or into a new [admin] section,
-// so that nobody copies a hash by hand. The file keeps its owner, which run
-// as root would otherwise become root and leave the receiver unable to read
-// it. The receiver reads the password when it starts.
+// so that nobody copies a hash by hand. The file keeps its owner, so that
+// the receiver can still read it after root ran this. The receiver reads
+// the password when it starts.
 int set_password_command(const std::string& path) {
+    // Run as root on a configuration in a directory another user owns, as
+    // `sudo fernsdr --set-password /var/lib/fernsdr/fernsdr.conf` is, this
+    // becomes that user first. Otherwise the receiver, which owns the
+    // directory, could swap a link to /etc/sudoers in for the file between
+    // its writing and its chown, and have root give that to it. As the
+    // directory's owner nothing here can reach further than the receiver
+    // already does. A directory root owns is safe to work in as root.
+    if (::geteuid() == 0) {
+        const size_t slash = path.find_last_of('/');
+        const std::string directory = slash == std::string::npos ? "." : slash == 0 ? "/" : path.substr(0, slash);
+        struct stat owner {};
+        if (::stat(directory.c_str(), &owner) != 0) {
+            fprintf(stderr, "cannot read %s: %s\n", directory.c_str(), std::strerror(errno));
+            return 1;
+        }
+        if (owner.st_uid != 0 &&
+            (::setgroups(0, nullptr) != 0 || ::setresgid(owner.st_gid, owner.st_gid, owner.st_gid) != 0 ||
+             ::setresuid(owner.st_uid, owner.st_uid, owner.st_uid) != 0 || ::setuid(0) == 0)) {
+            fprintf(stderr, "cannot become the owner of %s to write it\n", directory.c_str());
+            return 1;
+        }
+    }
+    // A FIFO or a device in its place would hang or mislead the read below.
+    struct stat file {};
+    if (::stat(path.c_str(), &file) != 0) {
+        fprintf(stderr, "cannot read %s: %s\n", path.c_str(), std::strerror(errno));
+        return 1;
+    }
+    if (!S_ISREG(file.st_mode)) {
+        fprintf(stderr, "%s is not a configuration file\n", path.c_str());
+        return 1;
+    }
     std::string text;
     if (!fernsdr::read_text_file(path, text)) {
         fprintf(stderr, "cannot read %s\n", path.c_str());
@@ -152,8 +185,6 @@ int set_password_command(const std::string& path) {
         fprintf(stderr, "cannot read randomness from /dev/urandom\n");
         return 1;
     }
-    struct stat before {};
-    const bool known = ::stat(path.c_str(), &before) == 0;
     std::string error;
     fernsdr::Config check;
     const std::string changed = fernsdr::with_admin_password(text, hash);
@@ -165,7 +196,9 @@ int set_password_command(const std::string& path) {
         fprintf(stderr, "%s\n", error.c_str());
         return 1;
     }
-    if (known && ::geteuid() == 0 && ::chown(path.c_str(), before.st_uid, before.st_gid) != 0) {
+    // Still root only in a directory root owns, where nobody else can put a
+    // link in the file's place; the file keeps the owner it had.
+    if (::geteuid() == 0 && ::chown(path.c_str(), file.st_uid, file.st_gid) != 0) {
         fprintf(stderr, "the password is set, but %s could not be given back to its owner: %s\n", path.c_str(),
                 std::strerror(errno));
         return 1;
@@ -392,8 +425,10 @@ int main(int argc, char** argv) {
     server_config.uploads_root = resolve_against_config(config_path,
         server_section.get("uploads", "fernsdr-uploads"));
     // Created up front so it can be served: an unresolvable root leaves static
-    // serving switched off for that directory.
-    if (!server_config.uploads_root.empty()) {
+    // serving switched off for that directory. Not by --check, which root
+    // runs on a configuration the receiver may have written: a check makes
+    // nothing.
+    if (!check_only && !server_config.uploads_root.empty()) {
         ::mkdir(server_config.uploads_root.c_str(), 0755);
     }
     server_config.max_connections = static_cast<int>(server_section.get_int("max_connections", 400));

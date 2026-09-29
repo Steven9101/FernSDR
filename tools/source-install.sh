@@ -221,7 +221,14 @@ if [ "$SERVICE" = 1 ]; then
     # gain privileges even if something in it is one day found to be wrong.
     SERVICE_USER=fernsdr
     id "$SERVICE_USER" >/dev/null 2>&1 || useradd --system --no-create-home --shell /usr/sbin/nologin "$SERVICE_USER"
-    "$BINARY" "$CONFIG" --root "$WEBROOT" --check >/dev/null
+    # As the receiver's user once the configuration is its own: root reading a
+    # file the receiver can rewrite would act on whatever the receiver put
+    # there.
+    if [ "$(stat -c %U "$CONFIG" 2>/dev/null)" = "$SERVICE_USER" ]; then
+        runuser -u "$SERVICE_USER" -- "$BINARY" "$CONFIG" --root "$WEBROOT" --check >/dev/null
+    else
+        "$BINARY" "$CONFIG" --root "$WEBROOT" --check >/dev/null
+    fi
 
     # Without --usb the receiver sees no devices at all. With it, it sees USB
     # devices and nothing else: the hardware modules it starts need them, and
