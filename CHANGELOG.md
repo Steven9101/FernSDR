@@ -149,6 +149,9 @@ The first release.
   230 ms from antenna to speaker in the benchmark lab, on a plain-HTTP page.
   After a slow or broken stretch of connection the extra buffer it took is
   given back within seconds once audio arrives evenly again.
+- A listener the operator disconnects stays disconnected until they load
+  the page again, and is told so; a place let go for inactivity waits for
+  the listener as before.
 
 ### Operator
 

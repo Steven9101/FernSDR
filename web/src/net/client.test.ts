@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { CLOSE_INACTIVE, SdrClient } from './client';
+import { CLOSE_INACTIVE, CLOSE_REMOVED, SdrClient } from './client';
 
 class Socket {
   static OPEN = 1;
@@ -64,6 +64,18 @@ describe('connection recovery', () => {
     // Listening again is the listener's choice, and it works.
     receiver.connect();
     expect(Socket.instances).toHaveLength(2);
+  });
+
+  it('stays closed when the operator disconnected the listener', () => {
+    const { receiver, handlers } = client();
+    const removed = vi.fn();
+    (handlers as Record<string, unknown>).onRemoved = removed;
+    receiver.connect(); Socket.instances[0].open();
+    Socket.instances[0].onclose?.({ code: CLOSE_REMOVED, reason: 'disconnected by the operator' });
+    vi.advanceTimersByTime(60_000);
+    expect(Socket.instances).toHaveLength(1);
+    expect(removed).toHaveBeenCalledWith('disconnected by the operator');
+    expect(handlers.onState).toHaveBeenLastCalledWith('closed', 'disconnected by the operator');
   });
 
   it('still reconnects after any other close', () => {

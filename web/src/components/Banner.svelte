@@ -1,5 +1,5 @@
 <script lang="ts">
-  import { bands, controller, currentBand, errorMessage, inactiveReason, inactivityDeadline, notice } from '../state/store';
+  import { bands, controller, currentBand, errorMessage, inactiveReason, inactivityDeadline, notice, removed } from '../state/store';
   import { endingNotice } from '../util/band-hours';
 
   const error = $derived(errorMessage.value);
@@ -54,7 +54,11 @@
   });
 </script>
 
-{#if inactive}
+{#if removed.value}
+  <div bind:this={element} class="banner" role="alert">
+    <span>The operator of this receiver disconnected you.</span>
+  </div>
+{:else if inactive}
   <div bind:this={element} class="banner banner--action" role="alert">
     <span>This receiver let your place go after {inactive.replace(/^no activity for /, '')} without activity.</span>
     <button type="button" class="button button--small" onclick={() => controller.listenAgain()}>Listen again</button>

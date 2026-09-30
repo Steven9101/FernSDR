@@ -1992,7 +1992,8 @@ bool Application::disconnect_session(uint64_t id) {
         if (!session || session->id() != id) return;
         LOG_INFO("admin", "disconnecting listener %llu at operator request",
                  static_cast<unsigned long long>(id));
-        connection.close(1000, "disconnected by the operator");
+        // 4002, which the page takes as final rather than reconnecting at once.
+        connection.close(4002, "disconnected by the operator");
         found = true;
     });
     return found;

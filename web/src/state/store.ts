@@ -182,6 +182,8 @@ export const connectionState = box<ConnectionState>('connecting');
  */
 export const inactivityDeadline = box<number | null>(null);
 export const inactiveReason = box<string | null>(null);
+/** Set when the operator disconnected this listener; the page stays closed. */
+export const removed = box(false);
 export const connectionDetail = box<string>('');
 export const site = box<SiteDescription | null>(null);
 export const bands = box<BandDescription[]>([]);
@@ -394,6 +396,10 @@ export class RadioController {
       onInactive: (reason) => {
         inactivityDeadline.value = null;
         inactiveReason.value = reason;
+      },
+      onRemoved: () => {
+        inactivityDeadline.value = null;
+        removed.value = true;
       },
       // The welcome carries the available bands. Restore once, after it arrives.
       onReady: () => {},

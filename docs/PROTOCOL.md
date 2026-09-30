@@ -481,6 +481,11 @@ limit the server closes the connection with code 4001 and a reason such as
 4001, since that would take the place straight back; it offers to listen
 again instead.
 
+When the operator disconnects a listener from the admin panel, the server
+closes with code 4002 and the reason `disconnected by the operator`. A client
+does not reconnect after 4002 and does not offer to: the listener comes back
+by loading the page again.
+
 ## Binary frames
 
 ### Audio - first byte `0x01`
@@ -572,4 +577,5 @@ coming back up is not hit simultaneously by every client it dropped - and
 replays its settings on the way back in. A dropped connection should cost a
 second of audio, not the user's place on the band. The exception is close
 code 4001, the listener timeout (see `inactivity`), after which it waits for
-the listener.
+the listener, and 4002, a disconnection by the operator, after which it stays
+closed.

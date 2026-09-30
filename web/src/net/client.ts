@@ -26,6 +26,7 @@ export interface ClientHandlers {
   onTraffic?(traffic: StreamTraffic): void;
   /** The receiver closed the connection for inactivity (CLOSE_INACTIVE). */
   onInactive?(reason: string): void;
+  onRemoved?(reason: string): void;
 }
 
 const BASE_RECONNECT_DELAY_MS = 500;
@@ -52,6 +53,13 @@ const STALL_TIMEOUT_MS = 12_000;
  * the operator's limit meaningless. The page offers to listen again.
  */
 export const CLOSE_INACTIVE = 4001;
+
+/**
+ * The operator disconnected this listener. Not reconnected either, and not
+ * offered again: reconnecting at once would make the operator's choice
+ * meaningless. Coming back is loading the page again.
+ */
+export const CLOSE_REMOVED = 4002;
 
 export class SdrClient {
   private socket: WebSocket | null = null;
@@ -165,6 +173,13 @@ export class SdrClient {
         this.closedByUser = true;
         this.handlers.onState('closed', event.reason || 'no activity');
         this.handlers.onInactive?.(event.reason || 'no activity');
+        return;
+      }
+      if (event.code === CLOSE_REMOVED) {
+        this.clearTimers();
+        this.closedByUser = true;
+        this.handlers.onState('closed', event.reason || 'disconnected by the operator');
+        this.handlers.onRemoved?.(event.reason || 'disconnected by the operator');
         return;
       }
       this.scheduleReconnect(event.reason || `closed (${event.code})`);
