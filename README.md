@@ -14,6 +14,8 @@ recording of long and medium wave, or read more at
 [fernsdr.org](https://fernsdr.org). If FernSDR is useful to you, you can
 [support it through PayPal](https://www.paypal.com/paypalme/magicint1337).
 
+https://github.com/user-attachments/assets/07b7c5a0-dcb1-4d97-a972-3661fd24ebb4
+
 ![The listener's page: spectrum and waterfall of the medium wave band, the receiver tuned to 909 kHz AM, and the station's widgets beside it](docs/images/listener.webp)
 
 ## Measured
