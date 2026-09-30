@@ -4,6 +4,8 @@
    * schedules and nets are in UTC, and the question that follows is always
    * "and what is that here".
    */
+  import { utcOffsetLabel } from '../util/utc-offset';
+
   let now = $state(new Date());
 
   $effect(() => {
@@ -12,10 +14,8 @@
   });
 
   const pad = (value: number) => String(value).padStart(2, '0');
-  const offset = $derived(-now.getTimezoneOffset() / 60);
-  const offsetText = $derived(
-    offset === 0 ? 'UTC' : `UTC${offset > 0 ? '+' : '−'}${Math.abs(offset) % 1 ? Math.abs(offset).toFixed(1) : Math.abs(offset)}`,
-  );
+  const offset = $derived(-now.getTimezoneOffset());
+  const offsetText = $derived(utcOffsetLabel(offset));
   const date = $derived(
     now.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short', timeZone: 'UTC' }),
   );
