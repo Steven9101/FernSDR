@@ -125,6 +125,10 @@ jobs:
             "$out/fernsdr-release-v1.txt.sig" "$out/install.sh"
           sed -n 's/^note$//p; s/^note //p' "$out/fernsdr-release-v1.txt" > "$RUNNER_TEMP/notes.md"
           if [ "$(gh release view "v$version" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2> /dev/null)" = true ]; then
+            # From this run's commit and notes, not those of the run that
+            # made the draft.
+            gh release edit "v$version" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
+              --notes-file "$RUNNER_TEMP/notes.md"
             gh release upload "v$version" --repo "$GITHUB_REPOSITORY" --clobber "$@"
           else
             gh release create "v$version" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
