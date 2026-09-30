@@ -530,8 +530,10 @@ ensure_password() {
     fi
     new_admin_password "$1"
     # The receiver reads the first [admin] section, so the hash goes into
-    # that one if there is one.
+    # that one if there is one. An empty password_hash line left in the file
+    # goes: the last one read wins, and it would undo the new one.
     awk -v hash="$HASH" '
+        /^[ \t]*password_hash[ \t]*=[ \t]*$/ { next }
         { print }
         /^[ \t]*\[[ \t]*admin[ \t]*\][ \t]*$/ && !done { print "password_hash = " hash; done = 1 }
         END { if (!done) { print ""; print "[admin]"; print "password_hash = " hash } }' \
@@ -1171,9 +1173,19 @@ write_caddyfile() {
     file=/etc/caddy/Caddyfile
     {
         # The package's example serves a welcome page on port 80 for every
-        # name, in the way of the certificate's challenge: it goes.
-        if [ -f "$file" ] && ! grep -q 'root \* /usr/share/caddy' "$file"; then
-            awk '/^# FernSDR begin/ { skip = 1 } !skip { print } /^# FernSDR end/ { skip = 0 }' "$file"
+        # name, in the way of the certificate's challenge: that one block
+        # goes, and every other site in the file stays as it was.
+        if [ -f "$file" ]; then
+            awk '
+                /^# FernSDR begin/ { skip = 1 }
+                skip { if (/^# FernSDR end/) skip = 0; next }
+                open { block = block $0 "\n"
+                       if (/^}/) { open = 0
+                                   if (!(head ~ /^:80[ \t]*\{/ && block ~ /\/usr\/share\/caddy/)) printf "%s", block }
+                       next }
+                /^[^ \t#].*\{[ \t]*$/ { open = 1; head = $0; block = $0 "\n"; next }
+                { print }
+                END { if (open) printf "%s", block }' "$file"
             printf '\n'
         fi
         printf '# FernSDR begin: written by its installer, which rewrites what is between\n'
