@@ -463,3 +463,25 @@ TEST_CASE(archive_reads_only_what_a_picture_can_show) {
     archive.close();
     std::remove(path.c_str());
 }
+
+// A shape refused by open() leaves the archive in use open and recording.
+TEST_CASE(archive_refused_a_new_shape_keeps_recording) {
+    const std::string path = temp_path("refused");
+    std::remove(path.c_str());
+    WaterfallArchive archive;
+    std::string error;
+    CHECK(archive.open(path, 64, 1.0, 1, error));
+    CHECK(!archive.open(path, 0, 1.0, 1, error));
+    CHECK(!archive.open(path, 64, 0.0, 1, error));
+    CHECK(!archive.open(path, 64, 1.0, 0, error));
+    CHECK(archive.is_open());
+    const int64_t start = 1'700'000'000'000;
+    const auto line = line_with_carrier(256, 8);
+    archive.append(line.data(), line.size(), start);
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(archive.read(start, start, rows, times));
+    CHECK_EQ(times.size(), 1);
+    archive.close();
+    std::remove(path.c_str());
+}

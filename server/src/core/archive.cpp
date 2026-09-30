@@ -93,7 +93,8 @@ void write_span(const std::string& path, double low_hz, double high_hz) {
 
 bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds_per_line,
                             int retention_hours, std::string& error, double low_hz, double high_hz) {
-    close();
+    // Checked before the archive in use is closed: a request refused for its
+    // shape leaves recording as it was.
     if (bins == 0 || bins > 8192) {
         error = "the archive width must be between 1 and 8192 bins";
         return false;
@@ -106,6 +107,7 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
         error = "the archive must keep between 1 hour and a year";
         return false;
     }
+    close();
 
     bins_ = bins;
     seconds_per_line_ = seconds_per_line;

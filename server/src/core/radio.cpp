@@ -1533,6 +1533,18 @@ bool Radio::apply_band_values(Band* target, const Json& values, std::string& err
         return false;
     }
 
+    // Checked before anything is applied: the history below may reshape the
+    // archive, which starts it again, and must not have done so for a request
+    // that is then refused over its calibration.
+    if (values.has("calibration")) {
+        Calibration check;
+        std::string problem;
+        if (!check.parse(values["calibration"].string(), problem)) {
+            error = problem;
+            return false;
+        }
+    }
+
     if (values.has("history") || values.has("history_hours") || values.has("history_bins") ||
         values.has("history_interval")) {
         const std::string access =
