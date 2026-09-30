@@ -1396,6 +1396,72 @@ TEST_CASE(server_holds_all_unread_http_answers_to_one_backlog) {
     thread.join();
 }
 
+// Small answers count toward the same backlog: a client asking for a small
+// file over and over without reading must not hold more than the backlog
+// between them. A connection still holding unread output when the backlog is
+// full is let go.
+TEST_CASE(server_holds_small_unread_http_answers_to_the_backlog_too) {
+    struct Handler : fernsdr::ServerHandler {
+        bool on_connect(fernsdr::Connection&) override { return true; }
+        void on_text(fernsdr::Connection&, const std::string&) override {}
+        void on_disconnect(fernsdr::Connection&) override {}
+        void on_flush() override {}
+        void on_tick() override {}
+        bool on_http(fernsdr::Connection&, const fernsdr::HttpRequest&, std::string& response) override {
+            response = fernsdr::build_http_response(200, "text/plain", std::string(32 * 1024, 's'), {}, true);
+            return true;
+        }
+    } handler;
+    fernsdr::ServerConfig config;
+    config.bind_address = "127.0.0.1";
+    config.port = 0;
+    config.max_connections_per_address = 0;
+    config.max_output_bytes = 16 * 1024 * 1024;
+    config.http_backlog_bytes = 2 * 1024 * 1024;
+    fernsdr::Server server(config, handler);
+    std::string error;
+    CHECK(server.start(error));
+    if (!error.empty()) return;
+    std::thread thread([&] { server.run(); });
+    constexpr int kSockets = 8;
+    constexpr int kRequests = 60;
+    std::vector<int> sockets;
+    std::string pipelined;
+    for (int i = 0; i < kRequests; i++) pipelined += "GET /font HTTP/1.1\r\nHost: localhost\r\n\r\n";
+    for (int i = 0; i < kSockets; i++) {
+        const int fd = ::socket(AF_INET, SOCK_STREAM, 0);
+        const int small = 4096;
+        ::setsockopt(fd, SOL_SOCKET, SO_RCVBUF, &small, sizeof(small));
+        sockaddr_in address{};
+        address.sin_family = AF_INET;
+        address.sin_port = htons(static_cast<uint16_t>(server.bound_port()));
+        address.sin_addr.s_addr = htonl(INADDR_LOOPBACK);
+        CHECK(::connect(fd, reinterpret_cast<sockaddr*>(&address), sizeof(address)) == 0);
+        CHECK(::send(fd, pipelined.data(), pipelined.size(), MSG_NOSIGNAL) == static_cast<ssize_t>(pipelined.size()));
+        sockets.push_back(fd);
+    }
+    wait_ms(300);
+    // Unread, all eight would hold 15 MB; the backlog is 2 MB.
+    size_t answered = 0;
+    for (int fd : sockets) {
+        std::string got;
+        char buffer[65536];
+        const int64_t until = fernsdr::monotonic_ms() + 3000;
+        while (fernsdr::monotonic_ms() < until) {
+            const ssize_t n = ::recv(fd, buffer, sizeof(buffer), MSG_DONTWAIT);
+            if (n > 0) { got.append(buffer, static_cast<size_t>(n)); continue; }
+            if (n == 0 || (errno != EAGAIN && errno != EWOULDBLOCK)) break;
+            wait_ms(5);
+        }
+        for (size_t at = got.find("HTTP/1.1 200"); at != std::string::npos; at = got.find("HTTP/1.1 200", at + 1)) answered++;
+        ::close(fd);
+    }
+    CHECK(answered > 0);
+    CHECK(answered < static_cast<size_t>(kSockets * kRequests));
+    server.stop();
+    thread.join();
+}
+
 TEST_CASE(server_completes_the_handshake_and_sends_a_welcome) {
     Harness harness;
     CHECK(harness.ok);

@@ -83,8 +83,6 @@ void refuse_connection(int fd, const char* reason) {
 
 constexpr int kEpollTimeoutMs = 20;
 constexpr int64_t kTickIntervalMs = 100;
-// What counts as small enough to send whatever else is queued.
-constexpr size_t kSmallResponseBytes = 64 * 1024;
 
 bool set_nonblocking(int fd) {
     const int flags = fcntl(fd, F_GETFL, 0);
@@ -895,10 +893,17 @@ void Server::process_http(Connection& connection) {
         }
         // Each connection may hold 2 MB its client has not read, and a few
         // addresses can open hundreds: all of them together hold no more
-        // than http_backlog_bytes, and a large answer beyond that waits for
-        // the client to ask again. The operator's backup is not held to it.
-        if (response.size() > kSmallResponseBytes && connection.output_allowance_ == 0 &&
-            http_backlog() + response.size() > config_.http_backlog_bytes) {
+        // than http_backlog_bytes, and an answer beyond that waits for the
+        // client to ask again. Small answers too, or a client could hold the
+        // whole allowance in a font file asked for over and over without
+        // reading. A connection still holding unread output is let go rather
+        // than handed a refusal it would not read either. The operator's
+        // backup is not held to it.
+        if (connection.output_allowance_ == 0 && http_backlog() + response.size() > config_.http_backlog_bytes) {
+            if (connection.pending_bytes() > 0) {
+                drop(connection, "http backlog full");
+                return;
+            }
             response = build_http_response(503, "text/plain", "busy; try again in a moment", {{"Retry-After", "5"}},
                                            request.keep_alive());
         }

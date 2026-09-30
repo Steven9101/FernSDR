@@ -51,6 +51,11 @@ void OutputQueue::consume(size_t count) {
     while (first_binary_ < binary_.size() && binary_[first_binary_].end <= base_ + offset_) first_binary_++;
     if (offset_ == bytes_.size()) {
         bytes_.clear();
+        // A drained queue keeps its allocation for the next message, but not
+        // one a large download left behind: hundreds of idle kept-alive
+        // connections would otherwise each hold what they last sent, outside
+        // any backlog count.
+        if (bytes_.capacity() > 256 * 1024) std::vector<uint8_t>().swap(bytes_);
         binary_.clear();
         first_binary_ = offset_ = base_ = 0;
     } else if (offset_ > 64 * 1024) {
