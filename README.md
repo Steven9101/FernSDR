@@ -231,6 +231,11 @@ make -C server test    # the DSP, the codecs, the server, the admin login
 cd web && npm test     # the client
 ```
 
+## Support
+
+FernSDR is made in spare time. If it runs your receiver, or you would like it
+to grow faster, you can [donate through PayPal](https://www.paypal.com/paypalme/magicint1337).
+
 ## Licence
 
 GNU Affero General Public License, version 3: see [LICENSE](LICENSE).
