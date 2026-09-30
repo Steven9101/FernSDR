@@ -22,10 +22,13 @@ listening. Each listener then costs:
 - one `L`-point inverse FFT (`L = 256` for a 12 kHz channel)
 - one complex rotation per output sample, for sub-bin tuning
 
-Structurally this is overlap-save fast convolution with the decimation folded
-into the inverse transform: a forward FFT of size `K` with 50% overlap, and an
-inverse of size `L = K/D` where `D` is the decimation factor. The second half
-of each inverse block is free of circular wraparound and is the output.
+Structurally this is a weighted overlap-add filter bank with the decimation
+folded into the inverse transform: a forward FFT of size `K` over a
+sine-windowed block with 50% overlap, and an inverse of size `L = K/D` where
+`D` is the decimation factor. The inverse block goes through the same sine
+window; its first half is added to the previous block's second half and is
+the output, and its second half is kept for the next block. With 50% overlap
+the two windows' squares sum to one, so the pair reconstructs exactly.
 
 ```
                      ┌──────────────── once per band ─────────────────┐
@@ -78,7 +81,7 @@ channelizer passed; the end-to-end test caught it.
 
 ### A separate transform for the waterfall
 
-Fast convolution requires a rectangular window, whose -13 dB sidelobes would
+The channelizer's sine window has sidelobes of about -23 dB, which would
 smear every strong carrier across the waterfall in a visible skirt tens of
 kilohertz wide. The spectrum analyser therefore runs its own FFT with a
 Blackman-Harris window (sidelobes below -85 dB, measured). It is shared across
@@ -101,8 +104,11 @@ Deliberately few:
   its listeners, fills their outboxes.
 - **A bounded DSP pool.** Large independent channelizer/waterfall transforms
   can share an idle worker. Groups of at least 64 listeners process in batches
-  across the caller and workers. Each band waits for its batch before reading
-  the next block; exceptions drain the batch before releasing its buffers.
+  across the caller and workers. With an FFT of 2^18 points or more and at
+  least 64 listeners, a band hands the batch a copy of the spectrum and reads
+  and transforms the next block while the batch runs, then waits for it
+  before starting the next one; otherwise it waits before reading. Exceptions
+  drain the batch before releasing its buffers.
 - **One thread for all I/O.** An epoll loop doing HTTP, WebSocket framing and
   every socket write.
 
