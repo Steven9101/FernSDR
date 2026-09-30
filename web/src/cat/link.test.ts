@@ -210,6 +210,24 @@ describe('rig link', () => {
     await link.disconnect();
   });
 
+  it('tunes the radio to a WFM station without sending it a mode it has not got', async () => {
+    const radio = new FakeRadio();
+    const rx = receiver();
+    const link = new RigLink(rx.access, { requestPort: async () => radio }, now);
+    await link.connect(settings('control'));
+    await advance(450);
+    rx.move(7_100_000, 'wfm');
+    await advance(1000);
+    expect(radio.freq).toBe(7_100_000);
+    expect(radio.written.filter((c) => /^MD./.test(c) && c !== 'MD;')).toEqual(['MD2;']);
+    expect(rigState.value.mode).not.toBe('wfm');
+    expect(rigState.value.message).toContain('WFM');
+    rx.move(7_100_000, 'usb');
+    await advance(1000);
+    expect(rigState.value.message).toBe('');
+    await link.disconnect();
+  });
+
   it('stays disconnected when Disconnect is pressed while the port is still opening', async () => {
     const radio = new FakeRadio();
     let opened: () => void = () => {};

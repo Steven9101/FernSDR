@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { DRIVERS, type DriverId } from './drivers';
+import { DRIVERS, type DriverId, type ReceiverMode } from './drivers';
 
 const session = (id: DriverId, address = 0x94) => DRIVERS.find((d) => d.id === id)!.create(address);
 const text = (bytes: Uint8Array) => new TextDecoder().decode(bytes);
@@ -71,5 +71,13 @@ describe('Icom CI-V', () => {
     expect(rig.parser.feed(new Uint8Array([0xfe, 0xfe, 0x00, 0x94, 0x00, 0x00, 0x00, 0x05, 0x07, 0x00, 0xfd]))).toEqual([{ freq: 7_050_000 }]);
     // Another radio on the same line is not ours.
     expect(rig.parser.feed(new Uint8Array([0xfe, 0xfe, 0xe0, 0xa4, 0x03, 0x00, 0x00, 0x05, 0x07, 0x00, 0xfd]))).toEqual([]);
+  });
+});
+
+describe('modes a radio has no command for', () => {
+  it('sends nothing for WFM rather than a malformed command or LSB', () => {
+    for (const driver of DRIVERS) {
+      expect(driver.create(0x94).setMode('wfm' as ReceiverMode)).toBeNull();
+    }
   });
 });

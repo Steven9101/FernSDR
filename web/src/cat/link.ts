@@ -52,6 +52,7 @@ const WRITE_DEBOUNCE_MS = 100;
 const QUIET_AFTER_WRITE_MS = 600;
 const SILENT_AFTER_MS = 2500;
 const SETTINGS_KEY = 'fernsdr.rig.v1';
+const NO_SUCH_MODE = 'The radio cannot be set to';
 
 export const BAUD_RATES = [4800, 9600, 19200, 38400, 57600, 115200] as const;
 
@@ -302,7 +303,10 @@ export class RigLink {
     const rig = rigState.value;
     // A mode the radio has not reported yet is no difference: its answer is
     // on the way, and quieting now would ignore it.
-    if (rig.freq !== null && Math.abs(here.freq - rig.freq) < this.resolution && (rig.mode === null || sameMode(here.mode, rig.mode))) return;
+    if (rig.freq !== null && Math.abs(here.freq - rig.freq) < this.resolution && (rig.mode === null || sameMode(here.mode, rig.mode))) {
+      if (rig.message.startsWith(NO_SUCH_MODE)) rigState.value = { ...rig, message: '' };
+      return;
+    }
     if (this.debounce) clearTimeout(this.debounce);
     // From the listener's first move, not from the write: answers to polls
     // in between still carry the radio's old frequency.
@@ -315,14 +319,23 @@ export class RigLink {
       const rig = rigState.value;
       const chunks: Uint8Array[] = [];
       if (rig.freq === null || Math.abs(here.freq - rig.freq) >= this.resolution) chunks.push(session.setFrequency(here.freq));
+      // The receiver has modes a radio's CAT does not (WFM on every driver
+      // here): those send no mode at all, since the table's gap would
+      // otherwise go out as a malformed command or as LSB.
       const mode = here.mode as ReceiverMode;
+      let modeSent = false;
+      let message = rig.message.startsWith(NO_SUCH_MODE) ? '' : rig.message;
       if (rig.mode === null || !sameMode(mode, rig.mode)) {
         const command = session.setMode(mode);
-        if (command) chunks.push(command);
+        if (command) {
+          chunks.push(command);
+          modeSent = true;
+        } else message = `${NO_SUCH_MODE} ${mode.toUpperCase()} over CAT; it stays in its own mode.`;
       }
+      if (message !== rig.message) rigState.value = { ...rigState.value, message };
       if (chunks.length === 0) return;
       this.quietUntil = this.now() + QUIET_AFTER_WRITE_MS;
-      rigState.value = { ...rigState.value, freq: here.freq, mode: rig.mode === null || !sameMode(mode, rig.mode) ? mode : rig.mode };
+      rigState.value = { ...rigState.value, freq: here.freq, mode: modeSent ? mode : rig.mode };
       void this.write(chunks, true);
     }, WRITE_DEBOUNCE_MS);
   }

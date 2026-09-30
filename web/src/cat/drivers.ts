@@ -103,7 +103,7 @@ function textSession(flavour: TextFlavour): RigSession {
   return {
     poll: () => [ascii('FA;'), ascii(flavour.modeQuery)],
     setFrequency: (hz) => ascii(`FA${String(Math.round(hz)).padStart(digits, '0').slice(-digits)};`),
-    setMode: (mode) => ascii(`${flavour.modePrefix}${flavour.toRig[mode]};`),
+    setMode: (mode) => (mode in flavour.toRig ? ascii(`${flavour.modePrefix}${flavour.toRig[mode]};`) : null),
     parser: {
       feed(bytes) {
         pending += new TextDecoder().decode(bytes);
@@ -161,7 +161,7 @@ function classicSession(): RigSession {
   return {
     poll: () => [new Uint8Array([0, 0, 0, 0, 0x03])],
     setFrequency: (hz) => new Uint8Array([...bcdBigEndian(hz / 10, 4), 0x01]),
-    setMode: (mode) => new Uint8Array([CLASSIC_TO_RIG[mode], 0, 0, 0, 0x07]),
+    setMode: (mode) => (mode in CLASSIC_TO_RIG ? new Uint8Array([CLASSIC_TO_RIG[mode], 0, 0, 0, 0x07]) : null),
     beforePoll() {
       pending = [];
     },
@@ -203,7 +203,7 @@ function icomSession(address: number): RigSession {
   return {
     poll: () => [frame(0x03), frame(0x04)],
     setFrequency: (hz) => frame(0x05, bcdBigEndian(hz, 5).reverse()),
-    setMode: (mode) => frame(0x06, [ICOM_TO_RIG[mode]]),
+    setMode: (mode) => (mode in ICOM_TO_RIG ? frame(0x06, [ICOM_TO_RIG[mode]]) : null),
     parser: {
       feed(bytes) {
         pending.push(...bytes);
