@@ -81,6 +81,25 @@ TEST_CASE(a_url_cannot_escape_the_css_it_is_written_into) {
     }
 }
 
+TEST_CASE(a_theme_value_of_the_wrong_type_is_refused) {
+    // Read as "" by the checks, a number or an object in place of a text was
+    // stored as it came, and the listener's page stopped starting on it.
+    for (const char* json : {
+             R"json({"background":{"image":1}})json",
+             R"json({"background":{"image":{"url":"/a.png"}}})json",
+             R"json({"background":{"image":"","opacity":"0.5"}})json",
+             R"json({"background":{"image":"","blur":true}})json",
+             R"json({"background":"https://example.org/a.jpg"})json",
+             R"json({"logo":["/a.png"]})json",
+             R"json({"widgets":[{"type":"notice","title":7}]})json",
+             R"json({"widgets":[{"type":"image","url":false}]})json",
+             R"json({"widgets":[{"type":"links","items":[{"label":"x","url":["https://example.org"]}]}]})json",
+         }) {
+        CHECK(!accepted(json));
+    }
+    CHECK(accepted(R"json({"background":{"image":null},"logo":null,"widgets":[{"type":"notice","title":null}]})json"));
+}
+
 TEST_CASE(background_numbers_are_bounded) {
     CHECK(accepted(R"json({"background":{"image":"","opacity":0.5,"blur":10}})json"));
     CHECK(!accepted(R"json({"background":{"image":"","opacity":4}})json"));

@@ -69,9 +69,13 @@ const CSS_PROPERTY: Record<string, string> = {
   success: '--success',
 };
 
-/** Only these are ever written into a url(); anything else is ignored. */
-function safeUrl(value: string | undefined): string {
-  if (!value) return '';
+/**
+ * Only these are ever written into a url(); anything else is ignored,
+ * including a value that is not a string, which a theme saved before the
+ * receiver checked types can still hold.
+ */
+export function safeUrl(value: unknown): string {
+  if (typeof value !== 'string' || !value) return '';
   if (/[()"'\\\s]/.test(value)) return '';
   if (/^https?:\/\//i.test(value) || value.startsWith('/') || /^data:image\//i.test(value)) {
     return value;

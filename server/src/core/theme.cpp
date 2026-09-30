@@ -58,6 +58,13 @@ bool is_link_url(const std::string& value) {
     return !value.empty() && is_safe_url(value) && value.rfind("data:", 0) != 0;
 }
 
+// A value checked as text or as a number must be one, or be left out: the
+// checks read anything else as "" or as the default, and the theme is stored
+// as it came, so a number where the page expects a URL passed and stopped
+// the listener's page from starting.
+bool text_or_absent(const Json& value) { return value.is_null() || value.is_string(); }
+bool number_or_absent(const Json& value) { return value.is_null() || value.is_number(); }
+
 bool known(const char* const* list, size_t count, const std::string& value) {
     for (size_t i = 0; i < count; i++) {
         if (value == list[i]) return true;
@@ -130,25 +137,29 @@ bool validate_theme(const Json& theme, std::string& error) {
     }
 
     const Json& background = theme["background"];
+    if (!background.is_null() && !background.is_object()) {
+        error = "background must be an object";
+        return false;
+    }
     if (background.is_object()) {
-        if (!is_safe_url(background["image"].string())) {
+        if (!text_or_absent(background["image"]) || !is_safe_url(background["image"].string())) {
             error = "the background image must be an https:// URL, a path on this receiver, "
                     "or a data:image value";
             return false;
         }
         const double opacity = background["opacity"].number(0.35);
-        if (opacity < 0.0 || opacity > 1.0) {
+        if (!number_or_absent(background["opacity"]) || opacity < 0.0 || opacity > 1.0) {
             error = "background opacity must be between 0 and 1";
             return false;
         }
         const double blur = background["blur"].number(0);
-        if (blur < 0.0 || blur > 40.0) {
+        if (!number_or_absent(background["blur"]) || blur < 0.0 || blur > 40.0) {
             error = "background blur must be between 0 and 40 pixels";
             return false;
         }
     }
 
-    if (!is_safe_url(theme["logo"].string())) {
+    if (!text_or_absent(theme["logo"]) || !is_safe_url(theme["logo"].string())) {
         error = "the logo must be an https:// URL, a path on this receiver, or a data:image value";
         return false;
     }
@@ -171,6 +182,10 @@ bool validate_theme(const Json& theme, std::string& error) {
             const std::string type = widget["type"].string();
             if (!known(kWidgetTypes, sizeof(kWidgetTypes) / sizeof(*kWidgetTypes), type)) {
                 error = "unknown widget type '" + type + "'";
+                return false;
+            }
+            if (!text_or_absent(widget["title"]) || !text_or_absent(widget["url"])) {
+                error = "a widget's title and address must be text";
                 return false;
             }
             const std::string title = widget["title"].string();
