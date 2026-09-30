@@ -87,14 +87,20 @@
     return () => window.clearInterval(timer);
   });
 
+  // Stopped by the button or by the hour's limit, the file is offered once.
+  async function finish(done: Recording) {
+    if (recordingNow.value !== done) return;
+    recordingNow.value = null;
+    const blob = await done.stop();
+    const tune = tuning.value;
+    saveFile(blob, recordingName(signalForCarrier(tune.freq, tune.mode, tune.cwPitch), tune.mode, done.started, extensionFor(done.type)));
+    if (done.reachedLimit) problem = 'Recordings stop after an hour; this one was saved. Press again to go on.';
+  }
+
   async function toggleRecording() {
     problem = '';
     if (recording) {
-      const done = recording;
-      recordingNow.value = null;
-      const blob = await done.stop();
-      const tune = tuning.value;
-      saveFile(blob, recordingName(signalForCarrier(tune.freq, tune.mode, tune.cwPitch), tune.mode, done.started, extensionFor(done.type)));
+      await finish(recording);
       return;
     }
     const started = Recording.start(controller.player);
@@ -102,6 +108,7 @@
     else {
       elapsed = 0;
       recordingNow.value = started;
+      void started.ended.then(() => finish(started));
     }
   }
 

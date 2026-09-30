@@ -36,6 +36,8 @@ export class Recording {
   private readonly release: () => void;
   private readonly timer: ReturnType<typeof setTimeout>;
   private finished: Promise<Blob>;
+  /** True once the hour ran out and the recording stopped by itself. */
+  reachedLimit = false;
 
   private constructor(stream: MediaStream, release: () => void, type: string) {
     this.type = type;
@@ -53,7 +55,19 @@ export class Recording {
     // Chunks every few seconds, so a crash of the tab loses little and the
     // browser never holds one enormous buffer.
     this.recorder.start(5000);
-    this.timer = setTimeout(() => this.stop(), MAX_RECORDING_MS);
+    this.timer = setTimeout(() => {
+      this.reachedLimit = true;
+      void this.stop();
+    }, MAX_RECORDING_MS);
+  }
+
+  /**
+   * The recording, once it has stopped for any reason: by stop(), or by
+   * itself at the hour, when nobody pressed anything and the page still has
+   * to offer the file and stop showing a recording in progress.
+   */
+  get ended(): Promise<Blob> {
+    return this.finished;
   }
 
   /** Starts recording, or says why it cannot. */

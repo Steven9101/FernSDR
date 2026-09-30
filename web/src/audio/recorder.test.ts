@@ -45,4 +45,18 @@ describe('recorder', () => {
     vi.advanceTimersByTime(MAX_RECORDING_MS);
     expect((await recording.stop()).size).toBe(3);
   });
+
+  it('tells the page when the hour ends it, so the file is offered without a press', async () => {
+    vi.useFakeTimers();
+    vi.stubGlobal('MediaRecorder', FakeRecorder);
+    const recording = Recording.start({ recordingStream: () => ({ stream: {} as MediaStream, release: () => {} }) }) as Recording;
+    let ended: Blob | null = null;
+    void recording.ended.then((blob) => (ended = blob));
+    await vi.advanceTimersByTimeAsync(MAX_RECORDING_MS - 1);
+    expect(ended).toBeNull();
+    expect(recording.reachedLimit).toBe(false);
+    await vi.advanceTimersByTimeAsync(1);
+    expect(ended!.size).toBe(3);
+    expect(recording.reachedLimit).toBe(true);
+  });
 });
