@@ -350,13 +350,36 @@ async function desktop() {
   await settled();
   seen.historyEnlargedPressed = await historyDialog.locator('.history__span[aria-pressed="true"]').textContent();
   assert.equal(seen.historyEnlargedPressed.trim(), '1 h');
-  // Six hours of an archive an hour old: the side is as tall as the
-  // recording, so its times sit beside their rows.
+  // A piece's download cancelled by a resize is made again, not left blank:
+  // the pieces' answers are held back until the window has changed width.
+  const pieces = { finished: 0 };
+  const isPiece = (url) => new URL(url).pathname === '/api/history' && new URL(url).searchParams.has('width');
+  const pieceRoute = (url) => isPiece(url.href);
+  const countPiece = (request) => { if (isPiece(request.url())) pieces.finished++; };
+  let release;
+  const released = new Promise((resolve) => (release = resolve));
+  await page.route(pieceRoute, async (route) => {
+    await released;
+    await route.continue().catch(() => {});
+  });
   requested = historyRequest();
   await historyDialog.getByRole('button', { name: '6 h', exact: true }).click();
   await requested;
   await settled();
   await historyDialog.locator('.history__tiles').waitFor();
+  await page.waitForTimeout(300);
+  page.on('requestfinished', countPiece);
+  await page.setViewportSize({ width: 1240, height: 800 });
+  await page.waitForTimeout(300);
+  release();
+  await page.waitForTimeout(1000);
+  page.off('requestfinished', countPiece);
+  seen.historyPiecesAfterResize = pieces.finished;
+  assert.ok(pieces.finished >= 1, 'a history piece cancelled by a resize was not fetched again');
+  await page.unroute(pieceRoute);
+  await page.setViewportSize({ width: 1280, height: 800 });
+  // Six hours of an archive an hour old: the side is as tall as the
+  // recording, so its times sit beside their rows.
   seen.historyTall = await historyDialog.evaluate((dialog) => ({
     times: Math.round(dialog.querySelector('.history__times').getBoundingClientRect().height),
     tiles: Math.round([...dialog.querySelectorAll('.history__tile')].reduce((sum, tile) => sum + tile.getBoundingClientRect().height, 0)),
