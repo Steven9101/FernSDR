@@ -17,7 +17,7 @@
 	import { Button } from '../components/ui/button/index';
 	import { Confirm } from '../components/ui/confirm/index';
 	import { ago, bitrate, dbfs, megahertz, share } from '../lib/format';
-	import { bandCondition, conditionDetail, live } from '../lib/live.svelte';
+	import { bandCondition, conditionDetail, isTrouble, live } from '../lib/live.svelte';
 	import { parseLogLine, recentProblems, type LogEntry } from '../lib/log';
 	import { dismissSetup, setupDone } from '../lib/setup';
 	import { href } from '../lib/router.svelte';
@@ -30,12 +30,7 @@
 	});
 
 	const bands = $derived(live.state?.bands ?? []);
-	const troubled = $derived(
-		bands.filter((band) => {
-			const condition = bandCondition(band);
-			return condition !== 'receiving' && condition !== 'off';
-		})
-	);
+	const troubled = $derived(bands.filter((band) => isTrouble(bandCondition(band))));
 	const receiving = $derived(bands.filter((band) => bandCondition(band) === 'receiving').length);
 	const uplink = $derived(live.uplink.at(-1) ?? 0);
 

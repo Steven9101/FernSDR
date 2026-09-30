@@ -137,6 +137,30 @@ export function bandCondition(band: {
   return 'retrying';
 }
 
+/**
+ * Whether a band's condition is a fault worth the operator's attention. A
+ * band off the air by its hours, or switched off, is doing what it was told.
+ */
+export function isTrouble(condition: BandCondition): boolean {
+  return condition !== 'receiving' && condition !== 'off' && condition !== 'off-air';
+}
+
+/**
+ * The receiver's state in a line when nothing needs the operator: every band
+ * receiving, or how many are, and why the others are quiet. A day and night
+ * pair has one band off the air at any time, and "all receiving" would say
+ * otherwise.
+ */
+export function quietSummary(conditions: readonly BandCondition[]): string {
+  const count = (which: BandCondition) => conditions.filter((condition) => condition === which).length;
+  const receiving = count('receiving');
+  if (receiving === conditions.length) return conditions.length === 1 ? 'Receiving' : `All ${conditions.length} bands receiving`;
+  const parts = [`${receiving} receiving`];
+  if (count('off-air')) parts.push(`${count('off-air')} off the air, as scheduled`);
+  if (count('off')) parts.push(`${count('off')} switched off`);
+  return parts.join(', ');
+}
+
 export const conditionLabel: Record<BandCondition, string> = {
   receiving: 'Receiving',
   starting: 'Starting',

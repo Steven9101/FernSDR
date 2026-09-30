@@ -1,5 +1,5 @@
 <script lang="ts">
-	import { bandCondition, live } from '../lib/live.svelte';
+	import { bandCondition, live, quietSummary } from '../lib/live.svelte';
 
 	/*
 	The receiver's state in a line, on every page: the first thing that should change when
@@ -14,7 +14,7 @@
 		const retrying = conditions.filter((c) => c === 'retrying' || c === 'starting' || c === 'restarting').length;
 		if (needs) return { tone: 'text-destructive', text: `${needs} band${needs === 1 ? ' needs' : 's need'} you` };
 		if (retrying) return { tone: 'text-warning', text: `${retrying} band${retrying === 1 ? '' : 's'} coming back` };
-		return { tone: 'text-muted-foreground', text: bands.length === 1 ? 'Receiving' : `All ${bands.length} bands receiving` };
+		return { tone: 'text-muted-foreground', text: quietSummary(conditions) };
 	});
 </script>
 
