@@ -1245,6 +1245,39 @@ TEST_CASE(audio_rate_follows_the_passband) {
     CHECK_EQ(passband_audio_rate(2.048e6, 8000, 32768, -4500, 4500), 8000.0);
 }
 
+TEST_CASE(the_lowest_rate_a_page_asks_for_is_one_it_plays) {
+    using fernsdr::channel_audio_rate;
+    using fernsdr::passband_audio_rate;
+    // 4 kHz rounds to the nearest power of two of the band rate, and that
+    // may lie below 4 kHz, which the page refuses: it stays silent.
+    CHECK_EQ(channel_audio_rate(192000, 4000, 4096), 6000.0);
+    CHECK_EQ(passband_audio_rate(192000, 4000, 4096, 650, 750), 6000.0);
+    CHECK_EQ(channel_audio_rate(64e6, 4000, 1u << 20), 7812.5);
+    CHECK_EQ(passband_audio_rate(64e6, 4000, 1u << 20, 650, 750), 7812.5);
+    CHECK_EQ(passband_audio_rate(2.048e6, 4000, 32768, 650, 750), 4000.0);
+
+    fernsdr::Config config;
+    std::string error;
+    CHECK(config.parse("[band:test]\nsource = test\nsample_rate = 192000\ncenter = 7.1M\nfft_size = 4096\n"
+                       "noise = 0.001\nrealtime = false\n", error));
+    const auto& section = config.section("band:test");
+    Band band("test", "Rates", fernsdr::make_source(section, error), section);
+    auto listener = std::make_shared<Listener>(1, band);
+    auto channel = listener->channel();
+    channel.frequency_hz = 7100000.0;
+    channel.mode = fernsdr::Mode::Cw;
+    channel.bandwidth_low = 650;
+    channel.bandwidth_high = 750;
+    channel.requested_audio_rate = 4000;
+    listener->set_channel(channel);
+    auto view = listener->viewport();
+    view.enabled = false;
+    listener->set_viewport(view);
+    band.add_listener(listener);
+    CHECK(band.process_one_block());
+    CHECK(listener->actual_audio_rate() >= 4000.0);
+}
+
 TEST_CASE(listener_rate_moves_up_at_once_and_down_only_with_the_mode) {
     fernsdr::Config config;
     std::string error;

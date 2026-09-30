@@ -18,21 +18,24 @@ namespace {
 constexpr size_t kOutboxSoftLimitBytes = 256 * 1024;
 constexpr size_t kOutboxHardLimitBytes = 1024 * 1024;
 
+// The lowest rate the receiver page plays.
+constexpr double kMinimumAudioRate = 4000.0;
+
 // Rounds fs/target to a power of two, so the channelizer's inverse transform
 // length stays a power of two.  The resulting audio rate is rarely a round
 // number - the client resamples anyway, and forcing 12000 exactly would mean
-// a resampler on the server, per user.
+// a resampler on the server, per user.  Rounding may go down, but never below
+// the lowest rate the page plays: 4 kHz asked of 192 kHz would round to 3 kHz,
+// which the page refuses, and the listener would hear nothing.
 size_t decimation_for(double band_rate, int target_rate, size_t fft_size) {
     const double ideal = band_rate / std::max(1, target_rate);
     size_t decimation = 1;
-    while (decimation * 2 <= static_cast<size_t>(ideal * 1.4142) && decimation < fft_size / 16) {
+    while (decimation * 2 <= static_cast<size_t>(ideal * 1.4142) && decimation < fft_size / 16 &&
+           band_rate / static_cast<double>(decimation * 2) >= kMinimumAudioRate) {
         decimation *= 2;
     }
     return std::max<size_t>(1, decimation);
 }
-
-// The lowest rate the receiver page plays.
-constexpr double kMinimumAudioRate = 4000.0;
 
 // The lowest channel rate that still carries the passband, so that a narrow
 // mode is not processed at a wide one's rate. Everything after the channel,
