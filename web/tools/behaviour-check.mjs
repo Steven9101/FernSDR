@@ -152,8 +152,21 @@ async function desktop() {
   await keys.focus();
   await tooltip.waitFor({ timeout: 300 });
   seen.tooltipOnFocus = await tooltip.textContent();
+  // Escape puts it away without moving focus.
+  await page.keyboard.press('Escape');
+  await page.waitForTimeout(100);
+  seen.tooltipAfterEscape = await tooltip.count();
+  assert.equal(seen.tooltipAfterEscape, 0);
   await blur(page);
   await tooltip.waitFor({ state: 'detached' });
+  // The text is the control's description for a screen reader, except where
+  // it only repeats the control's name.
+  seen.tooltipDescriptions = await page.evaluate(() => ['Copy a link to this frequency', 'Keyboard shortcuts'].map((name) => {
+    const button = document.querySelector(`button[aria-label="${name}"]`);
+    const ids = button?.getAttribute('aria-describedby');
+    return ids ? ids.split(' ').map((id) => document.getElementById(id)?.textContent).join(' ') : null;
+  }));
+  assert.deepEqual(seen.tooltipDescriptions, ['Copy a link that opens on this frequency', null]);
 
   // Sharing: the link goes to the clipboard and the button says so for a
   // moment. The click is also the first gesture, so audio starts.

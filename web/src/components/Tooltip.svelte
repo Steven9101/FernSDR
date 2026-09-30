@@ -44,6 +44,10 @@
   }
 
   let { label, placement = 'top', children }: Props = $props();
+  // The text is also the control's description for a screen reader, kept in
+  // the page while the tooltip is closed, since that is when it is read.
+  const uid = $props.id();
+  const descriptionId = `${uid}-tooltip`;
 
   let open = $state(false);
   let cold = $state(true);
@@ -82,6 +86,12 @@
 
   const attach: Attachment<HTMLElement> = (element) => {
     anchor = element;
+    // Not where the tooltip only repeats the control's name, which a screen
+    // reader would then say twice.
+    const name = (element.getAttribute('aria-label') ?? element.textContent ?? '').trim().toLowerCase();
+    const describes = typeof label !== 'string' || label.trim().toLowerCase() !== name;
+    const before = element.getAttribute('aria-describedby');
+    if (describes) element.setAttribute('aria-describedby', before ? `${before} ${descriptionId}` : descriptionId);
     const listeners = {
       pointerenter: (event: PointerEvent) => {
         // Touch reports itself as a pointer enter immediately before the tap;
@@ -129,6 +139,10 @@
     for (const [type, listener] of Object.entries(listeners)) element.addEventListener(type, listener as EventListener);
     return () => {
       for (const [type, listener] of Object.entries(listeners)) element.removeEventListener(type, listener as EventListener);
+      if (describes) {
+        if (before) element.setAttribute('aria-describedby', before);
+        else element.removeAttribute('aria-describedby');
+      }
       if (anchor === element) anchor = null;
     };
   };
@@ -139,14 +153,22 @@
   });
 
   // A tooltip opened by a long press has no pointerleave to close it, so it
-  // closes on the next touch anywhere.
+  // closes on the next touch anywhere. Escape closes any, wherever focus is,
+  // so one that covers something can be put away without moving the pointer.
   $effect(() => {
     if (!open) return;
     const dismiss = (event: PointerEvent) => {
       if (event.pointerType === 'touch') hide();
     };
+    const escape = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') hide();
+    };
     window.addEventListener('pointerdown', dismiss, { capture: true });
-    return () => window.removeEventListener('pointerdown', dismiss, { capture: true });
+    window.addEventListener('keydown', escape, { capture: true });
+    return () => {
+      window.removeEventListener('pointerdown', dismiss, { capture: true });
+      window.removeEventListener('keydown', escape, { capture: true });
+    };
   });
 
   $effect(() => {
@@ -186,6 +208,7 @@
 </script>
 
 {@render children(attach)}
+<span id={descriptionId} hidden>{#if typeof label === 'string'}{label}{:else}{@render label()}{/if}</span>
 {#if open}
   <div bind:this={floating} class="tooltip" role="tooltip" data-cold={String(cold)}>
     {#if typeof label === 'string'}{label}{:else}{@render label()}{/if}
