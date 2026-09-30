@@ -11,10 +11,10 @@ DecoderTap::DecoderTap(uint16_t channel, const Channelizer& channelizer, double 
                        double dial_hz, double offset_hz, double width_hz)
     : index_in_decoder_(channel), dial_hz_(dial_hz), offset_hz_(offset_hz), width_hz_(width_hz) {
     const double half = width_hz / 2.0;
-    // The lowest rate that still carries the channel, capped at 12 kHz: what
-    // a decoder does costs in proportion to the rate.
-    const double rate = passband_audio_rate(channelizer.sample_rate(), 12000, channelizer.fft_size(), -half, half);
-    const size_t decimation = static_cast<size_t>(std::llround(channelizer.sample_rate() / rate));
+    // The lowest rate that still carries the channel: what a decoder does
+    // costs in proportion to the rate. Unlike a listener's there is no
+    // ceiling, since a channel the section says is 48 kHz wide must be.
+    const size_t decimation = wfm_channel_decimation(channelizer.sample_rate(), channelizer.fft_size(), -half, half);
     channel_ = std::make_unique<Channel>(channelizer, channelizer.fft_size() / std::max<size_t>(1, decimation));
     const double centre = (dial_hz + offset_hz - origin_hz) / rf_scale;
     channel_->set_passband(centre, -half, half);

@@ -77,6 +77,20 @@ TEST_CASE(decoder_tap_puts_the_dial_audio_where_the_contract_says) {
     CHECK(std::sqrt(power / static_cast<double>(outside.size())) < 0.005);
 }
 
+TEST_CASE(decoder_tap_carries_a_wide_channel_to_both_edges) {
+    // 48 kHz is the widest channel a decoder section may ask for; a tone
+    // 2 kHz inside either edge must reach the decoder, not only the middle.
+    const double dial = kOrigin + 10000.0;
+    for (double audio : {2000.0, 46000.0}) {
+        Channelizer channelizer(kRate, kFft);
+        DecoderTap tap(0, channelizer, kOrigin, 1.0, dial, 24000.0, 48000.0);
+        CHECK(tap.rate() >= 48000.0);
+        const auto frames = run(tap, channelizer, dial + audio, 80, [](size_t b) { return kT0 + static_cast<int64_t>((b + 1) * kBlockUs); });
+        const auto samples = joined(frames, 2);
+        CHECK(amplitude_at(samples, audio - 24000.0, tap.rate()) > 0.4);
+    }
+}
+
 TEST_CASE(decoder_tap_frames_are_contiguous_and_the_first_says_the_clock_was_set) {
     Channelizer channelizer(kRate, kFft);
     DecoderTap tap(3, channelizer, kOrigin, 1.0, kDial, 2000.0, 4000.0);
