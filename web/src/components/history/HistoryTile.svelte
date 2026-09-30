@@ -35,15 +35,30 @@
     const rows = Math.min(4096, Math.ceil(heightPx * ratio));
     const columns = Math.ceil(width * ratio);
     const abort = new AbortController();
+    let settled = false;
     fetch(`/api/history?band=${encodeURIComponent(band)}&from=${Math.round(from)}&to=${Math.round(to)}&rows=${rows}&width=${columns}`,
       { credentials: 'same-origin', signal: abort.signal })
       .then((response) => (response.ok ? response.arrayBuffer() : Promise.reject(new Error(String(response.status)))))
-      .then((buffer) => (archive = decodeHistory(buffer)))
-      .catch((problem) => {
-        if ((problem as Error).name === 'AbortError') requested = false;
-        else failed = true;
+      .then((buffer) => {
+        if (abort.signal.aborted) return;
+        settled = true;
+        archive = decodeHistory(buffer);
+      })
+      .catch(() => {
+        if (abort.signal.aborted) return;
+        settled = true;
+        failed = true;
       });
-    return () => abort.abort();
+    // A resize, or the tile scrolling out of reach, reruns this before the
+    // answer is in. The request is then given up and marked as not made, here
+    // rather than when its rejection arrives: the rerun comes first, and
+    // finding it still marked as made, it would start nothing and leave the
+    // tile blank for good.
+    return () => {
+      if (settled) return;
+      abort.abort();
+      requested = false;
+    };
   });
 
   $effect(() => {
