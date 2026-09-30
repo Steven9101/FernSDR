@@ -24,10 +24,10 @@ namespace fernsdr {
  * frequency last night", which one line a second at a thousand bins answers
  * perfectly well, at about 90 MB a day.
  *
- * Each slot carries the absolute index of the line in it, so a ring left torn
- * by a power cut describes itself: a slot whose index does not match where it
- * sits is simply not there yet. There is no separate consistency to maintain
- * and nothing to repair on startup.
+ * Each slot carries a checksum of its epoch, absolute index and payload. A torn row
+ * or one from an older lap reads as a gap. Two checksummed headers on separate
+ * pages keep the previous cursor usable if one header tears. Recovery can
+ * omit the latest row; writes are not synchronised to durable storage.
  */
 class WaterfallArchive {
 public:
@@ -43,7 +43,8 @@ public:
      * An existing file whose shape does not match what is asked for is
      * replaced rather than reinterpreted: the retention or the width has been
      * changed in the configuration, and silently reading old lines at the
-     * wrong width would draw nonsense.
+     * wrong width would draw nonsense. Version 1 files have no integrity
+     * checks and are recreated with a log line.
      */
     /**
      * `low_hz` and `high_hz` are the frequencies a row covers, when known.
@@ -96,7 +97,7 @@ public:
      * reading itself, thousands of seeks on a slow card perhaps, holds nothing
      * the band's own thread waits for. It carries a descriptor of its own for
      * the file: the archive may be closed or reopened meanwhile, and a slot
-     * written since reads as the gap it was, by its index.
+     * overwritten since reads as a gap, by the checksum of its expected index.
      */
     struct Reading {
         int fd = -1;
@@ -132,17 +133,19 @@ public:
 
 private:
     struct Header {
-        char magic[8];      // "FRNWFA1\0"
+        char magic[8];      // "FRNWFA2\0"
         uint32_t bins;
-        uint32_t reserved;
+        uint32_t checksum;
         double seconds_per_line;
         uint64_t capacity;
         uint64_t next_index;  // absolute index of the next line to be written
         int64_t epoch_ms;     // wall-clock time of line 0
     };
 
-    bool read_header(Header& header) const;
-    bool write_header() const;
+    static constexpr uint64_t kHeaderSpacing = 4096;
+    static constexpr uint64_t kRowsOffset = 2 * kHeaderSpacing;
+    bool read_header(Header& header, unsigned copy) const;
+    bool write_header();
     size_t slot_bytes() const { return sizeof(uint64_t) + bins_; }
     int64_t time_of(uint64_t index) const;
     void note_written(bool written);
@@ -155,6 +158,7 @@ private:
     uint64_t next_index_ = 0;
     int64_t epoch_ms_ = 0;
     bool failing_ = false;
+    unsigned header_copy_ = 0;
     std::vector<uint8_t> scratch_;
 };
 

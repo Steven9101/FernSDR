@@ -30,7 +30,7 @@ TEST_OBJS   := $(TEST_SRCS:%.cpp=$(BUILD)/%.o) $(LIB_SRCS:%.cpp=$(BUILD)/%.o)
 SERVER_BIN := $(BUILD)/fernsdr
 TEST_BIN   := $(BUILD)/fernsdr-tests
 
-.PHONY: all test clean run fast vectors bench quality roundtrip lab fft-bench fft-compare link-model agc-lab wideband-module fuzz ed25519-compare release-tools release release-binary release-test installer docker
+.PHONY: all test clean run fast vectors bench archive-bench quality roundtrip lab fft-bench fft-compare link-model agc-lab wideband-module fuzz ed25519-compare release-tools release release-binary release-test installer docker
 
 all: $(SERVER_BIN)
 
@@ -275,6 +275,13 @@ $(BUILD)/agc-lab: $(BUILD)/tools/agc_lab.o $(LIB_SRCS:%.cpp=$(BUILD)/%.o)
 
 bench: $(BUILD)/benchmark
 	@$(BUILD)/benchmark
+
+archive-bench: $(BUILD)/archive-bench
+	@$(BUILD)/archive-bench
+
+$(BUILD)/archive-bench: tools/archive_bench.cpp src/core/archive.cpp src/core/archive.h src/util/log.h
+	@mkdir -p $(dir $@)
+	$(CXX) $(CXXSTD) $(OPT) $(WARN) -o $@ tools/archive_bench.cpp src/core/archive.cpp $(LDFLAGS) $(LDLIBS)
 
 $(BUILD)/benchmark: $(BUILD)/tools/benchmark.o $(LIB_SRCS:%.cpp=$(BUILD)/%.o)
 	@mkdir -p $(dir $@)

@@ -1,6 +1,8 @@
 #include "../src/core/archive.h"
+#include "../src/util/log.h"
 #include "test_util.h"
 
+#include <algorithm>
 #include <sys/resource.h>
 #include <sys/stat.h>
 
@@ -11,6 +13,7 @@
 #include <limits>
 #include <string>
 #include <vector>
+#include <unistd.h>
 
 using fernsdr::WaterfallArchive;
 
@@ -23,6 +26,44 @@ std::vector<float> line_with_carrier(size_t count, size_t bin, float level = -30
     std::vector<float> line(count, -100.0f);
     if (bin < count) line[bin] = level;
     return line;
+}
+
+// The fault tests also run against version 1, to establish the regression.
+struct DiskHeader {
+    char magic[8];
+    uint32_t bins;
+    uint32_t checksum;
+    double seconds_per_line;
+    uint64_t capacity;
+    uint64_t next_index;
+    int64_t epoch_ms;
+};
+static_assert(sizeof(DiskHeader) == 48);
+
+std::vector<uint8_t> file_bytes(const std::string& path) {
+    std::FILE* file = std::fopen(path.c_str(), "rb");
+    CHECK(file != nullptr);
+    if (!file) return {};
+    CHECK_EQ(std::fseek(file, 0, SEEK_END), 0);
+    const long size = std::ftell(file);
+    CHECK(size > 0);
+    std::rewind(file);
+    std::vector<uint8_t> bytes(static_cast<size_t>(size));
+    CHECK_EQ(std::fread(bytes.data(), 1, bytes.size(), file), bytes.size());
+    std::fclose(file);
+    return bytes;
+}
+
+void replace_bytes(const std::string& path, const std::vector<uint8_t>& bytes) {
+    std::FILE* file = std::fopen(path.c_str(), "wb");
+    CHECK(file != nullptr);
+    if (!file) return;
+    CHECK_EQ(std::fwrite(bytes.data(), 1, bytes.size(), file), bytes.size());
+    CHECK_EQ(std::fclose(file), 0);
+}
+
+size_t rows_offset(const std::vector<uint8_t>& bytes) {
+    return std::memcmp(bytes.data(), "FRNWFA2", 8) == 0 ? 8192 : sizeof(DiskHeader);
 }
 
 }  // namespace
@@ -290,7 +331,7 @@ TEST_CASE(archive_only_takes_a_line_when_one_is_due) {
         if (file) {
             char magic[8]{};
             CHECK_EQ(std::fread(magic, 1, sizeof(magic), file), sizeof(magic));
-            CHECK(std::memcmp(magic, "FRNWFA1", 8) == 0);
+            CHECK(std::memcmp(magic, "FRNWFA2", 8) == 0);
             std::fclose(file);
         }
     }
@@ -562,4 +603,223 @@ TEST_CASE(archive_refused_a_new_shape_keeps_recording) {
     CHECK_EQ(times.size(), 1);
     archive.close();
     std::remove(path.c_str());
+}
+
+TEST_CASE(archive_torn_payload_reads_as_a_gap) {
+    const std::string path = temp_path("torn-payload");
+    std::remove(path.c_str());
+    std::string error;
+    WaterfallArchive archive;
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    const int64_t start = 1'700'000'000'000;
+    const auto line = line_with_carrier(16, 3);
+    for (int i = 0; i < 3; ++i) archive.append(line.data(), line.size(), start + i * 600000);
+    archive.close();
+    auto bytes = file_bytes(path);
+    bytes[rows_offset(bytes) + 24 + 8 + 3] ^= 0x80;
+    replace_bytes(path, bytes);
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(archive.read(start, start + 1200000, rows, times));
+    CHECK(times == std::vector<int64_t>({start, start + 1200000}));
+    CHECK_EQ(rows.size(), 32);
+    if (rows.size() == 32) CHECK_EQ(rows[3], rows[19]);
+    archive.close();
+    std::remove(path.c_str());
+}
+
+TEST_CASE(archive_torn_ring_overwrite_reads_as_a_gap) {
+    const std::string path = temp_path("torn-overwrite");
+    std::remove(path.c_str());
+    std::string error;
+    WaterfallArchive archive;
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    const int64_t start = 1'700'000'000'000;
+    const auto old_line = line_with_carrier(16, 12);
+    for (int i = 0; i < 6; ++i) archive.append(old_line.data(), old_line.size(), start + i * 600000);
+    const auto before = file_bytes(path);
+    const auto new_line = line_with_carrier(16, 2, -20.0f);
+    archive.append(new_line.data(), new_line.size(), start + 3600000);
+    auto torn = file_bytes(path);
+    archive.close();
+    const size_t offset = rows_offset(torn);
+    // The new slot prefix persisted, but the last half of its payload did not.
+    std::copy(before.begin() + offset + 16, before.begin() + offset + 24, torn.begin() + offset + 16);
+    replace_bytes(path, torn);
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(archive.read(start, start + 3600000, rows, times));
+    CHECK_EQ(times.size(), 5);
+    CHECK(std::find(times.begin(), times.end(), start + 3600000) == times.end());
+    CHECK_EQ(rows.size(), 80);
+    archive.close();
+    std::remove(path.c_str());
+}
+
+TEST_CASE(archive_torn_headers_keep_the_usable_record) {
+    const std::string path = temp_path("torn-header");
+    const int64_t start = 1'700'000'000'000;
+    // Magic, shape, cursor, epoch and checksum can all tear independently.
+    for (const size_t field : {size_t{0}, size_t{8}, size_t{16}, size_t{24}, size_t{32}, size_t{40}, size_t{12}}) {
+        std::remove(path.c_str());
+        std::string error;
+        WaterfallArchive archive;
+        CHECK(archive.open(path, 16, 600.0, 1, error));
+        const auto line = line_with_carrier(16, 3);
+        for (int i = 0; i < 3; ++i) archive.append(line.data(), line.size(), start + i * 600000);
+        const auto before = file_bytes(path);
+        archive.close();
+        const bool version2 = rows_offset(before) == 8192;
+        for (const size_t copy : {size_t{0}, size_t{4096}}) {
+            if (!version2 && copy != 0) continue;
+            auto torn = before;
+            torn[copy + field] ^= 0x40;
+            replace_bytes(path, torn);
+            CHECK(archive.open(path, 16, 600.0, 1, error));
+            std::vector<uint8_t> rows;
+            std::vector<int64_t> times;
+            CHECK(archive.read(start, start + 1200000, rows, times));
+            CHECK(times.size() >= 2 && times.size() <= 3);
+            if (times.size() >= 2) {
+                CHECK_EQ(times[0], start);
+                CHECK_EQ(times[1], start + 600000);
+                CHECK_EQ(rows[3], WaterfallArchive::quantise(-30.0f));
+            }
+            archive.append(line.data(), line.size(), start + 3000000);
+            archive.close();
+            CHECK(archive.open(path, 16, 600.0, 1, error));
+            CHECK(archive.read(start, start + 3000000, rows, times));
+            CHECK(!times.empty() && times.back() == start + 3000000);
+            archive.close();
+        }
+    }
+    std::remove(path.c_str());
+}
+
+TEST_CASE(archive_unwritten_first_slot_reads_as_a_gap) {
+    const std::string path = temp_path("unwritten-zero");
+    std::remove(path.c_str());
+    std::string error;
+    WaterfallArchive archive;
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    const int64_t start = 1'700'000'000'000;
+    const auto line = line_with_carrier(16, 3);
+    archive.append(line.data(), line.size(), start);
+    archive.close();
+    auto bytes = file_bytes(path);
+    const size_t offset = rows_offset(bytes);
+    // A header reached storage before the first row, which is still a hole.
+    std::fill(bytes.begin() + offset, bytes.begin() + offset + 24, 0);
+    replace_bytes(path, bytes);
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(archive.read(start, start, rows, times));
+    CHECK(times.empty());
+    archive.close();
+    std::remove(path.c_str());
+}
+
+TEST_CASE(archive_truncated_file_is_recreated_cleanly) {
+    const std::string path = temp_path("truncated");
+    std::remove(path.c_str());
+    std::string error;
+    WaterfallArchive archive;
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    const int64_t start = 1'700'000'000'000;
+    const auto line = line_with_carrier(16, 3);
+    archive.append(line.data(), line.size(), start);
+    archive.close();
+    auto bytes = file_bytes(path);
+    bytes.resize(bytes.size() - 1);
+    replace_bytes(path, bytes);
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    CHECK_EQ(file_bytes(path).size(), archive.size_bytes());
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(archive.read(start, start, rows, times));
+    CHECK(times.empty());
+    archive.close();
+    std::remove(path.c_str());
+}
+
+TEST_CASE(archive_version1_is_recreated_with_a_log) {
+    const std::string path = temp_path("version1");
+    const int64_t start = 1'700'000'000'000;
+    DiskHeader header{};
+    std::memcpy(header.magic, "FRNWFA1", 8);
+    header.bins = 16;
+    header.seconds_per_line = 600.0;
+    header.capacity = 6;
+    header.next_index = 1;
+    header.epoch_ms = start;
+    std::vector<uint8_t> bytes(sizeof(header) + 6 * 24, 0);
+    std::memcpy(bytes.data(), &header, sizeof(header));
+    std::fill(bytes.begin() + sizeof(header) + 8, bytes.begin() + sizeof(header) + 24, 200);
+    replace_bytes(path, bytes);
+    const int previous_level = fernsdr::log_level().load();
+    fernsdr::set_log_level(fernsdr::LogLevel::Info);
+    WaterfallArchive archive;
+    std::string error;
+    CHECK(archive.open(path, 16, 600.0, 1, error));
+    fernsdr::log_level().store(previous_level);
+    const auto log = fernsdr::LogRing::instance().snapshot();
+    CHECK(std::any_of(log.begin(), log.end(), [&](const std::string& entry) {
+        return entry.find(path) != std::string::npos && entry.find("version 1") != std::string::npos;
+    }));
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(archive.read(start, start, rows, times));
+    CHECK(times.empty());
+    archive.close();
+    std::remove(path.c_str());
+}
+
+TEST_CASE(archive_checksum_matches_short_and_long_known_rows) {
+    const std::string path = temp_path("checksum-vector");
+    const int64_t start = 1'700'000'000'000;
+    for (const size_t width : {size_t{8}, size_t{64}}) {
+        std::remove(path.c_str());
+        WaterfallArchive archive;
+        std::string error;
+        CHECK(archive.open(path, width, 600.0, 1, error));
+        std::vector<float> line(width);
+        for (size_t i = 0; i < width; ++i) {
+            const uint8_t value = width == 8 ? static_cast<uint8_t>('1' + i) : static_cast<uint8_t>(i);
+            line[i] = WaterfallArchive::dequantise(value);
+        }
+        archive.append(line.data(), line.size(), start);
+        archive.close();
+        const auto bytes = file_bytes(path);
+        uint64_t stored = 0;
+        std::memcpy(&stored, bytes.data() + rows_offset(bytes), sizeof(stored));
+        // XXH64(index zero followed by payload, seeded with the row's epoch).
+        CHECK(stored == (width == 8 ? 0xfda11a560c86e5b9ull : 0x6e514d1837588d53ull));
+    }
+    std::remove(path.c_str());
+}
+
+TEST_CASE(archive_snapshot_rejects_rows_from_a_recreated_epoch) {
+    const std::string path = temp_path("snapshot-epoch");
+    std::remove(path.c_str());
+    std::remove((path + ".span").c_str());
+    WaterfallArchive archive;
+    std::string error;
+    CHECK(archive.open(path, 16, 600.0, 1, error, 100.0, 200.0));
+    const int64_t start = 1'700'000'000'000;
+    const auto line = line_with_carrier(16, 3);
+    archive.append(line.data(), line.size(), start);
+    WaterfallArchive::Reading snapshot;
+    CHECK(archive.begin_read(snapshot));
+    CHECK(archive.open(path, 16, 600.0, 1, error, 500.0, 600.0));
+    archive.append(line.data(), line.size(), start + 600000);
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(WaterfallArchive::read(snapshot, start, start, rows, times));
+    CHECK(times.empty());
+    archive.close();
+    std::remove(path.c_str());
+    std::remove((path + ".span").c_str());
 }

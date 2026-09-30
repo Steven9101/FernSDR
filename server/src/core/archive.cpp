@@ -1,12 +1,14 @@
 #include "archive.h"
 
 #include <fcntl.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <algorithm>
 #include <cerrno>
 #include <cmath>
 #include <cstring>
+#include <limits>
 
 #include "../util/log.h"
 
@@ -14,7 +16,58 @@ namespace fernsdr {
 
 namespace {
 
-constexpr char kMagic[8] = {'F', 'R', 'N', 'W', 'F', 'A', '1', '\0'};
+constexpr char kMagic[8] = {'F', 'R', 'N', 'W', 'F', 'A', '2', '\0'};
+
+uint64_t rotate(uint64_t value, unsigned bits) { return (value << bits) | (value >> (64 - bits)); }
+
+uint64_t word(const uint8_t* data) {
+    uint64_t value = 0;
+    for (unsigned i = 0; i < 8; ++i) value |= static_cast<uint64_t>(data[i]) << (i * 8);
+    return value;
+}
+
+// XXH64. The checksum binds the expected ring index and epoch to the payload
+// without adding disk bytes or requiring a CPU instruction set.
+uint64_t checksum(const void* bytes, size_t size, uint64_t seed = 0) {
+    constexpr uint64_t p1 = 11400714785074694791ull;
+    constexpr uint64_t p2 = 14029467366897019727ull;
+    constexpr uint64_t p3 = 1609587929392839161ull;
+    constexpr uint64_t p4 = 9650029242287828579ull;
+    constexpr uint64_t p5 = 2870177450012600261ull;
+    const auto round = [&](uint64_t lane, uint64_t input) { return rotate(lane + input * p2, 31) * p1; };
+    const auto* data = static_cast<const uint8_t*>(bytes);
+    const auto* end = data + size;
+    uint64_t hash = seed + p5;
+    if (size >= 32) {
+        uint64_t a = seed + p1 + p2, b = seed + p2, c = seed, d = seed - p1;
+        do {
+            a = round(a, word(data));
+            b = round(b, word(data + 8));
+            c = round(c, word(data + 16));
+            d = round(d, word(data + 24));
+            data += 32;
+        } while (end - data >= 32);
+        hash = rotate(a, 1) + rotate(b, 7) + rotate(c, 12) + rotate(d, 18);
+        for (uint64_t lane : {a, b, c, d}) hash = (hash ^ round(0, lane)) * p1 + p4;
+    }
+    hash += size;
+    while (end - data >= 8) {
+        hash = rotate(hash ^ round(0, word(data)), 27) * p1 + p4;
+        data += 8;
+    }
+    if (end - data >= 4) {
+        const uint32_t value = static_cast<uint32_t>(data[0]) | (static_cast<uint32_t>(data[1]) << 8) |
+                               (static_cast<uint32_t>(data[2]) << 16) | (static_cast<uint32_t>(data[3]) << 24);
+        hash = rotate(hash ^ (value * p1), 23) * p2 + p3;
+        data += 4;
+    }
+    while (data < end) hash = rotate(hash ^ (*data++ * p5), 11) * p1;
+    hash ^= hash >> 33;
+    hash *= p2;
+    hash ^= hash >> 29;
+    hash *= p3;
+    return hash ^ (hash >> 32);
+}
 
 // A month of a thousand bins a second is past 2 GB, beyond a 32-bit offset;
 // the Makefile asks for 64-bit ones on every system.
@@ -35,13 +88,17 @@ float WaterfallArchive::dequantise(uint8_t value) {
     return kFloorDb + (kCeilingDb - kFloorDb) * (static_cast<float>(value) / 255.0f);
 }
 
-bool WaterfallArchive::read_header(Header& header) const {
+bool WaterfallArchive::read_header(Header& header, unsigned copy) const {
     if (!file_) return false;
-    if (std::fseek(file_, 0, SEEK_SET) != 0) return false;
-    return std::fread(&header, sizeof(header), 1, file_) == 1;
+    static_assert(sizeof(Header) == 48);
+    if (::pread(::fileno(file_), &header, sizeof(header), copy * kHeaderSpacing) != sizeof(header)) return false;
+    const uint32_t stored = header.checksum;
+    header.checksum = 0;
+    return std::memcmp(header.magic, kMagic, sizeof(kMagic)) == 0 &&
+           stored == static_cast<uint32_t>(checksum(&header, sizeof(header)));
 }
 
-bool WaterfallArchive::write_header() const {
+bool WaterfallArchive::write_header() {
     if (!file_) return false;
     Header header{};
     std::memcpy(header.magic, kMagic, sizeof(kMagic));
@@ -50,16 +107,18 @@ bool WaterfallArchive::write_header() const {
     header.capacity = capacity_;
     header.next_index = next_index_;
     header.epoch_ms = epoch_ms_;
-    if (std::fseek(file_, 0, SEEK_SET) != 0) return false;
-    if (std::fwrite(&header, sizeof(header), 1, file_) != 1) return false;
-    return std::fflush(file_) == 0;
+    header.checksum = static_cast<uint32_t>(checksum(&header, sizeof(header)));
+    if (::pwrite(::fileno(file_), &header, sizeof(header), header_copy_ * kHeaderSpacing) != sizeof(header)) return false;
+    // Time gaps can jump the row index, so its parity cannot choose which
+    // header to replace without sometimes overwriting the only recent copy.
+    header_copy_ ^= 1;
+    return true;
 }
 
 namespace {
 
-// The frequencies live in a file of their own because the header has no room
-// for them, and changing the header would have thrown away every archive
-// recorded before.
+// Keep the existing sidecar so moving an archive still means moving its span
+// with it, and small frequency corrections still accumulate against that span.
 std::string span_path(const std::string& path) { return path + ".span"; }
 
 // Whether the rows already in the archive were recorded for these frequencies,
@@ -128,9 +187,14 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
     // "e" is close-on-exec, so a module started later does not inherit it.
     file_ = std::fopen(path.c_str(), "r+be");
     if (file_) {
-        Header header{};
-        const bool shaped = read_header(header) &&
-                            std::memcmp(header.magic, kMagic, sizeof(kMagic)) == 0 &&
+        Header headers[2]{};
+        const bool valid[2] = {read_header(headers[0], 0), read_header(headers[1], 1)};
+        const unsigned latest = valid[1] && (!valid[0] || headers[1].next_index > headers[0].next_index) ? 1 : 0;
+        const Header& header = headers[latest];
+        struct stat status{};
+        const bool complete = ::fstat(::fileno(file_), &status) == 0 && status.st_size >= 0 &&
+                              static_cast<uint64_t>(status.st_size) == size_bytes();
+        const bool shaped = (valid[0] || valid[1]) && complete &&
                             header.bins == bins_ && header.capacity == capacity_ &&
                             std::fabs(header.seconds_per_line - seconds_per_line_) < 1e-9;
         bool known = false;
@@ -143,7 +207,10 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
             if (!known) write_span(path, low_hz, high_hz);
             next_index_ = header.next_index;
             epoch_ms_ = header.epoch_ms;
+            header_copy_ = latest ^ 1;
             scratch_.assign(slot_bytes(), 0);
+            if (!valid[0] || !valid[1])
+                LOG_WARN("archive", "%s recovered using its intact header; the latest row may be missing", path.c_str());
             LOG_INFO("archive", "%s continued: %llu lines held of %llu", path.c_str(),
                      static_cast<unsigned long long>(std::min(next_index_, capacity_)),
                      static_cast<unsigned long long>(capacity_));
@@ -151,7 +218,9 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
         }
         std::fclose(file_);
         file_ = nullptr;
-        if (!shaped) LOG_INFO("archive", "%s was written with a different shape; starting again", path.c_str());
+        if (std::memcmp(headers[0].magic, "FRNWFA1", 8) == 0)
+            LOG_INFO("archive", "%s is version 1 without row integrity checks; starting again in version 2", path.c_str());
+        else if (!shaped) LOG_INFO("archive", "%s has an invalid header, length or different shape; starting again", path.c_str());
         else LOG_INFO("archive", "%s was recorded for other frequencies; starting again", path.c_str());
     }
 
@@ -162,7 +231,8 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
     }
     next_index_ = 0;
     epoch_ms_ = 0;
-    if (!write_header()) {
+    header_copy_ = 0;
+    if (!write_header() || !write_header()) {
         error = "cannot write the archive header in " + path;
         close();
         return false;
@@ -170,8 +240,8 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
     // The file is created at full size rather than grown: the operator is told
     // what it costs before it is switched on, and being told is worth nothing
     // if the number only becomes true a day later.
-    if (::fseeko(file_, static_cast<off_t>(size_bytes() - 1), SEEK_SET) != 0 ||
-        std::fputc(0, file_) == EOF || std::fflush(file_) != 0) {
+    if (size_bytes() > static_cast<uint64_t>(std::numeric_limits<off_t>::max()) ||
+        ::ftruncate(::fileno(file_), static_cast<off_t>(size_bytes())) != 0) {
         error = "cannot reserve " + std::to_string(size_bytes()) + " bytes for " + path;
         close();
         return false;
@@ -193,7 +263,7 @@ void WaterfallArchive::close() {
 }
 
 uint64_t WaterfallArchive::size_bytes() const {
-    return sizeof(Header) + capacity_ * static_cast<uint64_t>(slot_bytes());
+    return kRowsOffset + capacity_ * static_cast<uint64_t>(slot_bytes());
 }
 
 int64_t WaterfallArchive::time_of(uint64_t index) const {
@@ -240,19 +310,23 @@ void WaterfallArchive::append(const float* bins, size_t count, int64_t now_ms) {
         row[i] = quantise(peak);
     }
     std::memcpy(scratch_.data(), &next_index_, sizeof(uint64_t));
+    const uint64_t integrity = checksum(scratch_.data(), scratch_.size(), static_cast<uint64_t>(epoch_ms_));
+    std::memcpy(scratch_.data(), &integrity, sizeof(integrity));
 
     const uint64_t slot = next_index_ % capacity_;
-    const off_t offset = static_cast<off_t>(sizeof(Header) + slot * slot_bytes());
-    if (::fseeko(file_, offset, SEEK_SET) != 0 || std::fwrite(scratch_.data(), scratch_.size(), 1, file_) != 1) {
-        note_written(false);
-        return;
-    }
+    const off_t offset = static_cast<off_t>(kRowsOffset + slot * slot_bytes());
+    const bool row_written =
+        ::pwrite(::fileno(file_), scratch_.data(), scratch_.size(), offset) == static_cast<ssize_t>(scratch_.size());
 
+    // Counted whether or not it reached the file: a line's time is its index,
+    // so a line that could not be written must leave a gap, not hand its time
+    // to the next one. What the slot still holds carries another index and
+    // fails its check, so it reads as missing.
     next_index_++;
-    // The header is rewritten every line. It is 48 bytes against a kilobyte of
-    // payload, and it is what makes the file describe itself after a crash.
-    // Its flush is also where a buffered line meets the disk and fails.
-    note_written(write_header());
+    // The previous header stays intact if this cursor update tears. Neither
+    // write is a durable acknowledgement; checksums reject reordered tears.
+    // Its write is also where a line meets a full disk and fails.
+    note_written(write_header() && row_written);
 }
 
 void WaterfallArchive::note_written(bool written) {
@@ -285,8 +359,6 @@ WaterfallArchive::Reading::~Reading() {
 
 bool WaterfallArchive::begin_read(Reading& out) const {
     if (!file_) return false;
-    // Lines still in the stream's buffer are not in the file yet; the next
-    // line's seek writes them. Read now, they are the gap they would be.
     out.fd = ::fcntl(::fileno(file_), F_DUPFD_CLOEXEC, 0);
     if (out.fd < 0) return false;
     out.bins = bins_;
@@ -342,20 +414,32 @@ bool WaterfallArchive::read(const Reading& from, int64_t from_ms, int64_t to_ms,
     const uint64_t stride = (end - begin - 1) / limit + 1;
     if (row_ms) *row_ms = stride * from.seconds_per_line * 1000;
     const size_t slot_bytes = sizeof(uint64_t) + bins;
-    std::vector<uint8_t> slot(slot_bytes);
+    // Adjacent rows share a bounded read so integrity checking does not add
+    // one checksum scan on top of one syscall for every row in a picture.
+    const size_t batch_slots = stride == 1 ? std::max<size_t>(1, 65536 / slot_bytes) : 1;
+    std::vector<uint8_t> batch(batch_slots * slot_bytes);
+    uint64_t batch_begin = 0, batch_end = 0;
     for (uint64_t index = begin; index < end; index += stride) {
-        const off_t offset = static_cast<off_t>(sizeof(Header) + (index % from.capacity) * slot_bytes);
-        if (::pread(from.fd, slot.data(), slot.size(), offset) != static_cast<ssize_t>(slot.size())) return false;
-        if (read_bytes) *read_bytes += slot.size();
+        if (index >= batch_end) {
+            const uint64_t ring_slot = index % from.capacity;
+            const size_t slots = std::min<uint64_t>(batch_slots, std::min(end - index, from.capacity - ring_slot));
+            const size_t bytes = slots * slot_bytes;
+            const off_t offset = static_cast<off_t>(kRowsOffset + ring_slot * slot_bytes);
+            if (::pread(from.fd, batch.data(), bytes, offset) != static_cast<ssize_t>(bytes)) return false;
+            if (read_bytes) *read_bytes += bytes;
+            batch_begin = index;
+            batch_end = index + slots;
+        }
+        uint8_t* slot = batch.data() + (index - batch_begin) * slot_bytes;
 
         uint64_t stored = 0;
-        std::memcpy(&stored, slot.data(), sizeof(uint64_t));
-        // A slot holding a different index was never written, or belongs to an
-        // older lap of the ring. Either way it is not this line, and a gap in
-        // the record should read as a gap rather than as a row of zeroes.
-        if (stored != index) continue;
+        std::memcpy(&stored, slot, sizeof(stored));
+        // The expected index is part of the checksum so a valid older lap
+        // cannot masquerade as this row, even if its payload is identical.
+        std::memcpy(slot, &index, sizeof(index));
+        if (stored != checksum(slot, slot_bytes, static_cast<uint64_t>(from.epoch_ms))) continue;
 
-        const uint8_t* level = slot.data() + sizeof(uint64_t);
+        const uint8_t* level = slot + sizeof(uint64_t);
         if (bin_group == 1) {
             rows.insert(rows.end(), level, level + bins);
         } else {
