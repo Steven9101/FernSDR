@@ -221,6 +221,12 @@ default, all in whole Hz; `signal` is `iq`, or `real` for a radio that
 samples from 0 Hz up, as the RX-888 does. Without `tuning` the setup says it
 cannot suggest bands for the radio, and the operator writes the band by hand.
 
+A band written by hand for a module with `tuning` may leave `signal` and
+`sample_rate` out: it takes the module's signal and first rate. One that
+contradicts them (IQ from a real radio, a centre other than 0 on a real
+signal, or a centre outside `ranges`) is refused when the file is saved,
+with what to change, rather than when the band starts.
+
 `type` is `string`, `number`, `boolean` or `choice`, with `choices` for the
 last and optional `min`, `max` and `unit` for numbers. `advanced: true` marks
 a setting most operators should leave alone; the admin panel shows it apart

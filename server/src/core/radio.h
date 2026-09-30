@@ -71,8 +71,12 @@ class Radio {
 public:
     ~Radio() { stop(); }
     // Builds the bands described by the config.  Returns false with a
-    // human-readable error if any band cannot be created.
-    bool configure(const Config& config, std::string& error);
+    // human-readable error if any band cannot be created. `strict` also
+    // refuses settings a band would run with by falling back to its
+    // defaults (see check_band_settings): for a file being saved from the
+    // panel, not one a receiver has started with before and must start with
+    // again after an update.
+    bool configure(const Config& config, std::string& error, bool strict = false);
 
     bool start(std::string& error);
     void stop();

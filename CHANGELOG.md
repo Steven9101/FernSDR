@@ -55,6 +55,12 @@ The first release.
   moment, the waterfall and the audio are back in full within a few seconds.
   A queue building up in the network, which shows in the connection's round
   trip, takes the waterfall and not the audio.
+- A band for an input module takes its signal and first sample rate from
+  what the module says of itself, and a band the panel saves that
+  contradicts the module, or sets fft_size, spectrum_bins, low or high
+  outside what the band can run with, is refused with what to change; a
+  receiver that started with such a file before still starts, on its
+  defaults, and says so in its log.
 
 ### Listener page
 

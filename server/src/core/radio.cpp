@@ -134,7 +134,7 @@ bool valid_site_value(const std::string& key, const Json& value, std::string& wh
 
 }  // namespace
 
-bool Radio::configure(const Config& config, std::string& error) {
+bool Radio::configure(const Config& config, std::string& error, bool strict) {
     const ConfigSection& site = config.section("site");
     site_.name = site.get("name", "FernSDR");
     site_.operator_name = site.get("operator", "");
@@ -340,6 +340,14 @@ bool Radio::configure(const Config& config, std::string& error) {
         if (source->sample_rate() <= 0.0) {
             error = "[" + section->name() + "] sample_rate must be positive";
             return false;
+        }
+
+        if (std::string refused; !check_band_settings(*section, *source, refused)) {
+            if (strict) {
+                error = refused;
+                return false;
+            }
+            LOG_WARN("band", "%s; the band runs with its defaults there", refused.c_str());
         }
 
         bands_.push_back(std::make_unique<Band>(id, section->get("name", id), std::move(source), *section));

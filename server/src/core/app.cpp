@@ -766,7 +766,7 @@ bool Application::handle_admin(Connection& connection, const HttpRequest& reques
                 return true;
             }
             Radio probe;
-            if (!probe.configure(candidate, error)) {
+            if (!probe.configure(candidate, error, true)) {
                 response = json_response(400, json_error(error), request.keep_alive());
                 return true;
             }

@@ -543,5 +543,9 @@ private:
 // bins, which simultaneously puts the block length near 10 ms - the two
 // constraints turn out to be the same one.
 size_t choose_fft_size(double sample_rate);
+// Refuses band settings no band should run with, before the band is made:
+// fft_size or spectrum_bins set by hand outside what the transforms are
+// built for, and low and high reversed or outside what `source` covers.
+bool check_band_settings(const ConfigSection& section, const Source& source, std::string& error);
 
 }  // namespace fernsdr

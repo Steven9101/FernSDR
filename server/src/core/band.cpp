@@ -20,6 +20,50 @@ size_t choose_fft_size(double sample_rate) {
     return std::clamp<size_t>(size, 1024, 1u << 20);
 }
 
+bool check_band_settings(const ConfigSection& section, const Source& source, std::string& error) {
+    const std::string where = "[" + section.name() + "] ";
+    const auto power_of_two = [](long value) { return value > 0 && (value & (value - 1)) == 0; };
+    // Both follow the sample rate by themselves; a value set by hand is held
+    // to what the transforms are built and measured for, rather than taken
+    // as it comes or quietly replaced.
+    const long fft = section.get_int("fft_size", 0);
+    if (fft != 0 && (!power_of_two(fft) || fft < 1024 || fft > (1L << 20))) {
+        error = where + "fft_size is a power of two from 1024 to 1048576; left out, it follows the sample rate";
+        return false;
+    }
+    const long bins = section.get_int("spectrum_bins", 0);
+    if (bins != 0 && (!power_of_two(bins) || bins < 1024 || bins > (1L << 21))) {
+        error = where + "spectrum_bins is a power of two from 1024 to 2097152; left out, it follows the sample rate";
+        return false;
+    }
+    if (!section.has("low") && !section.has("high")) return true;
+    // What the input covers, as the band will place it: from DC to half the
+    // rate for a real signal, the rate about the centre for IQ.
+    const double offset = section.get_double("frequency_offset", 0.0);
+    const double ppm = section.get_double("ppm", 0.0);
+    const double rate = source.sample_rate() * (1.0 + (std::isfinite(ppm) ? std::clamp(ppm, -500.0, 500.0) : 0.0) * 1e-6);
+    const bool real = source.kind() == SignalKind::Real;
+    const double centre = real ? offset + rate / 4.0 : source.center_hz() * rate / source.sample_rate() + offset;
+    const double first = real ? offset : centre - rate / 2.0;
+    const double last = real ? offset + rate / 2.0 : centre + rate / 2.0;
+    const double low = section.get_double("low", first);
+    const double high = section.get_double("high", last);
+    const auto mhz = [](double hz) {
+        char text[32];
+        std::snprintf(text, sizeof text, "%.3f", hz / 1e6);
+        return std::string(text);
+    };
+    if (!std::isfinite(low) || !std::isfinite(high) || low >= high) {
+        error = where + "low must be below high";
+        return false;
+    }
+    if (low < first - 1.0 || high > last + 1.0) {
+        error = where + "low and high must lie in what the input covers, " + mhz(first) + " to " + mhz(last) + " MHz";
+        return false;
+    }
+    return true;
+}
+
 Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, const ConfigSection& section)
     : id_(std::move(id)), name_(std::move(name)), source_(std::move(source)) {
     configured_ = section.values();
@@ -27,7 +71,10 @@ Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, con
     signal_kind_ = source_->kind();
 
     fft_size_ = static_cast<size_t>(section.get_int("fft_size", 0));
-    if (fft_size_ == 0 || (fft_size_ & (fft_size_ - 1)) != 0) fft_size_ = choose_fft_size(sample_rate_);
+    // Out of what check_band_settings() accepts, the default: a receiver that
+    // started with such a file before an update starts with it after one.
+    if (fft_size_ < 1024 || fft_size_ > (1u << 20) || (fft_size_ & (fft_size_ - 1)) != 0)
+        fft_size_ = choose_fft_size(sample_rate_);
 
     // A real front end's anti-alias filter usually sits close to Nyquist, so
     // more of the range is genuinely usable than with a typical IQ tuner.
@@ -56,9 +103,18 @@ Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, con
         high_hz_ = center_hz_ + rf_rate() * usable_fraction_ / 2.0;
         spectrum_origin_hz_ = center_hz_;
     }
-    // An operator can always state the usable range directly.
-    if (section.has("low")) low_hz_ = section.get_double("low", low_hz_);
-    if (section.has("high")) high_hz_ = section.get_double("high", high_hz_);
+    // An operator can always state the usable range directly, within what
+    // the input covers (check_band_settings() says why it was not taken).
+    {
+        const double first = signal_kind_ == SignalKind::Real ? offset : center_hz_ - rf_rate() / 2.0;
+        const double last = signal_kind_ == SignalKind::Real ? offset + rf_rate() / 2.0 : center_hz_ + rf_rate() / 2.0;
+        const double low = section.get_double("low", low_hz_);
+        const double high = section.get_double("high", high_hz_);
+        if (std::isfinite(low) && std::isfinite(high) && low < high && low >= first - 1.0 && high <= last + 1.0) {
+            low_hz_ = low;
+            high_hz_ = high;
+        }
+    }
     max_bandwidth_hz_ = std::max(1000.0, section.get_double("max_bandwidth", 20000.0));
     wfm_allowed_ = section.get_bool("wfm", true);
     max_user_bitrate_ = static_cast<int>(std::clamp(section.get_int("max_user_bitrate", 100000), 16000L, 1000000L));
@@ -66,7 +122,7 @@ Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, con
         static_cast<int>(std::clamp(section.get_int("audio_bitrate", 48000), 8000L, 128000L));
 
     spectrum_bins_ = static_cast<size_t>(section.get_int("spectrum_bins", 0));
-    if (spectrum_bins_ == 0 || (spectrum_bins_ & (spectrum_bins_ - 1)) != 0) {
+    if (spectrum_bins_ < 1024 || spectrum_bins_ > (1u << 21) || (spectrum_bins_ & (spectrum_bins_ - 1)) != 0) {
         // Twice the channelizer's resolution: the waterfall is what users
         // hunt signals on, so it is worth resolving finer than the audio path.
         spectrum_bins_ = std::min<size_t>(fft_size_ * 2, 1u << 16);

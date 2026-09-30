@@ -910,3 +910,95 @@ TEST_CASE(two_bands_cannot_take_one_module_device) {
     configure(band("a", "") + band("b", "serial:00000002"), error);
     CHECK(error.find("both") == std::string::npos);
 }
+
+namespace {
+
+// A store with the fake module whose manifest says what it tunes.
+std::shared_ptr<ModuleStore> store_with_tuning(const TempDir& directory, const std::string& tuning) {
+    auto store = std::make_shared<ModuleStore>(directory.path + "/modules");
+    const std::string program = read_binary(fake_module_path());
+    std::string manifest = manifest_for(program, "1.0.0");
+    manifest = manifest.substr(0, manifest.size() - 1) + R"(,"tuning":)" + tuning + "}";
+    ModuleManifest installed;
+    std::string error;
+    if (!store->install(package_of(manifest, program), "file", nullptr, installed, error)) {
+        std::fprintf(stderr, "installing the fake module failed: %s\n", error.c_str());
+        return nullptr;
+    }
+    return store;
+}
+
+ConfigSection plain_module_band() {
+    ConfigSection section("band:mod");
+    section.set("source", "module");
+    section.set("module", "fake");
+    return section;
+}
+
+}  // namespace
+
+TEST_CASE(module_band_takes_signal_and_rate_from_what_the_module_says) {
+    // An RX-888-like module: real, 64.8 Msps first. A band that says only
+    // which module gets a real band at that rate, from 0 Hz.
+    TempDir directory;
+    auto store = store_with_tuning(directory, R"({"ranges":[[0,64800000]],"rates":[64800000,129600000],"signal":"real"})");
+    CHECK(store != nullptr);
+    if (!store) return;
+    std::string error;
+    auto source = make_module_source(plain_module_band(), store, error, quick_timing());
+    CHECK(source != nullptr);
+    if (!source) return;
+    CHECK(source->kind() == fernsdr::SignalKind::Real);
+    CHECK_EQ(source->sample_rate(), 64800000.0);
+}
+
+TEST_CASE(module_band_that_contradicts_the_module_is_refused_with_the_fix) {
+    TempDir directory;
+    auto real = store_with_tuning(directory, R"({"ranges":[[0,64800000]],"rates":[64800000],"signal":"real"})");
+    CHECK(real != nullptr);
+    if (!real) return;
+    std::string error;
+    ConfigSection iq = plain_module_band();
+    iq.set("signal", "iq");
+    CHECK(make_module_source(iq, real, error, quick_timing()) == nullptr);
+    CHECK(error.find("set signal = real") != std::string::npos);
+    ConfigSection centred = plain_module_band();
+    centred.set("center", "7100000");
+    CHECK(make_module_source(centred, real, error, quick_timing()) == nullptr);
+    CHECK(error.find("center is 0") != std::string::npos);
+
+    TempDir other;
+    auto tuner = store_with_tuning(other, R"({"ranges":[[500000,1766000000]],"rates":[2400000],"signal":"iq"})");
+    CHECK(tuner != nullptr);
+    if (!tuner) return;
+    ConfigSection low = plain_module_band();
+    low.set("center", "100000");
+    CHECK(make_module_source(low, tuner, error, quick_timing()) == nullptr);
+    CHECK(error.find("0.500 to 1766.000 MHz") != std::string::npos);
+    ConfigSection fine = plain_module_band();
+    fine.set("center", "7100000");
+    auto source = make_module_source(fine, tuner, error, quick_timing());
+    CHECK(source != nullptr);
+    if (source) CHECK_EQ(source->sample_rate(), 2400000.0);
+}
+
+TEST_CASE(band_values_set_by_hand_are_refused_when_saved_and_replaced_at_a_start) {
+    // fft_size 2, spectrum_bins not a power of two, a range past what the
+    // input covers: the panel refuses each with the reason; a receiver that
+    // starts with the same file runs the band on its defaults.
+    const char* cases[] = {"fft_size = 2\n", "spectrum_bins = 100000\n", "low = 7000000\nhigh = 9000000\n",
+                           "low = 7200000\nhigh = 7100000\n"};
+    const char* reasons[] = {"fft_size is a power of two", "spectrum_bins is a power of two",
+                             "must lie in what the input covers", "low must be below high"};
+    for (size_t i = 0; i < 4; i++) {
+        fernsdr::Config config;
+        std::string error;
+        CHECK(config.parse(std::string("[band:t]\nsource = test\nsample_rate = 192000\ncenter = 7100000\n") + cases[i],
+                           error));
+        fernsdr::Radio saved;
+        CHECK(!saved.configure(config, error, true));
+        CHECK(error.find(reasons[i]) != std::string::npos);
+        fernsdr::Radio started;
+        CHECK(started.configure(config, error));
+    }
+}
