@@ -340,6 +340,36 @@ async function desktop() {
   await settled();
   seen.historySpans = historyRequests.map((ms) => Math.round(ms / 60_000));
   assert.deepEqual(seen.historySpans, [15, 60, 60]);
+  // Enlarged, it shows the span chosen in the panel, and closing it keeps
+  // what was chosen there and puts focus back on Enlarge.
+  const historyDialog = page.getByRole('dialog', { name: /^History of/ });
+  requested = historyRequest();
+  await page.getByRole('button', { name: 'Enlarge', exact: true }).click();
+  await historyDialog.waitFor();
+  await requested;
+  await settled();
+  seen.historyEnlargedPressed = await historyDialog.locator('.history__span[aria-pressed="true"]').textContent();
+  assert.equal(seen.historyEnlargedPressed.trim(), '1 h');
+  // Six hours of an archive an hour old: the side is as tall as the
+  // recording, so its times sit beside their rows.
+  requested = historyRequest();
+  await historyDialog.getByRole('button', { name: '6 h', exact: true }).click();
+  await requested;
+  await settled();
+  await historyDialog.locator('.history__tiles').waitFor();
+  seen.historyTall = await historyDialog.evaluate((dialog) => ({
+    times: Math.round(dialog.querySelector('.history__times').getBoundingClientRect().height),
+    tiles: Math.round([...dialog.querySelectorAll('.history__tile')].reduce((sum, tile) => sum + tile.getBoundingClientRect().height, 0)),
+  }));
+  assert.ok(Math.abs(seen.historyTall.times - seen.historyTall.tiles) <= 4, `history side and picture differ: ${JSON.stringify(seen.historyTall)}`);
+  await historyDialog.getByRole('button', { name: 'Close', exact: true }).click();
+  await historyDialog.waitFor({ state: 'detached' });
+  await settled();
+  seen.historyAfterClose = {
+    pressed: (await page.locator('.history__span[aria-pressed="true"]').textContent()).trim(),
+    focus: await page.evaluate(() => document.activeElement?.textContent?.trim()),
+  };
+  assert.deepEqual(seen.historyAfterClose, { pressed: '6 h', focus: 'Enlarge' });
 
   // Station: five widgets, the chat among them.
   await page.locator('#control-tab-station').click();

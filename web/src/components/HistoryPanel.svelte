@@ -13,6 +13,7 @@
    * What this band looked like earlier. Only present when the operator keeps an
    * archive; a tab that always says "nothing here" is worse than no tab.
    */
+  import { tick } from 'svelte';
   import Panel from './Panel.svelte';
   import { currentBand } from '../state/store';
 
@@ -26,21 +27,37 @@
   $effect(() => {
     if (expanded && dialog && !dialog.open) dialog.showModal();
   });
+
+  // Kept here rather than in the view: enlarging and closing each create the
+  // view again, and the listener is looking at the same stretch throughout.
+  let hours = $state(0.25);
+  let back = $state(0);
+
+  // The Enlarge button focus came from was replaced along with the view, so
+  // the dialog cannot hand focus back to it by itself.
+  let holder = $state<HTMLDivElement | null>(null);
+  async function closed() {
+    expanded = false;
+    await tick();
+    holder?.querySelector<HTMLButtonElement>('[data-enlarge]')?.focus();
+  }
 </script>
 
 <Panel title="History" aside={band?.history === 'private' ? operatorOnly : undefined}>
   {#await loadHistoryView()}
     <p role="status">Loading history…</p>
   {:then HistoryView}
+    <div class="panel__holder" bind:this={holder}>
     {#if expanded}
       <dialog class="history-dialog" bind:this={dialog} aria-label="History of {band?.name ?? 'this band'}"
-        onclose={() => (expanded = false)}>
-        <HistoryView expanded onClose={() => dialog?.close()} />
+        onclose={closed}>
+        <HistoryView expanded bind:hours bind:back onClose={() => dialog?.close()} />
       </dialog>
       <p class="history__note">Shown full size.</p>
     {:else}
-      <HistoryView onExpand={() => (expanded = true)} />
+      <HistoryView bind:hours bind:back onExpand={() => (expanded = true)} />
     {/if}
+    </div>
   {:catch}
     <p role="alert">The history did not load. Reload the page to try again.</p>
   {/await}

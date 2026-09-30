@@ -15,17 +15,20 @@
     expanded?: boolean;
     onExpand?: () => void;
     onClose?: () => void;
+    /** The filters, bound by the panel, so enlarging keeps them. */
+    channel?: string;
+    cqOnly?: boolean;
+    search?: string;
   }
 
-  let { expanded = false, onExpand, onClose }: Props = $props();
+  let {
+    expanded = false, onExpand, onClose,
+    channel = $bindable(''), cqOnly = $bindable(false), search = $bindable(''),
+  }: Props = $props();
 
   // The panel beside the waterfall shows the latest; the full list is for
   // the enlarged view, where there is room for it.
   const PANEL_ROWS = 150;
-
-  let channel = $state('');
-  let cqOnly = $state(false);
-  let search = $state('');
 
   $effect(() => decodeFeed.open());
 
@@ -82,7 +85,7 @@
       {:else if all.length === 0}Nothing decoded yet. FT8 decodes arrive every 15 seconds.
       {:else}{shown.length.toLocaleString()} of {all.length.toLocaleString()} decodes, times in UTC{/if}
     </span>
-    {#if onExpand}<button type="button" class="history__action" onclick={onExpand}>Enlarge</button>{/if}
+    {#if onExpand}<button type="button" class="history__action" data-enlarge onclick={onExpand}>Enlarge</button>{/if}
     {#if onClose}<button type="button" class="history__action" onclick={onClose}>Close</button>{/if}
   </div>
   <div class="decodes__body">

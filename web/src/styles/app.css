@@ -2909,6 +2909,11 @@ kbd {
   background: var(--background);
 }
 
+/* Only there to find the Enlarge button in; no box of its own. */
+.panel__holder {
+  display: contents;
+}
+
 /* Full size, in a dialog over the page: the plot takes what the controls
    leave. */
 .history-dialog {

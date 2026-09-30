@@ -55,9 +55,13 @@
     expanded?: boolean;
     onExpand?: () => void;
     onClose?: () => void;
+    /** The span shown, in hours; bound by the panel, so enlarging keeps it. */
+    hours?: number;
+    /** How far back the shown window ends, in hours before now. Zero is live. */
+    back?: number;
   }
 
-  let { expanded = false, onExpand, onClose }: Props = $props();
+  let { expanded = false, onExpand, onClose, hours = $bindable(0.25), back = $bindable(0) }: Props = $props();
 
   const band = $derived(currentBand.value);
   // The band's identity and access rather than the band itself: its status
@@ -71,7 +75,6 @@
   let canvas = $state<HTMLCanvasElement | null>(null);
   let canvasHeight = $state(0);
   let canvasWidth = $state(0);
-  let hours = $state(0.25);
   let zone = $state<'utc' | 'local'>(storedZone());
   function setZone(next: 'utc' | 'local') {
     zone = next;
@@ -82,8 +85,6 @@
     }
   }
   const tall = $derived(expanded && hours >= TALL_FROM_HOURS);
-  // How far back the shown window ends, in hours before now. Zero is live.
-  let back = $state(0);
   let archive = $state.raw<Archive | null>(null);
   let problem = $state('');
   let loading = $state(false);
@@ -95,8 +96,13 @@
   const reach = $derived(historyReach(archive?.oldest ?? band?.history_from ?? 0, now, hours));
   const shown = $derived(historyWindow(windowRange.from, windowRange.to, archive?.oldest ?? 0));
 
+  // Another band starts at its latest recordings. Only a change: this view
+  // is created again when it is enlarged, and must keep the place it was at.
+  let bandShown = untrack(() => bandId);
   $effect(() => {
-    void bandId;
+    const id = bandId;
+    if (id === bandShown) return;
+    bandShown = id;
     untrack(() => {
       back = 0;
       archive = null;
@@ -264,7 +270,7 @@
         aria-label="Times in {zoneName}; switch to {zone === 'utc' ? 'local time' : 'UTC'}"
         onclick={() => setZone(zone === 'utc' ? 'local' : 'utc')}>{zone === 'utc' ? 'UTC' : 'Local'}</button>
       <button type="button" class="history__action" disabled={loading} onclick={() => (refresh += 1)}>Refresh</button>
-      {#if onExpand}<button type="button" class="history__action" onclick={onExpand}>Enlarge</button>{/if}
+      {#if onExpand}<button type="button" class="history__action" data-enlarge onclick={onExpand}>Enlarge</button>{/if}
       {#if onClose}<button type="button" class="history__action" onclick={onClose}>Close</button>{/if}
     </div>
 
