@@ -132,10 +132,10 @@ which both passed 400, are not known.
 ## Statistics
 
 Each figure is the median of the valid runs with the minimum and maximum
-beside it. FernSDR was measured three times, the other receivers once in
-this round; with so few runs, a difference smaller than the spread
-FernSDR's own runs show is not a difference. Rejected runs are listed with
-the gate that rejected them.
+beside it. Every receiver was measured three times in the published round;
+with so few runs, a difference smaller than the spread a receiver's own
+runs show is not a difference. Rejected runs are listed with the gate that
+rejected them.
 
 ## What this lab cannot say
 

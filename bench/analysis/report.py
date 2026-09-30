@@ -255,6 +255,17 @@ def capacity(root, extra=None):
                   "CPU % per extra listener", "Own frequency per listener", "Next step"], rows)
 
 
+def runs_said(root):
+    """How often the round measured each receiver, from its metrics."""
+    m = load(os.path.join(root, "summary-metrics.json"), {}) or {}
+    runs = {k.split("/")[0]: v.get("runs") for k, v in m.items()}
+    counts = sorted({n for n in runs.values() if n})
+    if len(counts) == 1:
+        n = counts[0]
+        return f"Each receiver was measured {n} time{'s' if n != 1 else ''} in this round"
+    return "Runs per receiver: " + ", ".join(f"{name(r)} {n}" for r, n in runs.items())
+
+
 def before_after(before, after):
     if not before:
         return ""
@@ -280,16 +291,18 @@ def main():
     a = ap.parse_args()
     rids = order(a.round)
     rel = os.path.relpath(a.round, REPO)
+    note = (load(os.path.join(a.round, "round.json"), {}) or {}).get("note")
     parts = [
         "# Benchmarks", "",
-        "FernSDR against ten other web SDR receivers, measured on 2026-09-27 in the lab in `bench/`: identical "
+        f"FernSDR against ten other web SDR receivers, measured in the round `{rel}` in the lab in `bench/`: identical "
         "generated input, one receiver at a time on two pinned cores, real browsers as listeners. How it was "
         f"done is in [bench/METHOD.md](../bench/METHOD.md); every number below comes from a summary file in `{rel}/`, "
         "next to the raw data it was computed from.", "",
         "Receivers marked * (VertexSDR, NovaSDR, PhantomSDR-Plus) are earlier projects of FernSDR's author, and "
         "every adapter and configuration in the lab was written by that author; they are in `bench/receivers/` "
-        "for anyone to check. FernSDR was measured three times, the others once: with one run, a difference "
-        "smaller than a few percent is not a difference. Where another receiver does better, the tables say so.", "",
+        f"for anyone to check. {runs_said(a.round)}: a difference smaller than the spread a receiver's own runs "
+        "show is not a difference. Where another receiver does better, the tables say so."
+        + (f" The round's own note: {note}" if note else ""), "",
         "## Versions", "", versions(), "",
         "## Overview", "",
         "Sorted by latency. Four listeners at a time on one receiver: a plain one (latency, bitrate), one tuned to "
@@ -326,14 +339,15 @@ def main():
         "## Capacity", "",
         "One browser listens; then light clients repeat what that page sent, each on its own frequency where the "
         "protocol allows (where it does not, all share one frequency, an easier load for a receiver that shares work "
-        "between them), in steps of 1, 10, 50, 100, 200 and 400 listeners on the receiver's two cores, then 800 and "
-        "1600 for those that passed them all. A step "
+        "between them), in steps of 1, 10, 50, 100, 200 and 400 listeners on the receiver's two cores, and for "
+        "those that passed them all the further steps of the rounds given with --capacity-extra. A step "
         "passes when 95 % of the listeners get at least 90 % of the browser's audio messages and none is "
         "disconnected; caps an operator would raise are raised.", "",
         capacity(a.capacity, a.capacity_extra), "",
         "## Excluded jobs and findings", "",
         validity(a.round, rids), "",
-        "Notes on single receivers, with the details in each `bench/receivers/<id>/NOTES.md`:", "",
+        "Notes on single receivers, from the rounds that led to this one; the tables above are what this round "
+        "measured:", "",
         "- Share of markers heard, for ka9q-web on loss2, wifi, drop1s and cell and for UberSDR on wifi, drop1s, cell and "
         "rate32: the audio arrived at close to its plain rate (summary-links.json, audio_kbit) but the markers' code "
         "was not found in it, so the audio was changed in time or shape, not lost. Both use Opus.",
@@ -341,20 +355,17 @@ def main():
         "density, but a separate input, so their SNR and decode figures compare with each other more than with the rest.",
         "- PhantomSDR-Plus (sv1btl): retuning through the page's CAT API sends the band plan's mode and then the "
         "previous one within milliseconds, and the server drops a mode command that follows another within 100 ms, "
-        "so it stays in LSB while the page shows USB. The adapter sets the mode apart from the retune. With four "
-        "listeners at once its page played with dropouts (none with one listener), which is why FT8 decoded nothing.",
+        "so it stays in LSB while the page shows USB. The adapter sets the mode apart from the retune.",
         "- UberSDR and OpenWebRX+ change their layout in a small window; their side listeners use 1280x800.",
         "- OpenWebRX and OpenWebRX+ stop reading the input while nobody listens; that is the input they did not take.",
-        "- ka9q-web stopped running during the impaired-link batch in two sessions out of two; the jobs it could not "
-        "serve are excluded. The cause is being reported to the project before it is described here.",
         "- Capacity: the lab gives each receiver 1 GB of memory. OpenWebRX and OpenWebRX+ at 100 listeners (about "
         "900 MB of shared memory) and UberSDR at 400 were ended by that limit, not by their two cores (the kernel's "
         "out-of-memory log); with more memory they would serve more. ka9q-web serves five clients at most, a limit "
         "compiled into it.",
-        "- FernSDR's figures, capacity included, come from commit c56f964, with the changes described below. Before "
-        "3415639 FernSDR, like PA3FWM's WebSDR, stopped accepting at about 1017 sockets, the soft limit on open files "
-        "the containers (and a systemd service by default) start with; FernSDR now raises it. WebSDR's 800-listener "
-        "step failed at that limit, so its own is not known. FernSDR was not tried past 1600 in this round.",
+        "- Before 3415639 FernSDR, like PA3FWM's WebSDR, stopped accepting at about 1017 sockets, the soft limit on "
+        "open files the containers (and a systemd service by default) start with; FernSDR now raises it. In the "
+        "earlier capacity rounds B3 and B4w, not kept, WebSDR's 800-listener step failed at that limit, so its own "
+        "is not known.",
         "- The tones of PhantomSDR, PhantomSDR-Plus, sv1btl and NovaSDR sit 15.6 Hz low: one FFT bin of their "
         "tuning grid.", "",
     ]

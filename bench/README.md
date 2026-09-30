@@ -10,7 +10,7 @@ a quiet machine). Each run's own files, without the audio, are the archive
 
 | Directory | What |
 |---|---|
-| `receivers/` | one per receiver: Dockerfile, configs, page adapter, notes ([contract](receivers/README.md)) |
+| `receivers/` | one per receiver: Dockerfile, configs, page adapter ([contract](receivers/README.md)) |
 | `source/` | `scene.py` renders scenes, `pace` delivers them in real time |
 | `scenes/` | the scene files |
 | `net/` | the isolated lab network and its checks |
