@@ -396,6 +396,25 @@ export class ApiError extends Error {
 
 let pendingWrite: Promise<unknown> = Promise.resolve();
 
+/**
+ * How long a change waits for the one before it. A request whose answer
+ * never finishes arriving would otherwise hold every later save, sign-in and
+ * sign-out until the page is reloaded. Past this the next one goes anyway:
+ * should the stalled one reach the receiver after it, its counter is refused
+ * and it is signed again like any other clash.
+ */
+export const WRITE_TURN_MS = 20_000;
+
+function turn(previous: Promise<unknown>): Promise<void> {
+  return new Promise((resolve) => {
+    const timer = setTimeout(resolve, WRITE_TURN_MS);
+    void previous.then(() => {
+      clearTimeout(timer);
+      resolve();
+    });
+  });
+}
+
 function call<T>(path: string, options: RequestInit = {}): Promise<T> {
   if ((options.method ?? 'GET').toUpperCase() === 'GET') return request<T>(path, options);
   // The server accepts counters in order. Serialise mutations so two quick
@@ -404,7 +423,7 @@ function call<T>(path: string, options: RequestInit = {}): Promise<T> {
   // is then about the counter, not the login: signed again with a new one,
   // the change goes through; a second refusal is real and is shown.
   const attempt = () => request<T>(path, options);
-  const result = pendingWrite.then(() =>
+  const result = turn(pendingWrite).then(() =>
     attempt().catch((problem: unknown) => {
       if (problem instanceof ApiError && problem.status === 401 && /not signed/.test(problem.message) && currentKey())
         return attempt();

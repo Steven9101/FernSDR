@@ -47,11 +47,31 @@ it('serialises mutations so later signatures cannot reach the server first', asy
   const { api } = await import('./api');
   const first = api.writeStation({ name: 'first' });
   const second = api.writeStation({ name: 'second' });
-  await Promise.resolve();
+  await new Promise((resolve) => setTimeout(resolve, 0));
   expect(fetch).toHaveBeenCalledTimes(1);
   finishFirst();
   await Promise.all([first, second]);
   expect(fetch).toHaveBeenCalledTimes(2);
+});
+
+it('lets later changes through when one request never finishes', async () => {
+  vi.useFakeTimers();
+  try {
+    vi.stubGlobal('sessionStorage', { getItem: () => null });
+    const fetch = vi.fn().mockImplementationOnce(() => new Promise<Response>(() => {}))
+      .mockImplementation(async () => Response.json({ ok: true }));
+    vi.stubGlobal('fetch', fetch);
+    const { api, WRITE_TURN_MS } = await import('./api');
+    void api.writeStation({ name: 'stalled' });
+    const second = api.writeStation({ name: 'second' });
+    await vi.advanceTimersByTimeAsync(WRITE_TURN_MS - 1);
+    expect(fetch).toHaveBeenCalledTimes(1);
+    await vi.advanceTimersByTimeAsync(1);
+    await expect(second).resolves.toEqual({ ok: true });
+    expect(fetch).toHaveBeenCalledTimes(2);
+  } finally {
+    vi.useRealTimers();
+  }
 });
 
 it('keeps two tabs of one login in order, and signs again once when the server saw a later counter', async () => {
