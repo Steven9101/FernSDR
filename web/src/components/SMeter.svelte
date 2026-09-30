@@ -12,6 +12,7 @@
   import { meter, currentBand, tuning } from '../state/store';
   import type { CalibrationPoint } from '../net/protocol';
   import { nextPeak } from './smeter-peak';
+  import { BAR_TICKS, DB_PER_S_UNIT, MINOR_MARKS, NEEDLE_MARKS, S9_AT, toSUnits } from './smeter-scale';
 
   /**
    * dBFS that reads as S1 when nobody has calibrated this receiver.
@@ -21,7 +22,6 @@
    * labelled relative so nobody quotes it as a signal report.
    */
   const S_UNIT_BASE_DBFS = -103;
-  const DB_PER_S_UNIT = 6;
 
   /**
    * S9 in dBm, IARU Region 1 Technical Recommendation R.1: below 30 MHz, S9 is
@@ -98,33 +98,6 @@
     return level.value + offsetAt(points, tuning.value.freq);
   });
 
-  /**
-   * `base` is the level that reads as S1: derived from the operator's
-   * calibration where there is one, and a guess where there is not. Same curve
-   * either way, so a calibrated receiver behaves exactly as this one always has
-   * and only the number it is anchored to changes.
-   */
-  function toSUnits(dbfs: number, base: number): { label: string; fraction: number } {
-    const above = dbfs - base;
-    const units = above / DB_PER_S_UNIT;
-    if (units >= 9) {
-      const over = Math.round((units - 9) * DB_PER_S_UNIT);
-      return { label: `S9+${Math.max(0, over)}`, fraction: Math.min(1, 0.6 + (units - 9) / 10 / 2.5) };
-    }
-    const clamped = Math.max(0, Math.min(9, units));
-    return { label: `S${Math.max(1, Math.round(clamped))}`, fraction: (clamped / 9) * 0.6 };
-  }
-
-  const NEEDLE_MARKS = [
-    { at: 0, label: '1' },
-    { at: 0.133, label: '3' },
-    { at: 0.267, label: '5' },
-    { at: 0.4, label: '7' },
-    { at: 0.6, label: '9' },
-    { at: 0.8, label: '+20' },
-    { at: 1, label: '+40' },
-  ];
-
   /** A point on the dial, `t` of the way from S1 to S9+40. */
   function dialPoint(t: number, radius: number): [number, number] {
     const radians = ((-60 + t * 120) - 90) * (Math.PI / 180);
@@ -132,9 +105,6 @@
   }
 
   const unit = (fraction: number) => Math.max(0, Math.min(1, fraction));
-
-  /** The S-units between the numbered ones, and +10 and +30: a printed dial has them. */
-  const MINOR_MARKS = [0.075, 0.2, 0.333, 0.467, 0.7, 0.9];
 </script>
 
 <script lang="ts">
@@ -190,7 +160,7 @@
          coloured ticks: on a real dial that band is printed, and it is the
          one distinction on this scale that means something. -->
     <path
-      d="M {dialPoint(0.6, 31).join(' ')} A 31 31 0 0 1 {dialPoint(1, 31).join(' ')}"
+      d="M {dialPoint(S9_AT, 31).join(' ')} A 31 31 0 0 1 {dialPoint(1, 31).join(' ')}"
       class="smeter__arc smeter__arc--over"
       fill="none"
     />
@@ -204,9 +174,9 @@
       {@const [tx, ty] = dialPoint(mark.at, 38)}
       <g>
         <line {x1} {y1} {x2} {y2}
-              class={mark.at >= 0.6 ? 'smeter__mark smeter__mark--over' : 'smeter__mark'} />
+              class={mark.at >= S9_AT ? 'smeter__mark smeter__mark--over' : 'smeter__mark'} />
         <text x={tx} y={ty + 2}
-              class={mark.at >= 0.6 ? 'smeter__numeral smeter__numeral--over' : 'smeter__numeral'}
+              class={mark.at >= S9_AT ? 'smeter__numeral smeter__numeral--over' : 'smeter__numeral'}
               text-anchor="middle">
           {mark.label}
         </text>
@@ -215,7 +185,7 @@
     {#each MINOR_MARKS as at (at)}
       {@const [x1, y1] = dialPoint(at, 29)}
       {@const [x2, y2] = dialPoint(at, 31)}
-      <line {x1} {y1} {x2} {y2} class={at >= 0.6 ? 'smeter__mark smeter__mark--over smeter__mark--minor' : 'smeter__mark smeter__mark--minor'} />
+      <line {x1} {y1} {x2} {y2} class={at >= S9_AT ? 'smeter__mark smeter__mark--over smeter__mark--minor' : 'smeter__mark smeter__mark--minor'} />
     {/each}
     <!-- The trailing pointer: where the signal reached recently. On a real
          movement this is a second, lighter needle held by the first, and it
@@ -257,7 +227,7 @@
     <svg class="smeter__trace" viewBox="0 0 {width} {height}" preserveAspectRatio="none"
          aria-hidden="true">
       <!-- S9, which is the line a report is judged against. -->
-      <line x1="0" y1={height - 0.6 * height} x2={width} y2={height - 0.6 * height}
+      <line x1="0" y1={height - S9_AT * height} x2={width} y2={height - S9_AT * height}
             class="smeter__trace-rule" />
       <polyline {points} class="smeter__trace-line" fill="none" />
     </svg>
@@ -276,10 +246,10 @@
       <!-- Where the signal reached recently. A meter that only shows now
            cannot answer "how strong was that", which is what a report is. -->
       <span class="smeter__peak" style:left="{unit(peak) * 100}%"></span>
-      {#each [1, 3, 5, 7, 9] as s}
-        <span class="smeter__tick" style:left="{((s - 1) / 9) * 60}%" data-label="{s}"></span>
+      {#each BAR_TICKS as tick (tick.label)}
+        <span class="smeter__tick" style:left="{tick.at * 100}%" data-label="{tick.label}"></span>
       {/each}
-      <span class="smeter__tick smeter__tick--plus" style:left="60%" data-label="9"></span>
+      <span class="smeter__tick smeter__tick--plus" style:left="{S9_AT * 100}%" data-label="9"></span>
     </div>
   {/if}
   <div class="smeter__readout">
