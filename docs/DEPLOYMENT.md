@@ -631,8 +631,9 @@ decoded there, confident decodes only, each station at most once an hour
 on each band.
 In the file a decoder is a `[decoder:ft8]` section with its module and
 channels; [Configuring a decoder](MODULES.md#configuring-a-decoder) has every
-key. A decoder costs little: it gets a channel of at most 12 kHz cut from the
-band's shared transform, not a band of its own.
+key. A decoder costs little: it gets a channel just wide enough for its
+`width`, a few kilohertz for FT8, cut from the band's shared transform, not a
+band of its own.
 
 ### ka9q-radio
 

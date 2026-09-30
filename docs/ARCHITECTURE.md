@@ -176,8 +176,8 @@ uses it, that sends samples through a pipe and reads commands as lines of
 JSON; a driver that crashes or hangs takes its module down, not the
 receiver, which starts it again unless the failure needs the operator, such
 as a setting the module refuses. A decoder module gets a narrow channel cut
-from a band's shared spectrum (`core/decoder_tap.cpp`, at about 12 kHz, a
-power-of-two share of the band's rate) on a thread of its own per decoder, and sends back what it decoded; every
+from a band's shared spectrum (`core/decoder_tap.cpp`, at the lowest
+power-of-two share of the band's rate that holds the channel's width) on a thread of its own per decoder, and sends back what it decoded; every
 decode is checked before it is kept, shown or reported to PSK Reporter.
 
 ## Hours on the air
