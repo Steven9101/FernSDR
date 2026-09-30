@@ -89,7 +89,8 @@ signing one no receiver takes.
    release job, which runs nothing but this repository's code and the
    system's compilers, builds and tests the programs, packs the archives,
    signs the manifest in a step of its own, the only one given the key, and
-   publishes the release `vVERSION` at the commit it was built from. The
+   puts the files on a draft of the release `vVERSION`, to be published at
+   the commit it was built from once the images are pushed (step 5). The
    programs are built there because every receiver's updater runs them as
    root: a package from npm with something in it could reach the pages, but
    not them, and not the key.
@@ -99,8 +100,11 @@ panel and its last look is over a day old, or when someone presses *Check
 for updates* on its Updates page; nothing updates by itself.
 
 5. The workflow then builds the container image from the archives it just
-   published, for all three processors, with `tools/build-image.sh`, and
-   pushes `ghcr.io/steven9101/fernsdr:VERSION` and `:latest`. The image
+   built, for all three processors, with `tools/build-image.sh`, pushes
+   `ghcr.io/steven9101/fernsdr:VERSION` and `:latest`, and only then
+   publishes the draft. If a step fails, the release stays a draft nobody
+   installs from; running the workflow again puts the files on the same
+   draft and carries on. The image
    carries the signed release's own files; nothing in it is built anew. The
    rehearsal builds the images too, without pushing them. A new package on
    ghcr.io is private: once, after the first release, make it public in the

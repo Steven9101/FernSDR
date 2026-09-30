@@ -111,20 +111,28 @@ jobs:
         env:
           FERNSDR_RELEASE_KEY: ${{ secrets.FERNSDR_RELEASE_KEY }}
         run: tools/build-release.sh sign "$RUNNER_TEMP/release" env:FERNSDR_RELEASE_KEY
-      - name: Publish
+      # A draft until the images are pushed too, so that no one installs a
+      # release whose container is missing; a run again after a failure puts
+      # the files on the same draft.
+      - name: Draft the release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           version=$(sed -n 's/.*kVersion = "\(.*\)";/\1/p' server/src/version.h)
           out=$RUNNER_TEMP/release
-          sed -n 's/^note$//p; s/^note //p' "$out/fernsdr-release-v1.txt" > "$RUNNER_TEMP/notes.md"
-          gh release create "v$version" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" \
-            --title "FernSDR $version" --notes-file "$RUNNER_TEMP/notes.md" \
-            "$out/fernsdr-$version-linux-x86_64.tar" "$out/fernsdr-$version-linux-aarch64.tar" \
+          set -- "$out/fernsdr-$version-linux-x86_64.tar" "$out/fernsdr-$version-linux-aarch64.tar" \
             "$out/fernsdr-$version-linux-armhf.tar" "$out/fernsdr-release-v1.txt" \
             "$out/fernsdr-release-v1.txt.sig" "$out/install.sh"
+          sed -n 's/^note$//p; s/^note //p' "$out/fernsdr-release-v1.txt" > "$RUNNER_TEMP/notes.md"
+          if [ "$(gh release view "v$version" --repo "$GITHUB_REPOSITORY" --json isDraft --jq .isDraft 2> /dev/null)" = true ]; then
+            gh release upload "v$version" --repo "$GITHUB_REPOSITORY" --clobber "$@"
+          else
+            gh release create "v$version" --repo "$GITHUB_REPOSITORY" --target "$GITHUB_SHA" --draft \
+              --title "FernSDR $version" --notes-file "$RUNNER_TEMP/notes.md" "$@"
+          fi
       # The container image install.sh's Docker path and docker run fetch,
-      # from the archives just published, for all three processors.
+      # from the archives just built, for all three processors, before the
+      # release is published.
       - name: Container images
         env:
           GH_TOKEN: ${{ github.token }}
@@ -132,3 +140,9 @@ jobs:
           printf '%s' "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker run --privileged --rm tonistiigi/binfmt@sha256:8f58e6214f4cc9dc83ce8f5acad1ece508eb6b20e696a8c1e9f274481982c541 --install arm64,arm
           tools/build-image.sh "$RUNNER_TEMP/release" ghcr.io/steven9101/fernsdr push
+      - name: Publish
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          version=$(sed -n 's/.*kVersion = "\(.*\)";/\1/p' server/src/version.h)
+          gh release edit "v$version" --repo "$GITHUB_REPOSITORY" --draft=false --latest
