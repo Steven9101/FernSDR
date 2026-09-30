@@ -358,8 +358,9 @@
 							None of your bands covers an FT8 frequency with 4 kHz to spare. Add a band that does, such
 							as 7,074 or 14,074 kHz, and come back.
 						{:else if ft8Installed || ft8Release}
-							Decodes stay on this page until you make them public. FernSDR runs the decoder in a sandbox
-							with no files and no network, at the lowest CPU priority.
+							Decodes stay on this page until you make them public. FernSDR runs the decoder at the lowest
+							CPU priority, in a sandbox that keeps it from files and TCP as far as this machine's kernel
+							allows.
 						{:else if !ft8Listed}
 							Fern-FT8 is not in this receiver's module catalog. Add Steven9101/Fern-FT8 to catalog under
 							[modules] in the configuration file on the machine, or install a package there with

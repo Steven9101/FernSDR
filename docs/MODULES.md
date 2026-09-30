@@ -390,11 +390,22 @@ file descriptors are open:
 
 A decoder parses signals that anyone with a transmitter can send, so it runs
 with less than an input module: it has no devices, it may not gain
-privileges (`PR_SET_NO_NEW_PRIVS`), and where the kernel offers Landlock it
-can open no file at all; FernSDR says in its log when the kernel does not.
-It needs no network either: reporting spots, where the operator switches it
-on, is done by the receiver. It runs at the lowest CPU priority, so a busy
-decoder slows its own decodes and never a listener's audio.
+privileges (`PR_SET_NO_NEW_PRIVS`), and it runs at the lowest CPU priority,
+so a busy decoder slows its own decodes and never a listener's audio. The
+rest depends on the kernel's Landlock:
+
+- Without Landlock (before Linux 5.13, or switched off), the decoder can
+  read and write whatever the receiver's user can. FernSDR says so in the
+  decoder's log.
+- With Landlock, it can open no file but its own program and the system's
+  libraries, and those only to read and run.
+- From Landlock ABI 4 (Linux 6.7), it can neither open nor accept a TCP
+  connection. UDP stays open to it, because Landlock does not cover UDP.
+- From Landlock ABI 6 (Linux 6.12), it cannot send the receiver a signal or
+  reach an abstract UNIX socket.
+
+A decoder needs no network: reporting spots, where the operator switches it
+on, is done by the receiver.
 
 A decoder exits with status 0 when fd 0 or fd 4 reaches end of file.
 
@@ -491,7 +502,7 @@ other stations and their locators.
 `report = pskreporter` reports what the decoder hears to
 [PSK Reporter](https://pskreporter.info), under the callsign and locator on
 the Station page (`[site] operator` and `grid`), with the antenna when one is
-given. FernSDR sends, not the module, which has no network: a datagram every
+given. FernSDR sends, not the module, which needs no network: a datagram every
 five minutes or so, not in step with the clock, each station at most once an
 hour on each band unless its locator changed, and only confident decodes of stations that
 sent their call in full. The Decoders page has it as a switch and says what
