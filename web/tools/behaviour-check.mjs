@@ -177,6 +177,14 @@ async function desktop() {
   await dialog.waitFor();
   seen.help = { rows: await dialog.locator('.shortcuts__row').count(), keys: await dialog.locator('kbd').allTextContents() };
   assert.equal(seen.help.rows, 11);
+  // A modal dialog: focus is inside it, and Tab does not leave it.
+  const focusInHelp = () => page.evaluate(() => !!document.activeElement?.closest('[role="dialog"]'));
+  seen.helpFocus = await focusInHelp();
+  await page.keyboard.press('Tab');
+  await page.keyboard.press('Tab');
+  seen.helpFocusAfterTab = await focusInHelp();
+  assert.equal(seen.helpFocus, true);
+  assert.equal(seen.helpFocusAfterTab, true);
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'detached' });
   await page.keyboard.press('?');
@@ -193,13 +201,14 @@ async function desktop() {
   await dialog.waitFor({ state: 'detached' });
   await keys.click();
   await dialog.waitFor();
-  // Focus is on the button that opened it, and the page's shortcuts leave
-  // keys aimed at buttons alone. Recorded, not asserted.
+  // Opened from its button, Escape still closes it, and focus goes back to
+  // the button.
   await page.keyboard.press('Escape');
   await page.waitForTimeout(150);
   seen.helpAfterEscapeOnButton = await dialog.count();
-  await dialog.getByRole('button', { name: 'Close' }).click();
-  await dialog.waitFor({ state: 'detached' });
+  seen.helpFocusReturned = await keys.evaluate((button) => button === document.activeElement);
+  assert.equal(seen.helpAfterEscapeOnButton, 0);
+  assert.equal(seen.helpFocusReturned, true);
   await takeSent(page, entry);
 
   // Theme: explicit choices lock it, Auto follows the system as it changes.
