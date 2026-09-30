@@ -19,8 +19,11 @@ DecoderTap::DecoderTap(uint16_t channel, const Channelizer& channelizer, double 
     const double centre = (dial_hz + offset_hz - origin_hz) / rf_scale;
     channel_->set_passband(centre, -half, half);
     scratch_.resize(channel_->output_per_block());
-    frame_samples_ = std::max<size_t>(channel_->output_per_block(),
-                                      static_cast<size_t>(channel_->output_rate() * 0.25));
+    // A quarter of a second, however many samples a block brings: a large
+    // transform on a slow band delivers seconds at once, and one frame of
+    // all of them would exceed both the protocol's 65 536 and what a decoder
+    // may hold.
+    frame_samples_ = std::clamp<size_t>(static_cast<size_t>(channel_->output_rate() * 0.25), 1, 65536);
     window_samples_ = static_cast<uint64_t>(channel_->output_rate() * 30.0);
     delay_us_ = static_cast<int64_t>(std::llround(channelizer.block_seconds() * 1e6));
 }

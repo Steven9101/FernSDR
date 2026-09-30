@@ -103,9 +103,8 @@ bool Decoder::start(std::string& error) {
         Band* band = find_band_(channel.band);
         taps_.push_back(band->add_decoder_tap(static_cast<uint16_t>(i), channel.dial_hz, channel.offset_hz, channel.width_hz));
         bands_.push_back(band);
-        // Three seconds a channel may wait for a slow decoder; then whole
-        // frames go, and the decoder is told.
-        max_pending_samples_ += static_cast<size_t>(taps_.back()->rate() * 3.0);
+        // Past this whole frames go, and the decoder is told.
+        max_pending_samples_ += taps_.back()->pending_budget();
     }
     frames_sent_.assign(count, 0);
     frames_dropped_.assign(count, 0);

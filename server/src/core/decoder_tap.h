@@ -60,6 +60,14 @@ public:
     // Samples per frame: about a quarter of a second.
     size_t frame_samples() const { return frame_samples_; }
 
+    // How many of this tap's samples a decoder may hold before it drops
+    // frames: three seconds for a slow decoder, on top of the block that
+    // arrives all at once, which with a large transform on a slow band can
+    // itself be longer than that.
+    size_t pending_budget() const {
+        return static_cast<size_t>(rate() * 3.0) + channel_->output_per_block() + frame_samples_;
+    }
+
 private:
     void take(const cfloat* samples, size_t count, int64_t now_us);
 

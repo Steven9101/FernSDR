@@ -91,6 +91,35 @@ TEST_CASE(decoder_tap_carries_a_wide_channel_to_both_edges) {
     }
 }
 
+TEST_CASE(decoder_tap_splits_a_long_block_into_frames_a_decoder_can_hold) {
+    // A million-point transform at 48 kHz: each block brings eleven seconds
+    // of a 6 kHz channel at once. Frames stay a quarter second, within the
+    // protocol's 65 536 samples, and what a decoder may hold of the tap
+    // covers a whole block, or every frame would be dropped on arrival.
+    constexpr double kSlowRate = 48000.0;
+    constexpr size_t kBigFft = size_t(1) << 20;
+    Channelizer channelizer(kSlowRate, kBigFft);
+    DecoderTap tap(0, channelizer, kOrigin, 1.0, kOrigin + 5000.0, 2000.0, 4000.0);
+    CHECK(tap.frame_samples() <= static_cast<size_t>(tap.rate() * 0.25) + 1);
+    CHECK(tap.frame_samples() <= 65536u);
+    const size_t block = static_cast<size_t>(std::llround(tap.rate() * channelizer.block_seconds()));
+    CHECK(block > static_cast<size_t>(tap.rate() * 3.0));
+    CHECK(tap.pending_budget() >= block + tap.frame_samples());
+
+    std::vector<cfloat> input(channelizer.block_size(), cfloat(0.1f, 0.0f));
+    std::vector<fernsdr::TapFrame> frames;
+    for (size_t b = 0; b < 3; b++) {
+        channelizer.process(input.data());
+        tap.process(channelizer, kT0 + static_cast<int64_t>((b + 1) * channelizer.block_seconds() * 1e6));
+        for (auto& frame : tap.take_frames()) frames.push_back(std::move(frame));
+    }
+    CHECK(frames.size() > 3u);
+    for (size_t i = 1; i < frames.size(); i++) {
+        CHECK_EQ(frames[i].samples.size(), tap.frame_samples());
+        CHECK_EQ(frames[i].index, frames[i - 1].index + frames[i - 1].samples.size());
+    }
+}
+
 TEST_CASE(decoder_tap_frames_are_contiguous_and_the_first_says_the_clock_was_set) {
     Channelizer channelizer(kRate, kFft);
     DecoderTap tap(3, channelizer, kOrigin, 1.0, kDial, 2000.0, 4000.0);
