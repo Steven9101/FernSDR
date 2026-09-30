@@ -112,6 +112,30 @@ it('keeps two tabs of one login in order, and signs again once when the server s
   expect(outcomes.slice(4)).toEqual([401, 200]);
 });
 
+it('signs this tab out when another tab\'s sign-in has replaced its login', async () => {
+  const stored = new Map<string, string>();
+  vi.stubGlobal('sessionStorage', { getItem: (k: string) => stored.get(k) ?? null,
+    setItem: (k: string, v: string) => stored.set(k, v), removeItem: (k: string) => stored.delete(k) });
+  vi.stubGlobal('crypto', webcrypto);
+  const salt = '1'.repeat(32), nonce = '2'.repeat(32);
+  let changes = 0;
+  vi.stubGlobal('fetch', vi.fn(async (path: string) => {
+    if (path.endsWith('/challenge')) return Response.json({ salt, nonce, iterations: 10 });
+    if (path.endsWith('/login')) return Response.json({ ok: true, signing_context: '3'.repeat(64) });
+    // The cookie now carries the other tab's login, whose key this tab lacks.
+    changes++;
+    return Response.json({ error: 'this request was not signed; sign in again' }, { status: 401 });
+  }));
+  const { api, canSign, whenSignedOut } = await import('./api');
+  const signedOut = vi.fn();
+  whenSignedOut(signedOut);
+  await api.login('pw');
+  await expect(api.writeStation({ name: 'A' })).rejects.toThrow(/not signed/);
+  expect(changes).toBe(2);
+  expect(signedOut).toHaveBeenCalledTimes(1);
+  expect(canSign()).toBe(false);
+});
+
 it('forgets the signing key even when signing out fails on the way', async () => {
   const stored = new Map<string, string>();
   vi.stubGlobal('sessionStorage', { getItem: (k: string) => stored.get(k) ?? null,

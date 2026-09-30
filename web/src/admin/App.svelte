@@ -1,6 +1,6 @@
 <script lang="ts">
 	import { onMount } from 'svelte';
-	import { api, canSign } from './api';
+	import { api, canSign, whenSignedOut } from './api';
 	import BottomNav from './components/BottomNav.svelte';
 	import SideNav from './components/SideNav.svelte';
 	import TopBar from './components/TopBar.svelte';
@@ -28,6 +28,7 @@
 	let exposed = $state(false);
 
 	onMount(() => {
+		whenSignedOut(() => (live.unauthorised = true));
 		api
 			.session()
 			.then((answer) => {

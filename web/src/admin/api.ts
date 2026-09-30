@@ -424,14 +424,33 @@ function call<T>(path: string, options: RequestInit = {}): Promise<T> {
   // the change goes through; a second refusal is real and is shown.
   const attempt = () => request<T>(path, options);
   const result = turn(pendingWrite).then(() =>
-    attempt().catch((problem: unknown) => {
-      if (problem instanceof ApiError && problem.status === 401 && /not signed/.test(problem.message) && currentKey())
-        return attempt();
-      throw problem;
-    }),
+    attempt()
+      .catch((problem: unknown) => {
+        if (problem instanceof ApiError && problem.status === 401 && /not signed/.test(problem.message) && currentKey())
+          return attempt();
+        throw problem;
+      })
+      .catch((problem: unknown) => {
+        // Refused twice, or the session is gone: this tab's key belongs to a
+        // login that has ended, as when another tab signed in and the shared
+        // cookie moved to its login. Reading still works, so without this the
+        // panel would look signed in and fail every save. It signs in again.
+        if (problem instanceof ApiError && problem.status === 401 && /not signed|sign in first/.test(problem.message)) {
+          forgetKey();
+          signedOut?.();
+        }
+        throw problem;
+      }),
   );
   pendingWrite = result.catch(() => {});
   return result;
+}
+
+let signedOut: (() => void) | null = null;
+
+/** Called when a change is refused because this tab's login has ended. */
+export function whenSignedOut(handler: (() => void) | null): void {
+  signedOut = handler;
 }
 
 async function request<T>(path: string, options: RequestInit): Promise<T> {
