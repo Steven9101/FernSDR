@@ -287,10 +287,15 @@ async function desktop() {
   assert.equal(seen.autonotch, 'true');
   const squelch = page.getByLabel('Squelch', { exact: true });
   await squelch.focus();
+  // Waited for, like the gain: the label follows the key a frame later on a
+  // slow runner.
+  const squelchValue = page.locator('.field', { has: squelch }).locator('.field__value');
   await page.keyboard.press('End');
-  seen.squelchClosed = await page.locator('.field', { has: squelch }).locator('.field__value').textContent();
+  await squelchValue.filter({ hasText: /^\u221220 dBFS$/ }).waitFor({ timeout: 5000 }).catch(() => {});
+  seen.squelchClosed = await squelchValue.textContent();
   await page.keyboard.press('Home');
-  seen.squelchOpen = await page.locator('.field', { has: squelch }).locator('.field__value').textContent();
+  await squelchValue.filter({ hasText: /^open$/ }).waitFor({ timeout: 5000 }).catch(() => {});
+  seen.squelchOpen = await squelchValue.textContent();
   assert.deepEqual([seen.squelchClosed, seen.squelchOpen], ['\u221220 dBFS', 'open']);
   const reduction = page.getByLabel('Reduction', { exact: true });
   await reduction.focus();
