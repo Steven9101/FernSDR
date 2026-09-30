@@ -2430,8 +2430,10 @@ TEST_CASE(server_charges_a_narrow_history_request_for_what_it_reads) {
         for (int i = 0; i < 600 && !refused; i++) {
             const std::string reply =
                 TestClient(harness.port()).http_get("/api/history?band=demo&from=0&width=1&rows=4096");
-            if (reply.find("200 OK") != std::string::npos) answered++;
-            refused = reply.find("429") != std::string::npos;
+            // By the status line: the body is binary rows, and "429" turns up
+            // in one sooner or later.
+            if (reply.rfind("HTTP/1.1 200", 0) == 0) answered++;
+            refused = reply.rfind("HTTP/1.1 429", 0) == 0;
         }
         CHECK(answered > 3);
         CHECK(refused);
