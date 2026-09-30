@@ -11,8 +11,7 @@ the server's CPU and uplink determine how many can listen at once.
 
 Listen to one now at [demo.fernsdr.org](https://demo.fernsdr.org), a
 recording of long and medium wave, or read more at
-[fernsdr.org](https://fernsdr.org). If FernSDR is useful to you, you can
-[support it through PayPal](https://www.paypal.com/paypalme/magicint1337).
+[fernsdr.org](https://fernsdr.org).
 
 https://github.com/user-attachments/assets/07b7c5a0-dcb1-4d97-a972-3661fd24ebb4
 
@@ -242,11 +241,6 @@ and [docs/TESTING.md](docs/TESTING.md) how everything is checked.
 make -C server test    # the DSP, the codecs, the server, the admin login
 cd web && npm test     # the client
 ```
-
-## Support
-
-FernSDR is made in spare time. If it runs your receiver, or you would like it
-to grow faster, you can [donate through PayPal](https://www.paypal.com/paypalme/magicint1337).
 
 ## Licence
 
