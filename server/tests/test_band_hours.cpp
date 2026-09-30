@@ -204,3 +204,22 @@ TEST_CASE(band_hours_without_a_place_take_a_fixed_day) {
     CHECK(day.on_air(utc(2026, 9, 29, 12, 0), nullptr));
     CHECK(!day.on_air(utc(2026, 9, 29, 20, 0), nullptr));
 }
+
+TEST_CASE(band_hours_offsets_never_turn_a_range_inside_out) {
+    // Sunrise to sunset stays in its day whatever the offsets: crossed ones
+    // leave the day empty, where they made a range of 22 hours.
+    const int64_t from = utc(2026, 9, 29, 0, 0);
+    const int64_t to = utc(2026, 10, 1, 0, 0);
+    CHECK(hours("sunrise+7h-sunset-7h").intervals(from, to, nullptr).empty());
+    const StationPlace berlin{52.52, 13.405};
+    CHECK(hours("sunrise+7h-sunset-7h").intervals(from, to, &berlin).empty());
+    // Sunset to sunrise ends in the next day, however far the offsets move
+    // its ends towards each other: 11:00 to 13:00 the day after.
+    CHECK(hours("sunset-7h-sunrise+7h").on_air(from + 15 * kHour, nullptr));
+    // Between two of the same kind, the offsets are all there is to go by.
+    const auto evening = hours("sunset-1h-sunset+2h").intervals(from, from + kDay, nullptr);
+    CHECK_EQ(evening.size(), 1u);
+    if (evening.size() == 1) CHECK_EQ(evening[0].second - evening[0].first, 3 * kHour);
+    CHECK(hours("sunset+1h-sunset").on_air(from + 12 * kHour, nullptr));
+    CHECK(!hours("sunset+1h-sunset").on_air(from + 18 * kHour + 30 * 60'000, nullptr));
+}

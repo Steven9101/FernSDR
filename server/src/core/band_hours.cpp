@@ -284,10 +284,12 @@ void BandHours::instances(int64_t day, const StationPlace* place, std::vector<st
         int64_t end;
         if (range.from.kind != Point::Clock && range.until.kind != Point::Clock) {
             // Sunrise to sunset stays in the day, sunset to sunrise ends in
-            // the next, decided on a nominal day so offsets cannot turn an
-            // empty range into one of nearly a day.
-            const auto nominal = [](const Point& p) { return (p.kind == Point::Sunrise ? 6 : 18) * kHourMs + p.ms; };
-            end = resolve(range.until, nominal(range.until) > nominal(range.from) ? day : day + 1);
+            // the next, decided by the kinds alone: offsets that cross leave
+            // the day empty rather than turn it into nearly a day. Between
+            // two of one kind, the offsets are all there is to go by.
+            const bool next_day = range.from.kind != range.until.kind ? range.from.kind == Point::Sunset
+                                                                      : range.until.ms <= range.from.ms;
+            end = resolve(range.until, next_day ? day + 1 : day);
         } else {
             end = resolve(range.until, day);
             if (end <= start) end = resolve(range.until, day + 1);
