@@ -36,6 +36,24 @@ def scores(res):
             "cw_score": {r["snr"]: r["score"] for r in res["cw"]}}
 
 
+def aggregate(runs, latency_ms):
+    """Medians over the valid runs only; a run whose gates failed or whose
+    input was lost is counted, not averaged in."""
+    ok = [r for r in runs if "error" not in r and not r.get("invalid")]
+    return {
+        "runs": len(ok), "invalid_runs": sum(1 for r in runs if r.get("invalid")), "latency_ms_used": latency_ms,
+        "ft8_threshold_db": summarize([r.get("ft8_threshold_db") for r in ok]),
+        "ft8_decode_share": summarize([r["ft8_decodes"] / r["ft8_opportunities"] for r in ok if r.get("ft8_opportunities")]),
+        "wspr_decode_share": summarize([r["wspr_decodes"] / r["wspr_opportunities"] for r in ok if r.get("wspr_opportunities")]),
+        "wspr_lowest_db": summarize([r.get("wspr_lowest_db") for r in ok]),
+        "rtty_low": summarize([(r.get("rtty_score") or {}).get(-6) for r in ok]),
+        "rtty_high": summarize([(r.get("rtty_score") or {}).get(4) for r in ok]),
+        "cw_low": summarize([(r.get("cw_score") or {}).get(10) for r in ok]),
+        "cw_high": summarize([(r.get("cw_score") or {}).get(20) for r in ok]),
+        "errors": [r["error"] for r in runs if "error" in r],
+    }
+
+
 def main():
     root, oracle_path = sys.argv[1:3]
     oracle = scores(load(oracle_path))
@@ -58,23 +76,15 @@ def main():
                 res = digital.decode_recording(d, (l or 0) / 1000, os.path.join(rdir, rep, "receiver", "pace.jsonl"))
                 sc = scores(res)
                 sc["gates_failed"] = [k for k, v in (meta.get("gates") or {}).items() if not v]
+                # What links_report found wrong with the job, input lost
+                # inside its window included.
+                sc["invalid"] = (load(os.path.join(d, "metrics.json"), {}) or {}).get("invalid") or sc["gates_failed"]
                 with open(os.path.join(d, "digital.json"), "w") as f:
                     json.dump({"latency_ms_used": l, "result": res, "scores": sc}, f, indent=1)
                 runs.append(sc)
             except Exception as e:
                 runs.append({"error": str(e)[:300]})
-        table[rid] = {
-            "runs": len(runs), "latency_ms_used": l,
-            "ft8_threshold_db": summarize([r.get("ft8_threshold_db") for r in runs]),
-            "ft8_decode_share": summarize([r["ft8_decodes"] / r["ft8_opportunities"] for r in runs if r.get("ft8_opportunities")]),
-            "wspr_decode_share": summarize([r["wspr_decodes"] / r["wspr_opportunities"] for r in runs if r.get("wspr_opportunities")]),
-            "wspr_lowest_db": summarize([r.get("wspr_lowest_db") for r in runs]),
-            "rtty_low": summarize([(r.get("rtty_score") or {}).get(-6) for r in runs]),
-            "rtty_high": summarize([(r.get("rtty_score") or {}).get(4) for r in runs]),
-            "cw_low": summarize([(r.get("cw_score") or {}).get(10) for r in runs]),
-            "cw_high": summarize([(r.get("cw_score") or {}).get(20) for r in runs]),
-            "errors": [r["error"] for r in runs if "error" in r],
-        }
+        table[rid] = aggregate(runs, l)
     with open(os.path.join(root, "summary-digital.json"), "w") as f:
         json.dump(table, f, indent=1)
     o = oracle

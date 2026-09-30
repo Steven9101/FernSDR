@@ -169,6 +169,62 @@ def profile_metrics(d, marker, rate):
     return out
 
 
+def problems(prof, r):
+    """Why a job is invalid, empty when it is not, and whether it played
+    nothing on an impaired link. A job is valid when every gate held and pace
+    handed the receiver all of its input inside the job's window."""
+    why = [k for k, v in (r.get("gates") or {}).items() if not v]
+    silent = False
+    # On an impaired link a page that plays nothing is the receiver's result
+    # (ka9q-web drops a listener whose writes stall), not a broken
+    # measurement; on the plain listeners it is.
+    if why == ["audio"] and prof not in ("listen", "digital", "tones"):
+        silent = True
+        why = []
+    lost = r.get("input_dropped_s") or {}
+    why += [f"input {k} {v:.1f} s" for k, v in lost.items() if v > 0]
+    if r.get("error"):
+        why.append(r["error"][:80])
+    return why, silent
+
+
+def summarise(table):
+    """Medians over the valid jobs only: an invalid one says nothing about
+    the receiver."""
+    out = {}
+    for rid, profs in table.items():
+        out[rid] = {}
+        for prof, runs in profs.items():
+            ok = [r for r in runs if not problems(prof, r)[0]]
+            out[rid][prof] = {k: summarize([r.get(k) for r in ok]) for k in
+                              ("markers_share", "latency_median_ms", "latency_p95_ms", "latency_max_ms",
+                               "waterfall_fps", "kbit", "audio_kbit", "recovery_s", "first_heard_s",
+                               "sockets_opened_in_window")}
+            out[rid][prof] |= {"dropouts": summarize([(r.get("dropouts") or {}).get("seconds") for r in ok]),
+                               "runs": len(ok), "invalid_runs": len(runs) - len(ok)}
+    return out
+
+
+def validity_of(table):
+    """Each invalid job by repetition and profile, so that three invalid
+    repetitions of one profile count three times. The digital and tones
+    jobs are judged here too; their own reports read the same files."""
+    validity = {}
+    for rid, profs in table.items():
+        bad, silent = {}, []
+        for prof, runs in profs.items():
+            for r in runs:
+                why, quiet = problems(prof, r)
+                if quiet:
+                    silent.append(prof)
+                if why:
+                    bad[f"{r.get('rep', '?')}/{prof}"] = why
+        session = [r.get("input_dropped_session_s") for runs in profs.values() for r in runs]
+        validity[rid] = {"jobs": sum(len(v) for v in profs.values()), "invalid": bad, "no_audio_on_link": silent,
+                         "input_dropped_session_s": next((x for x in session if x), None)}
+    return validity
+
+
 def main():
     root = sys.argv[1]
     bench = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
@@ -189,39 +245,15 @@ def main():
                 if not os.path.exists(os.path.join(d, "link.json")):
                     continue
                 m = profile_metrics(d, m_real if real else m_iq, 20480000 if real else 2048000)
+                m["rep"] = rep
+                # Kept with the job's metrics, where the digital and
+                # compression reports read it.
+                m["invalid"], m["no_audio_on_link"] = problems(prof, m)
                 with open(os.path.join(d, "metrics.json"), "w") as f:
                     json.dump(m, f, indent=1)
                 table.setdefault(rid, {}).setdefault(prof, []).append(m)
-    summary = {rid: {prof: {k: summarize([r.get(k) for r in runs]) for k in
-                            ("markers_share", "latency_median_ms", "latency_p95_ms", "latency_max_ms", "waterfall_fps",
-                             "kbit", "audio_kbit", "recovery_s", "first_heard_s", "sockets_opened_in_window")} |
-                     {"dropouts": summarize([(r.get("dropouts") or {}).get("seconds") for r in runs]), "runs": len(runs)}
-                     for prof, runs in profs.items()} for rid, profs in table.items()}
-    # A job is valid when every gate held and pace handed the receiver all
-    # of its input inside the job's window. The digital and tones jobs are
-    # judged here too; their own reports read the same files.
-    validity = {}
-    for rid, profs in table.items():
-        bad, silent = {}, []
-        for prof, runs in profs.items():
-            for r in runs:
-                why = [k for k, v in (r.get("gates") or {}).items() if not v]
-                # On an impaired link a page that plays nothing is the
-                # receiver's result (ka9q-web drops a listener whose writes
-                # stall), not a broken measurement; on the plain listeners
-                # it is.
-                if why == ["audio"] and prof not in ("listen", "digital", "tones"):
-                    silent.append(prof)
-                    why = []
-                lost = r.get("input_dropped_s") or {}
-                why += [f"input {k} {v:.1f} s" for k, v in lost.items() if v > 0]
-                if r.get("error"):
-                    why.append(r["error"][:80])
-                if why:
-                    bad[prof] = why
-        session = [r.get("input_dropped_session_s") for runs in profs.values() for r in runs]
-        validity[rid] = {"jobs": sum(len(v) for v in profs.values()), "invalid": bad, "no_audio_on_link": silent,
-                         "input_dropped_session_s": next((x for x in session if x), None)}
+    summary = summarise(table)
+    validity = validity_of(table)
     with open(os.path.join(root, "summary-validity.json"), "w") as f:
         json.dump(validity, f, indent=1)
     with open(os.path.join(root, "summary-links.json"), "w") as f:

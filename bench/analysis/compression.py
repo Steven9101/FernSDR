@@ -54,6 +54,9 @@ def main():
             meta = load(os.path.join(d, "meta.json"))
             if not meta or not meta.get("measurementStartedWallMs"):
                 continue
+            # A job links_report found invalid says nothing about the stream.
+            if (load(os.path.join(d, "metrics.json"), {}) or {}).get("invalid"):
+                continue
             socks = load(os.path.join(d, "sockets.json"), [])
             t0, t1 = meta["measurementStartedWallMs"], meta["endedWallMs"]
             runs.append({"audio": stream_stats(socks, t0, t1, "audio"), "waterfall": stream_stats(socks, t0, t1, "waterfall")})

@@ -8,7 +8,8 @@ sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 import json  # noqa: E402
 import tempfile  # noqa: E402
 
-from links_report import input_dropped, outage_recovery  # noqa: E402
+from digital_report import aggregate  # noqa: E402
+from links_report import input_dropped, outage_recovery, summarise, validity_of  # noqa: E402
 
 EVENTS = [{"t": 100.0, "what": "shaped"}, {"t": 105.0, "what": "outage on"}, {"t": 120.0, "what": "outage off"}]
 
@@ -67,6 +68,37 @@ class InputDropped(unittest.TestCase):
 
     def test_no_log(self):
         self.assertIsNone(input_dropped(tempfile.mkdtemp()))
+
+
+def job(rep, markers_share, gates=None, lost=None):
+    return {"rep": rep, "markers_share": markers_share, "gates": gates or {"audio": True, "clock": True},
+            "input_dropped_s": lost or {}}
+
+
+class InvalidJobs(unittest.TestCase):
+    table = {"rx": {"rate24": [job("1", 0.9), job("2", 0.1, gates={"audio": True, "clock": False}),
+                               job("3", 0.2, lost={"full": 1.5})],
+                    "listen": [job(str(i), 1.0, gates={"audio": True, "clock": False}) for i in (1, 2, 3)]}}
+
+    def test_summaries_leave_invalid_jobs_out(self):
+        s = summarise(self.table)["rx"]["rate24"]
+        self.assertEqual(s["runs"], 1)
+        self.assertEqual(s["invalid_runs"], 2)
+        self.assertAlmostEqual(s["markers_share"]["median"], 0.9)
+
+    def test_every_invalid_repetition_counts(self):
+        v = validity_of(self.table)["rx"]
+        self.assertEqual(v["jobs"], 6)
+        self.assertEqual(len(v["invalid"]), 5)
+
+    def test_digital_scores_of_an_invalid_run_are_left_out(self):
+        good = {"ft8_threshold_db": -18, "ft8_decodes": 5, "ft8_opportunities": 10, "invalid": []}
+        bad = {"ft8_threshold_db": -20, "ft8_decodes": 10, "ft8_opportunities": 10, "invalid": ["clock"]}
+        a = aggregate([good, bad], 250)
+        self.assertEqual(a["runs"], 1)
+        self.assertEqual(a["invalid_runs"], 1)
+        self.assertEqual(a["ft8_threshold_db"]["median"], -18)
+        self.assertAlmostEqual(a["ft8_decode_share"]["median"], 0.5)
 
 
 if __name__ == "__main__":
