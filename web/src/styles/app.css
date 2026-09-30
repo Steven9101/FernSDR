@@ -984,8 +984,8 @@ a {
 
 /* --- tooltip -------------------------------------------------------------
  * Placed by util/place.ts, so `position: fixed` at the origin and moved by a
- * transform. No entrance animation: a tooltip that fades in after its delay has
- * already made the reader wait twice.
+ * transform. Only the first tooltip animates in (below); a warm one appears
+ * at once, since fading in after its delay would make the reader wait twice.
  */
 .tooltip {
   position: fixed;

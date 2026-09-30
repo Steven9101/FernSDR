@@ -94,8 +94,9 @@ signing one no receiver takes.
    root: a package from npm with something in it could reach the pages, but
    not them, and not the key.
 
-A receiver sees the new version once someone presses *Check for updates* on
-its Updates page; nothing updates by itself.
+A receiver looks for the new version when someone signs in to its admin
+panel and its last look is over a day old, or when someone presses *Check
+for updates* on its Updates page; nothing updates by itself.
 
 5. The workflow then builds the container image from the archives it just
    published, for all three processors, with `tools/build-image.sh`, and

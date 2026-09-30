@@ -71,11 +71,10 @@
   --success: #4cc38a;
 
   /* --- typography -------------------------------------------------------
-   * Two families. The sans is Inter, as in the admin panel: one variable
-   * font of 48 KB for Latin, fetched once and shown with the system's sans
-   * until it arrives. Numbers in the controls are Inter's tabular figures;
-   * the mono is kept for the stage, the dial and the axes, where a
-   * frequency whose digits change width as it counts is unreadable.
+   * One family: Inter, as in the admin panel. The listener's page loads a
+   * 22 kB subset of it (styles/inter.css) and shows the system's sans until
+   * it arrives. Numbers use Inter's tabular figures, so a frequency whose
+   * digits change as it counts keeps its width.
    */
   --font-sans: 'Inter Variable', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', Roboto,
     'Helvetica Neue', Arial, sans-serif;
@@ -106,8 +105,9 @@
   --space-6: 2rem;
 
   /* --- shape ------------------------------------------------------------
-   * One radius, scaled. shadcn's 0.5rem base, which is the size that reads as
-   * "software" rather than as "app store screenshot".
+   * One radius, scaled, from a 0.625rem base: a little rounder than shadcn's
+   * 0.5rem, still a size that reads as "software" rather than as "app store
+   * screenshot".
    */
   --radius: 0.625rem;
   --radius-sm: calc(var(--radius) * 0.6);

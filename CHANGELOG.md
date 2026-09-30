@@ -8,10 +8,10 @@ The first release.
 
 - Demodulates USB, LSB, CW, CW-L, AM, synchronous AM, NFM and DSB, each with its
   own passband presets and a passband that can be dragged to any width; the
-  SSB presets include 2.7 kHz, flat from 300 to 2700 Hz. Wide FM, in mono,
-  on a band of 240 kHz or more that shows FM broadcasting (anywhere with
-  wfm = yes), demodulated once per station for everyone
-  tuned to it, with RDS: the station's name, programme type and radiotext.
+  SSB presets include 2.4 kHz (300 to 2700 Hz) and 2.7 kHz (200 to
+  2900 Hz). Wide FM, in mono, on a band of 240 kHz or more that shows FM
+  broadcasting (anywhere with wfm = yes), demodulated once per station for
+  everyone tuned to it, with RDS: the station's name, programme type and radiotext.
 - Runs several bands at once from standard input, files, UDP, ka9q-radio
   multicast, a synthetic test source or a hardware module; the RTL-SDR,
   RX-888 and SDRplay modules are installed from the admin panel, and a

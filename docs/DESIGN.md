@@ -35,7 +35,7 @@ pairs, `muted` for recessive surfaces and text, `border`, `input`, `ring`,
 `primary`, `destructive` - because it is the one most people working on a web
 interface already know, and because naming a token for its *role* rather than
 its shade is what makes a stylesheet legible a year later. `--radius` is
-shadcn's 0.5rem.
+0.625rem, a little rounder than shadcn's 0.5rem.
 
 Nothing is installed from those libraries. shadcn/ui, ReUI and beUI are React,
 Tailwind and Motion; this client is Svelte without either of the others, and
@@ -167,7 +167,7 @@ the noise sits around 15% of the ramp where it has visible texture and the
 
 ## Dependencies
 
-Three, and each earns its place:
+The listener's page uses two, and each earns its place:
 
 | Package | What it does here |
 |---|---|
@@ -177,7 +177,8 @@ Three, and each earns its place:
 Svelte replaced Preact so that both pages are one framework. That cost the
 listener page 14 kB gzipped of script: 63 kB where Preact's build was 49 kB.
 
-`motion` and `clsx` were installed during the redesign and removed again: the
+`motion` and `clsx` were tried on the listener's page during the redesign and
+taken out of it again (the admin panel's components still use `clsx`): the
 three animations that survived the motion policy are CSS keyframes, and class
 composition never got complicated enough to need a helper. A dependency that is
 only in `package.json` is still a dependency somebody has to audit.
