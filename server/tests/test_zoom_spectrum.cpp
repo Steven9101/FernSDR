@@ -150,6 +150,51 @@ TEST_CASE(zoom_on_a_direct_sampling_band_reads_as_its_line_does) {
     CHECK_NEAR(r.zoom[i], -40.0, 1.0);
 }
 
+TEST_CASE(zoom_reads_the_parent_bins_where_a_pixel_is_wider_than_them) {
+    // A 150 kHz view at 1000 pixels on a real 20.48 Msps band: pixels of
+    // 150 Hz, the channelizer's bins 78 Hz, the band line's 312 Hz. The zoom
+    // reads the bins, and draws a carrier where it is, at the line's level.
+    Channelizer channelizer(20.48e6, fernsdr::choose_fft_size(20.48e6), SignalKind::Real);
+    ZoomKey key;
+    CHECK(ZoomSpectrum::plan(channelizer, 0.0, 1.0, 7.025e6, 7.175e6, 1000, key));
+    CHECK_EQ(key.transform_size, 0u);
+    const double f = 7.1e6 + 31.0;
+    const Result r = run(SignalKind::Real, 20.48e6, {{f, 0.02}}, 7.025e6, 7.175e6, 1000, 1.0);
+    CHECK(r.zoom_ready);
+    const size_t i = peak_index(r.zoom, 0, r.zoom.size());
+    CHECK_NEAR(7.025e6 + (static_cast<double>(i) + 0.5) * 150.0, f, 150.0);
+    CHECK_NEAR(r.zoom[i], r.band_peak_db, 1.5);
+    CHECK_NEAR(r.zoom[i], -40.0, 1.5);
+}
+
+TEST_CASE(zoom_reading_bins_leaves_no_skirt_beside_a_strong_carrier) {
+    // The channelizer's own window, a sine, puts a carrier's leakage 20 bins
+    // away about 67 dB down, which on a quiet band is a visible skirt; the
+    // kernel's sin^3 puts it past 110 dB, below this noise.
+    const double f = 7.1e6 + 17.0;
+    const Result r = run(SignalKind::Real, 20.48e6, {{f, 0.2}}, 7.025e6, 7.175e6, 1000, 1.0);
+    CHECK(r.zoom_ready);
+    const size_t i = peak_index(r.zoom, 0, r.zoom.size());
+    CHECK(r.zoom[i] > -25.0f);
+    // 20 bins of 78 Hz is about 10 pixels of 150 Hz, either side.
+    CHECK(r.zoom[i + 11] < -125.0f);
+    CHECK(r.zoom[i - 11] < -125.0f);
+}
+
+TEST_CASE(zoom_reads_the_bins_of_an_iq_band_as_well) {
+    // 10 Msps IQ: bins of 76 Hz, a band line of 153 Hz; 118 Hz pixels.
+    Channelizer channelizer(10e6, fernsdr::choose_fft_size(10e6), SignalKind::Iq);
+    ZoomKey key;
+    CHECK(ZoomSpectrum::plan(channelizer, 0.0, 1.0, -1.059e6, -0.941e6, 1000, key));
+    CHECK_EQ(key.transform_size, 0u);
+    const double f = -1.0e6 + 23.0;
+    const Result r = run(SignalKind::Iq, 10e6, {{f, 0.01}}, -1.059e6, -0.941e6, 1000, 1.0);
+    CHECK(r.zoom_ready);
+    const size_t i = peak_index(r.zoom, 0, r.zoom.size());
+    CHECK_NEAR(-1.059e6 + (static_cast<double>(i) + 0.5) * 118.0, f, 118.0);
+    CHECK_NEAR(r.zoom[i], r.band_peak_db, 1.5);
+}
+
 namespace {
 
 class Quiet final : public fernsdr::Source {

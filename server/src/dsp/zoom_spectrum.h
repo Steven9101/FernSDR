@@ -7,27 +7,37 @@
 // shared transform finer does not scale: a 1M-point one on that band took
 // most of a core and delayed everyone's audio.
 //
-// A view that is finer than the band's bins gets this instead: a channel
-// cut from the channelizer's spectrum, which the band computes anyway and
-// which every listener's audio already comes from, just wide enough for the
-// view, and a transform of that channel sized so that one bin is no wider
-// than one pixel. What it costs follows the width of the view, not of the
-// band: a 300 kHz view on the 64.8 Msps band is an 8192-point inverse
-// transform a block and a few small windowed ones a line.
+// A view finer than the band's bins gets one of these instead, drawn from
+// the channelizer's transform, which the band computes anyway for every
+// listener's audio, in one of two ways:
 //
-// A zoom is keyed by its channel, not by the exact view: the channel's
-// centre sits on a grid of a sixteenth of its width, and it is wide enough
-// that the view stays in its flat part wherever between two grid points
-// the view's centre falls. Panning, and zooming in steps that keep the
-// channel's and transform's sizes, go on reading the zoom already running
-// instead of starting a new one, and listeners looking at nearly the same
-// place share one (Band::share_zoom).
+// - While a pixel is still wider than the channelizer's bins (on 64.8 Msps,
+//   views from about 115 kHz up), the power of those bins is enough. The
+//   channelizer's sine window leaks too far for a waterfall (-23 dB
+//   sidelobes, a skirt around every strong carrier), but multiplying a
+//   windowed block by sin^2 is, in frequency, a three-point kernel over the
+//   bins, which turns the window into sin^3: -39 dB sidelobes falling by 24
+//   dB an octave. So each line is the power of that kernel over the view's
+//   bins, averaged over the blocks in it: about ten operations a bin, and a
+//   1 MHz view costs a fifth of what a channel of it would.
+// - Finer than that, time is needed to resolve frequency: a channel cut from
+//   the transform, just wide enough for the view, and a Blackman-Harris
+//   transform of it with bins no wider than a pixel, down to 2 Hz. Such a
+//   view is narrow, and so is its channel.
+//
+// A zoom is keyed by where it lies on a grid, not by the exact view: its
+// centre sits on steps of a sixteenth of its width, and it is wide enough
+// that the view stays inside it wherever between two steps the view's
+// centre falls. Panning, and zooming in steps that keep its sizes, go on
+// reading the zoom already running instead of starting a new one, and
+// listeners looking at nearly the same place share one (Band::share_zoom).
 //
 // The lines are in dBFS like the band's, so a carrier reads the same level
 // in both; the noise in each bin is lower by as much as the bins are
 // narrower, as on any receiver whose resolution changes with the zoom.
 #pragma once
 #include <cstddef>
+#include <memory>
 #include <vector>
 
 #include "channelizer.h"
@@ -36,7 +46,9 @@
 namespace fernsdr {
 
 struct ZoomKey {
-    double centre_hz = 0.0;  // the channel's centre, in the parent's samples from its origin
+    double centre_hz = 0.0;  // the zoom's centre, in the parent's samples from its origin
+    // A channel of this many of the parent's bins and a transform of it; or,
+    // with transform_size 0, this many of the parent's bins themselves.
     size_t channel_size = 0;
     size_t transform_size = 0;
     bool operator==(const ZoomKey& other) const {
@@ -87,19 +99,37 @@ public:
     // Each line averaged with the one before, for views shown at half the
     // line rate or less, as the band keeps for its own.
     const SpectrumPyramid& paired() const { return paired_; }
-    // Whether [low_hz, high_hz] (RF) lies in the channel's flat part, so
+    // Whether [low_hz, high_hz] (RF) lies in what this zoom draws well, so
     // that this zoom can draw it: a listener keeps drawing from the zoom it
     // had while the one for its new view is still gathering its first line.
     bool covers(double low_hz, double high_hz) const { return low_hz >= flat_low_hz_ && high_hz <= flat_high_hz_; }
 
-    // The channel's rate and the transform's bin, in the parent's samples.
-    double channel_rate() const { return channel_.output_rate(); }
-    double bin_hz() const { return analyzer_.bin_hz(); }
+    // The width of a line's bins, in the parent's samples; whether this zoom
+    // reads the parent's bins rather than a channel.
+    double bin_hz() const { return bin_hz_; }
+    bool reads_bins() const { return key_.transform_size == 0; }
 
 private:
+    void finish_line();
+    void accumulate_bins(const ChannelBlock& block);
+
     ZoomKey key_;
-    Channel channel_;
-    SpectrumAnalyzer analyzer_;
+    // A channel and its transform, for a zoom finer than the parent's bins.
+    std::unique_ptr<Channel> channel_;
+    std::unique_ptr<SpectrumAnalyzer> analyzer_;
+    // Or the parent's bins: the first (from the origin, negative below it
+    // on an IQ band), their powers so far and how many blocks they hold.
+    long first_bin_ = 0;
+    size_t parent_size_ = 0;
+    std::vector<float> power_;
+    int blocks_ = 0;
+    double credit_ = 0.0;
+    double lines_per_second_ = 25.0;
+    float smoothing_ = 0.5f;
+    float gain_db_ = 0.0f;
+    std::vector<float> smoothed_;
+    bool smoothed_primed_ = false;
+    double bin_hz_ = 0.0;
     // RF edges of the transform's cells, as SpectrumPyramid takes them.
     double low_hz_ = 0.0;
     double high_hz_ = 0.0;

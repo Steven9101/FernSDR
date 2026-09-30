@@ -105,15 +105,22 @@ overhead. Leave uplink headroom for those costs and traffic bursts.
 For a wideband real source, `sample_rate = 64M` covers DC to 32 MHz before
 the usable-range setting. A 1,048,576-point FFT resolves about 61 Hz and
 advances in 8.192 ms blocks. Source conversion, transforms, listener work and
-networking all have to keep up. The band's own waterfall line has 32,768
-bins of about 1 kHz; a listener zoomed in further gets a spectrum of its own
-view, cut from the channelizer's transform, with bins no wider than a pixel
-(down to 2 Hz). On this band that costs 0.1 to 0.3 % of a core for a view of
-2 to 15 kHz, about 1 % for 300 kHz and about 2 % for the widest views that
-need one, 1 to 1.6 MHz; listeners on nearly the same view share it.
-Raising `spectrum_rate` or `spectrum_averages` increases transform work. Reducing the waterfall cadence retains frequency resolution while
-trading away time detail. Measure that configuration instead of extrapolating
-from a narrowband receiver or an isolated FFT benchmark.
+networking all have to keep up. The channelizer's transform starts with
+the first listener and is most of the band's work: on six cores of a Ryzen 9
+9950X in a virtual machine the band took 5 % of a core with nobody listening,
+31 % with one listener and 33 % with twelve, about 0.2 % for each listener
+after the first.
+
+The band's own waterfall line has 32,768 bins of about 1 kHz. A listener
+zoomed in further gets a spectrum of their own view from that same transform,
+with bins no wider than a pixel (down to 2 Hz): its bins read through a sin^3
+window for views from about 115 kHz up, a narrow channel of it below. Twelve
+listeners, each on a view of their own, cost 0.3 % of a core each at 600 kHz,
+0.4 % at 110 kHz, the dearest width, and 0.15 % at 30 kHz; listeners on nearly
+the same view share one. Raising `spectrum_rate` or `spectrum_averages`
+increases transform work; reducing the waterfall cadence keeps the frequency
+resolution and gives up time detail. Measure that configuration instead of
+extrapolating from a narrowband receiver or an isolated FFT benchmark.
 
 ## Network and audio
 
