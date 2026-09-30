@@ -32,3 +32,10 @@ export function locatorFor(lat: number, lon: number, length: 4 | 6 = 6): string 
   const sub = String.fromCharCode(97 + Math.floor(((x % 2) * 60) / 5), 97 + Math.floor(((y % 1) * 60) / 2.5));
   return field + square + sub;
 }
+
+/** A typed Maidenhead locator written as locatorFor() writes one, or '' when it is not one. */
+export function normalLocator(text: string): string {
+  const value = text.trim();
+  if (!locatorCentre(value)) return '';
+  return value.slice(0, 4).toUpperCase() + value.slice(4).toLowerCase();
+}

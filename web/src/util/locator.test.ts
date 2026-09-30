@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { locatorCentre, locatorFor } from './locator';
+import { locatorCentre, locatorFor, normalLocator } from './locator';
 
 describe('locatorCentre', () => {
   it('finds the middle of a square', () => {
@@ -32,5 +32,15 @@ describe('locatorFor', () => {
       const centre = locatorCentre(grid)!;
       expect(locatorFor(centre.lat, centre.lon)).toBe(grid.slice(0, 4) + grid.slice(4).toLowerCase());
     }
+  });
+});
+
+describe('typed locator', () => {
+  it('takes a locator typed in any case, as the panel writes it, and nothing else', () => {
+    expect(normalLocator(' jo31KI ')).toBe('JO31ki');
+    expect(normalLocator('jo31')).toBe('JO31');
+    expect(normalLocator('JO3')).toBe('');
+    expect(normalLocator('ZZ99')).toBe('');
+    expect(normalLocator('JO31k')).toBe('');
   });
 });

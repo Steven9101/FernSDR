@@ -4,7 +4,8 @@
 	import Plus from '@lucide/svelte/icons/plus';
 	import { Button } from './ui/button/index';
 	import * as Dialog from './ui/dialog/index';
-	import { locatorCentre, locatorFor } from '../../util/locator';
+	import { Input } from './ui/input/index';
+	import { locatorCentre, locatorFor, normalLocator } from '../../util/locator';
 
 	/*
 	Finding the station's grid square without looking it up elsewhere: from this browser's position
@@ -29,8 +30,24 @@
 	let locating = $state(false);
 	let problem = $state('');
 
+	// Typed rather than pointed at: the map takes a pointer, and a keyboard, or
+	// an antenna somewhere other than this browser, needs another way in.
+	let typed = $state('');
+	const typedGrid = $derived(normalLocator(typed));
+
 	const height = $derived(Math.round(Math.min(width * 0.6, 420)));
-	const choice = $derived(picked ? locatorFor(picked.lat, picked.lon) : '');
+	const choice = $derived(typedGrid || (picked ? locatorFor(picked.lat, picked.lon) : ''));
+
+	function typeGrid(value: string) {
+		typed = value;
+		const here = locatorCentre(value);
+		if (!here) return;
+		picked = here;
+		centre = here;
+		// A subsquare close enough that the small squares are drawn and named.
+		scale = value.trim().length === 6 ? MIN_SCALE : 0.02;
+		clampCentre();
+	}
 
 	$effect(() => {
 		if (!open) return;
@@ -41,6 +58,7 @@
 		// Opened on the square already set, close enough to see its neighbours.
 		const here = locatorCentre(grid);
 		picked = here;
+		typed = '';
 		problem = '';
 		if (here) {
 			centre = here;
@@ -185,6 +203,7 @@
 
 	function pointerUp(event: PointerEvent) {
 		if (drag && !drag.moved) {
+			typed = '';
 			picked = {
 				lon: Math.max(-180, Math.min(180, centre.lon + (event.offsetX - width / 2) * scale)),
 				lat: Math.max(-90, Math.min(90, centre.lat - (event.offsetY - height / 2) * scale))
@@ -208,6 +227,7 @@
 		navigator.geolocation.getCurrentPosition(
 			(position) => {
 				locating = false;
+				typed = '';
 				picked = { lat: position.coords.latitude, lon: position.coords.longitude };
 				centre = picked;
 				// Close enough that the subsquares are drawn and named.
@@ -231,8 +251,8 @@
 		<div class="flex flex-col gap-1 px-3 pr-12">
 			<Dialog.Title class="text-lg font-semibold">Find the grid square</Dialog.Title>
 			<Dialog.Description class="text-sm leading-relaxed text-muted-foreground">
-				Tap where the antenna is. Drag to move, zoom until the small squares show, and check the one it
-				is in.
+				Tap where the antenna is, or type its square. Drag to move, zoom until the small squares show, and
+				check the one it is in.
 			</Dialog.Description>
 		</div>
 		<div class="relative overflow-hidden rounded-2xl" bind:clientWidth={width}>
@@ -257,6 +277,10 @@
 			<Button variant="secondary" class="h-11 rounded-full px-4 md:h-9" disabled={locating} onclick={locate}>
 				<Crosshair /> {locating ? 'Finding…' : 'Where this browser is'}
 			</Button>
+			<Input class="h-11 w-32 rounded-full px-4 md:h-9" value={typed} maxlength={6} autocomplete="off" spellcheck="false"
+				placeholder="Or type it" aria-label="Grid square, such as JO31 or JO31ki"
+				aria-invalid={typed.trim() !== '' && !typedGrid}
+				oninput={(event) => typeGrid(event.currentTarget.value)} />
 			<span class="flex-1"></span>
 			<span class="text-[15px] tabular text-muted-foreground" aria-live="polite">
 				{#if picked}{Math.abs(picked.lat).toFixed(3)}° {picked.lat >= 0 ? 'N' : 'S'}, {Math.abs(picked.lon).toFixed(3)}° {picked.lon >= 0 ? 'E' : 'W'}{/if}
