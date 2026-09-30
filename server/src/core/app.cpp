@@ -475,7 +475,8 @@ bool Application::handle_history(Connection& connection, const HttpRequest& requ
     };
     const size_t max_rows = small_count("rows");
     const size_t width = small_count("width");
-    if (!band->read_history(from_ms, to_ms, rows, times, bins, &row_ms, max_rows, width)) {
+    uint64_t read_bytes = 0;
+    if (!band->read_history(from_ms, to_ms, rows, times, bins, &row_ms, max_rows, width, &read_bytes)) {
         response =
             json_response(500, json_error("the history could not be read"), request.keep_alive());
         return true;
@@ -510,7 +511,9 @@ bool Application::handle_history(Connection& connection, const HttpRequest& requ
     body += header;
     body.append(reinterpret_cast<const char*>(rows.data()), rows.size());
 
-    if (!operator_asks) budget.bytes -= static_cast<int64_t>(body.size());
+    // Charged for what was read as well as for what is sent: a picture one
+    // pixel wide reads every row in full to send a byte of each.
+    if (!operator_asks) budget.bytes -= static_cast<int64_t>(std::max<uint64_t>(body.size(), read_bytes));
     response = build_http_response(200, "application/octet-stream", body,
                                    {{"Cache-Control", "no-store"}}, request.keep_alive());
     return true;

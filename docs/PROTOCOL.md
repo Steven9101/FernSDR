@@ -38,8 +38,9 @@ picture. Timestamps retain gaps; rows must not be stretched
 uniformly across the requested period. Private archives require an admin
 session. Access changes are reported in `band-status`. Each address (an IPv6
 /48 as one) may read 16 MB of history at once and a megabyte a second after
-that; beyond it the answer is 429 with `Retry-After`. An admin session is not
-held to it.
+that, counted as the larger of what is sent and what is read from the
+archive (whole rows, however narrow the picture); beyond it the answer is 429
+with `Retry-After`. An admin session is not held to it.
 
 `GET /api/decodes` returns what the public decoders heard, newest last, as
 `{"epoch":"...","through":N,"decodes":[...]}`. Each decode carries `seq`, `decoder`,

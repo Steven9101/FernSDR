@@ -111,9 +111,11 @@ public:
         ~Reading();
     };
     bool begin_read(Reading& out) const;
+    // `read_bytes` is what was read from the file, gaps and merged bins
+    // included: far more than the rows returned, for a narrow picture.
     static bool read(const Reading& from, int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,
                      std::vector<int64_t>& times_ms, double* row_ms = nullptr, size_t max_rows = 0,
-                     size_t bin_group = 1, size_t* out_bins = nullptr);
+                     size_t bin_group = 1, size_t* out_bins = nullptr, uint64_t* read_bytes = nullptr);
 
     size_t bins() const { return bins_; }
     double seconds_per_line() const { return seconds_per_line_; }

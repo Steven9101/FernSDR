@@ -2409,6 +2409,38 @@ TEST_CASE(server_holds_one_address_to_a_budget_for_the_waterfall_archive) {
     ::rmdir(directory);
 }
 
+// A picture one pixel wide still reads every row of the archive in full:
+// the budget is charged for what was read, not for the few bytes sent.
+TEST_CASE(server_charges_a_narrow_history_request_for_what_it_reads) {
+    if (std::getenv("FERNSDR_TEST_UNDER_QEMU")) {
+        std::fprintf(stderr, "  skipped under qemu-user, which runs the server too slowly to outrun a rate\n");
+        return;
+    }
+    char directory[] = "/tmp/fernsdr-history-narrow-XXXXXX";
+    CHECK(::mkdtemp(directory) != nullptr);
+    {
+        Harness harness(15000, 120000,
+                        "history = public\nhistory_path = " + std::string(directory) +
+                            "/h.wfa\nhistory_bins = 8192\nhistory_interval = 0.1\n");
+        CHECK(harness.ok);
+        if (!harness.ok) return;
+        wait_ms(3500);
+        int answered = 0;
+        bool refused = false;
+        for (int i = 0; i < 600 && !refused; i++) {
+            const std::string reply =
+                TestClient(harness.port()).http_get("/api/history?band=demo&from=0&width=1&rows=4096");
+            if (reply.find("200 OK") != std::string::npos) answered++;
+            refused = reply.find("429") != std::string::npos;
+        }
+        CHECK(answered > 3);
+        CHECK(refused);
+    }
+    ::unlink((std::string(directory) + "/h.wfa").c_str());
+    ::unlink((std::string(directory) + "/h.wfa.span").c_str());
+    ::rmdir(directory);
+}
+
 TEST_CASE(session_answers_a_chat_backlog_request_once_in_a_while) {
     fernsdr::Radio radio;
     fernsdr::Session session(1, radio);

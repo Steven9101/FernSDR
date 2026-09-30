@@ -299,8 +299,9 @@ bool WaterfallArchive::begin_read(Reading& out) const {
 
 bool WaterfallArchive::read(const Reading& from, int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,
                             std::vector<int64_t>& times_ms, double* row_ms, size_t max_rows,
-                            size_t bin_group, size_t* out_bins) {
+                            size_t bin_group, size_t* out_bins, uint64_t* read_bytes) {
     const size_t bins = from.bins;
+    if (read_bytes) *read_bytes = 0;
     bin_group = std::max<size_t>(1, std::min(bin_group, bins));
     const size_t grouped = (bins + bin_group - 1) / bin_group;
     if (out_bins) *out_bins = grouped;
@@ -345,6 +346,7 @@ bool WaterfallArchive::read(const Reading& from, int64_t from_ms, int64_t to_ms,
     for (uint64_t index = begin; index < end; index += stride) {
         const off_t offset = static_cast<off_t>(sizeof(Header) + (index % from.capacity) * slot_bytes);
         if (::pread(from.fd, slot.data(), slot.size(), offset) != static_cast<ssize_t>(slot.size())) return false;
+        if (read_bytes) *read_bytes += slot.size();
 
         uint64_t stored = 0;
         std::memcpy(&stored, slot.data(), sizeof(uint64_t));
