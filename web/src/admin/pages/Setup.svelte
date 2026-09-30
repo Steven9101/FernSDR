@@ -29,6 +29,7 @@
 	import RestoreBackup from '../components/RestoreBackup.svelte';
 	import { installFromCatalog, restartAndReload } from '../lib/receiver';
 	import { deviceSelector } from '../lib/device-selector';
+	import { live } from '../lib/live.svelte';
 
 	/*
 	Setting a receiver up, from the first sign-in: one question at a time, in the order an operator
@@ -66,6 +67,11 @@
 		next && next.length < 12 ? `${next.length} characters; at least 12.` : again && again !== next ? 'The two differ.' : ''
 	);
 	async function savePassword() {
+		// The receiver ends every session on the change, and the page signs in
+		// again a moment later. A poll answered in between would find no
+		// session and sign the panel out, leaving the setup, so it waits, as
+		// on the Station page.
+		live.stop();
 		try {
 			await api.changePassword(current, next, (message) => (passwordBusy = message));
 			toast.success('Your own password is set.');
@@ -76,6 +82,7 @@
 			toast.error(error.status === 403 ? 'The current password is not right.' : error.message);
 		} finally {
 			passwordBusy = '';
+			live.start();
 		}
 	}
 
