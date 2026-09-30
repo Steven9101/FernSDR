@@ -146,9 +146,10 @@ The first release.
   bandwidth appears after five seconds of it and stays until fifteen seconds
   at the full rate, rather than blinking with every reading.
 - Playback that holds its pitch steady while it keeps the delay short: about
-  230 ms from antenna to speaker in the benchmark lab, on a plain-HTTP page.
-  After a slow or broken stretch of connection the extra buffer it took is
-  given back within seconds once audio arrives evenly again.
+  230 ms from the input to the browser's audio output in the benchmark lab,
+  on a plain-HTTP page. After a slow or broken stretch of connection the
+  extra buffer it took is given back within seconds once audio arrives
+  evenly again.
 - A listener the operator disconnects stays disconnected until they load
   the page again, and is told so; a place let go for inactivity waits for
   the listener as before.

@@ -91,7 +91,9 @@ after a 10 s warm-up:
 **Latency** is from the moment a sample leaves `pace` to the moment the
 browser expects it at its audio output (`getOutputTimestamp`). An
 independent trace of the null sink showed that estimate off by up to
-9.3 ms, so absolute latencies carry that uncertainty. After the outage, a
+9.3 ms, so absolute latencies carry that uncertainty. The stages before
+`pace` and after the browser, a real radio's USB transfer and the sound
+card, are not measured. After the outage, a
 receiver counts as recovered when a marker is heard within 1 s of the
 latency it had before, not when anything is heard again.
 
@@ -121,7 +123,11 @@ may open), with the Origin a page sends. Steps of 1, 10, 50, 100, 200 and
 listeners get at least 90 % of the browser's audio messages a second (not
 bytes: a variable-rate codec spends fewer bytes on a quieter frequency) and
 none is disconnected. Caps an operator would raise are raised (the matched
-tier). The receiver keeps its two cores; the clients have four.
+tier). The receiver keeps its two cores; the clients have four. A receiver
+stops at the first step it fails. FernSDR alone was also tried at a single
+step of 1,600 listeners (`runs/20260929-capacity-R1y`); no other receiver
+was tried above 400, so the limits of FernSDR and of PA3FWM's WebSDR,
+which both passed 400, are not known.
 
 ## Statistics
 

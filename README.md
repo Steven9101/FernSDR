@@ -24,12 +24,20 @@ listening and each receiver on the same two CPU cores:
 
 | | FernSDR | Best of the others |
 |---|---|---|
-| From the antenna to the listener's ear | 227 ms | 261 ms, UberSDR |
-| Listeners on two CPU cores | 1,600 and more | 400, PA3FWM's WebSDR |
+| Delay from the input to the browser's audio output | 227 ms | 261 ms, UberSDR |
+| Listeners served on two CPU cores, at the largest step tried | 1,600 | 400, PA3FWM's WebSDR |
 | Memory with four listening | 8 MB | 30 MB, PhantomSDR |
 | Sound that still arrives through 24 kbit/s | 63 % | 7 %, NovaSDR (VertexSDR's arrived too changed to measure) |
 | Back on time after a 15 s outage | 0.9 s | 2.0 s, PhantomSDR-Plus (sv1btl) |
 | The listener's page on a first visit | 127 kB | 130 kB, VertexSDR |
+
+The delay runs from the moment the lab's generated band leaves its source
+to the moment the browser says the sound reaches its output; that estimate
+was off by up to 9.3 ms in calibration, and a real radio's USB delay and the
+sound card after the browser are not in it. The listener steps shared by all
+receivers went up to 400, where FernSDR and PA3FWM's WebSDR both still served
+everyone and the others no longer did; only FernSDR was tried at 1,600, so
+neither one's limit is known.
 
 Others do better on the stream's size, on CPU with a handful of listeners,
 and on audio SNR. The method, the lab and every figure, including those, are
