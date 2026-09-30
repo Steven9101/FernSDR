@@ -246,11 +246,18 @@ async function desktop() {
   await page.getByRole('radio', { name: 'LSB', exact: true }).click();
   await page.waitForFunction(() => document.querySelector('[role="radiogroup"][aria-label="Filter width"] [aria-checked="true"]'));
   seen.lsbFilter = await page.locator('[role="radiogroup"][aria-label="Filter width"] [aria-checked="true"]').textContent();
-  await page.getByRole('radio', { name: 'Off', exact: true }).first().click();
+  const agcOff = page.getByRole('radio', { name: 'Off', exact: true }).first();
+  await agcOff.click();
+  // The Gain slider only exists with the AGC off. On a slow runner it can be
+  // focused while the rack is still being redrawn, and the value read before
+  // the label follows the key, so wait for each rather than reading once.
+  await page.waitForFunction((el) => el.getAttribute('aria-checked') === 'true', await agcOff.elementHandle());
   const gain = page.getByLabel('Gain', { exact: true });
   await gain.focus();
   await page.keyboard.press('End');
-  seen.gain = await page.locator('.field', { has: gain }).locator('.field__value').textContent();
+  const gainValue = page.locator('.field', { has: gain }).locator('.field__value');
+  await gainValue.filter({ hasText: /^60 dB$/ }).waitFor({ timeout: 5000 }).catch(() => {});
+  seen.gain = await gainValue.textContent();
   assert.equal(seen.gain, '60 dB');
   await page.getByRole('radio', { name: 'Slow', exact: true }).click();
   await page.getByRole('switch', { name: 'Auto notch' }).click();
