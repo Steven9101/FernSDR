@@ -558,9 +558,13 @@ export const api = {
     await api.login(next);
   },
   logout: async () => {
-    const result = await call<{ ok: boolean }>('/api/admin/logout', { method: 'POST' });
-    forgetKey();
-    return result;
+    // The key goes whatever the receiver answers: a sign-out that failed on
+    // the way must not leave this browser able to sign straight back in.
+    try {
+      return await call<{ ok: boolean }>('/api/admin/logout', { method: 'POST' });
+    } finally {
+      forgetKey();
+    }
   },
   state: () => call<AdminState>('/api/admin/state'),
   log: () => call<{ lines: string[] }>('/api/admin/log'),

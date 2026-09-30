@@ -91,3 +91,21 @@ it('keeps two tabs of one login in order, and signs again once when the server s
   await tabA.writeStation({ name: 'A3' });
   expect(outcomes.slice(4)).toEqual([401, 200]);
 });
+
+it('forgets the signing key even when signing out fails on the way', async () => {
+  const stored = new Map<string, string>();
+  vi.stubGlobal('sessionStorage', { getItem: (k: string) => stored.get(k) ?? null,
+    setItem: (k: string, v: string) => stored.set(k, v), removeItem: (k: string) => stored.delete(k) });
+  vi.stubGlobal('crypto', webcrypto);
+  const salt = '1'.repeat(32), nonce = '2'.repeat(32), context = '3'.repeat(64);
+  vi.stubGlobal('fetch', vi.fn(async (path: string) => {
+    if (path.endsWith('/challenge')) return Response.json({ salt, nonce, iterations: 100 });
+    if (path.endsWith('/login')) return Response.json({ ok: true, signing_context: context });
+    throw new TypeError('network down');
+  }));
+  const { api } = await import('./api');
+  await api.login('test password');
+  expect(stored.size).toBeGreaterThan(0);
+  await expect(api.logout()).rejects.toThrow();
+  expect([...stored.keys()].filter((k) => k.startsWith('fernsdr_admin_key'))).toEqual([]);
+});
