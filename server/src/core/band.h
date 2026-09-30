@@ -25,6 +25,7 @@
 #include "decoder_tap.h"
 #include "shared_fm.h"
 #include "shared_waterfall.h"
+#include "zoom_bank.h"
 #include "calibration.h"
 #include "../dsp/noise_floor.h"
 #include "../dsp/spectrum.h"
@@ -367,6 +368,7 @@ public:
     // thread.
     std::shared_ptr<ZoomSpectrum> share_zoom(const ViewportSettings& viewport) const;
     size_t zoom_count() const;
+    size_t zoom_tile_count() const;
 
     std::shared_ptr<DecoderTap> add_decoder_tap(uint16_t index, double dial_hz, double offset_hz, double width_hz);
     void remove_decoder_tap(const std::shared_ptr<DecoderTap>& tap);
@@ -474,10 +476,9 @@ private:
     mutable std::mutex waterfall_mutex_;
     mutable std::vector<std::weak_ptr<SharedWaterfall>> shared_waterfalls_;
     std::vector<std::shared_ptr<SharedWaterfall>> waterfall_snapshot_;
-    mutable std::mutex zoom_mutex_;
-    mutable std::vector<std::weak_ptr<ZoomSpectrum>> zooms_;
-    std::vector<std::shared_ptr<ZoomSpectrum>> zoom_snapshot_;
-    ChannelBlock zoom_block_;
+    // Made with the channelizer; its own lock makes share_zoom() safe from
+    // any listener's thread.
+    std::unique_ptr<ZoomBank> zoom_bank_;
     std::vector<std::shared_ptr<DecoderTap>> tap_snapshot_;
 
     std::function<void()> wake_;

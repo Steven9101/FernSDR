@@ -113,11 +113,15 @@ after the first.
 
 The band's own waterfall line has 32,768 bins of about 1 kHz. A listener
 zoomed in further gets a spectrum of their own view from that same transform,
-with bins no wider than a pixel (down to 2 Hz): its bins read through a sin^3
-window for views from about 115 kHz up, a narrow channel of it below. Twelve
-listeners, each on a view of their own, cost 0.3 % of a core each at 600 kHz,
-0.4 % at 110 kHz, the dearest width, and 0.15 % at 30 kHz; listeners on nearly
-the same view share one. Raising `spectrum_rate` or `spectrum_averages`
+with bins no wider than a pixel (down to 2 Hz): for views from about 115 kHz
+up its bins read through a sin^3 window, summed in tiles of 1,024 that every
+view over them shares; below that, a narrow channel of it. Timed on its own,
+that is 0.02 to 0.06 % of a core per view from 150 to 600 kHz, 0.15 % at
+110 kHz, the dearest width, 0.05 % at 30 kHz and 0.01 % at 2 kHz; twelve
+listeners on 300 kHz views of 40 m cost 0.014 % each. A view of its own also
+means rows coded for that listener alone rather than shared, which took
+about 0.2 % of a core per listener more on the whole. Listeners on the same
+view share both. Raising `spectrum_rate` or `spectrum_averages`
 increases transform work; reducing the waterfall cadence keeps the frequency
 resolution and gives up time detail. Measure that configuration instead of
 extrapolating from a narrowband receiver or an isolated FFT benchmark.

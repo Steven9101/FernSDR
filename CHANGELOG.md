@@ -72,7 +72,8 @@ The first release.
   finer than the band's own line gets a spectrum of its own from the
   channelizer's transform, with bins down to 2 Hz. On a 0 to 30 MHz band
   an SSB signal on 40 m fills the view instead of three kilohertz-wide bins,
-  for at most 0.4 % of a core per view, shared by everyone near it.
+  for at most 0.15 % of a core per view to compute, and views that overlap
+  share the work.
 - The band plan of the station's IARU region, or of the United States,
   Canada, the United Kingdom, Germany, Australia or Japan, chosen on the
   Station page or worked out from the grid square: amateur segments with

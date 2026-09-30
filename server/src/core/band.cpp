@@ -123,6 +123,9 @@ Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, con
     spectrum_ = std::make_unique<SpectrumAnalyzer>(sample_rate_, spectrum_bins_,
                                                    spectrum_lines_per_second_, spectrum_averages_,
                                                    spectrum_smoothing_, signal_kind_);
+    zoom_bank_ = std::make_unique<ZoomBank>(*channelizer_, spectrum_origin_hz_, rf_scale_,
+                                            rf_rate() / static_cast<double>(spectrum_bins_), spectrum_lines_per_second_,
+                                            spectrum_averages_, spectrum_smoothing_);
 }
 
 Band::~Band() {
@@ -400,26 +403,15 @@ std::shared_ptr<SharedWaterfall> Band::share_waterfall(const WaterfallKey& key) 
 }
 
 std::shared_ptr<ZoomSpectrum> Band::share_zoom(const ViewportSettings& viewport) const {
-    if (!zoom_wanted(viewport.low_hz, viewport.high_hz, viewport.width, rf_rate() / static_cast<double>(spectrum_bins_)))
-        return nullptr;
-    ZoomKey key;
-    if (!ZoomSpectrum::plan(*channelizer_, spectrum_origin_hz_, rf_scale_, viewport.low_hz, viewport.high_hz,
-                            viewport.width, key))
-        return nullptr;
-    std::lock_guard<std::mutex> lock(zoom_mutex_);
-    for (const auto& weak : zooms_) {
-        if (auto running = weak.lock(); running && running->key() == key) return running;
-    }
-    auto made = std::make_shared<ZoomSpectrum>(*channelizer_, spectrum_origin_hz_, rf_scale_, key,
-                                               spectrum_lines_per_second_, spectrum_averages_, spectrum_smoothing_);
-    zooms_.push_back(made);
-    return made;
+    return zoom_bank_->share(viewport.low_hz, viewport.high_hz, viewport.width);
 }
 
 size_t Band::zoom_count() const {
-    std::lock_guard<std::mutex> lock(zoom_mutex_);
-    return static_cast<size_t>(std::count_if(zooms_.begin(), zooms_.end(),
-                                             [](const auto& weak) { return !weak.expired(); }));
+    return zoom_bank_->zoom_count();
+}
+
+size_t Band::zoom_tile_count() const {
+    return zoom_bank_->tile_count();
 }
 
 size_t Band::shared_waterfall_count() const {
@@ -702,33 +694,7 @@ bool Band::advance_block(bool overlap) {
     }
 
     // Zoomed views' spectra, before the rows and listeners that draw them.
-    {
-        std::lock_guard<std::mutex> lock(zoom_mutex_);
-        zoom_snapshot_.clear();
-        for (auto it = zooms_.begin(); it != zooms_.end();) {
-            if (auto running = it->lock()) {
-                zoom_snapshot_.push_back(std::move(running));
-                ++it;
-            } else {
-                it = zooms_.erase(it);
-            }
-        }
-    }
-    if (!zoom_snapshot_.empty()) {
-        // Each reads the same finished block and writes only its own state,
-        // so a crowd of zoomed views spreads over the workers; one or two
-        // cost less than handing them over.
-        zoom_block_ = channelizer_->current_block();
-        const auto zoom = [](void* context, size_t index) {
-            auto& band = *static_cast<Band*>(context);
-            band.zoom_snapshot_[index]->process(band.zoom_block_);
-        };
-        if (dsp_workers_ && dsp_workers_->has_workers() && zoom_snapshot_.size() >= 4)
-            dsp_workers_->run(zoom_snapshot_.size(), zoom, this);
-        else
-            for (size_t i = 0; i < zoom_snapshot_.size(); i++) zoom(this, i);
-        zoom_snapshot_.clear();
-    }
+    zoom_bank_->process(channelizer_->current_block(), dsp_workers_);
 
     // Waterfall rows once per view, on the same terms.
     {

@@ -3,6 +3,7 @@
 // line does, at the frequency it is on, and is shared by everyone on the view.
 #include "../src/core/band.h"
 #include "../src/core/listener.h"
+#include "../src/core/zoom_bank.h"
 #include "../src/core/protocol.h"
 #include "../src/codec/waterfall_rc.h"
 #include "../src/dsp/zoom_spectrum.h"
@@ -43,10 +44,11 @@ Result run(SignalKind kind, double rate, const std::vector<Tone>& tones, double 
            double seconds, double origin = 0.0, double scale = 1.0) {
     const size_t fft = fernsdr::choose_fft_size(rate);
     Channelizer channelizer(rate, fft, kind);
-    ZoomKey key;
     Result result;
-    if (!ZoomSpectrum::plan(channelizer, origin, scale, low, high, width, key)) return result;
-    ZoomSpectrum zoom(channelizer, origin, scale, key, 25.0, 8, 0.5f);
+    // The band's own line has 65,536 points, as a wide band's does.
+    fernsdr::ZoomBank bank(channelizer, origin, scale, scale * rate / 65536.0, 25.0, 8, 0.5f);
+    const auto zoom = bank.share(low, high, width);
+    if (!zoom) return result;
     fernsdr::SpectrumAnalyzer band(rate, 65536, 25.0, 8, 0.5f, kind);
     std::mt19937 rng(7);
     std::normal_distribution<float> noise(0.0f, 1e-5f);
@@ -77,12 +79,12 @@ Result run(SignalKind kind, double rate, const std::vector<Tone>& tones, double 
             channelizer.process_real(real.data());
             band.push_real(real.data(), block);
         }
-        zoom.process(channelizer.current_block());
+        bank.process(channelizer.current_block(), nullptr);
         while (band.take_line(line)) result.band_peak_db = *std::max_element(line.begin(), line.end());
     }
-    result.zoom_ready = zoom.ready();
+    result.zoom_ready = zoom->ready();
     result.zoom.assign(static_cast<size_t>(width), -200.0f);
-    if (zoom.ready()) zoom.line().render(low, high, result.zoom.data(), result.zoom.size());
+    if (zoom->ready()) zoom->line().render(low, high, result.zoom.data(), result.zoom.size());
     return result;
 }
 
@@ -193,6 +195,62 @@ TEST_CASE(zoom_reads_the_bins_of_an_iq_band_as_well) {
     const size_t i = peak_index(r.zoom, 0, r.zoom.size());
     CHECK_NEAR(-1.059e6 + (static_cast<double>(i) + 0.5) * 118.0, f, 118.0);
     CHECK_NEAR(r.zoom[i], r.band_peak_db, 1.5);
+}
+
+TEST_CASE(zoom_views_of_bins_share_their_tiles_and_a_panned_one_is_ready_within_a_line) {
+    // A real 20.48 Msps band, a carrier on 7.1 MHz. Two views of 150 kHz
+    // that overlap by 100 kHz sum the tiles they share once: the bank holds
+    // the tiles of their union, not of both, and the views read the same
+    // levels where they overlap.
+    const double rate = 20.48e6;
+    Channelizer channelizer(rate, fernsdr::choose_fft_size(rate), SignalKind::Real);
+    fernsdr::ZoomBank bank(channelizer, 0.0, 1.0, rate / 65536.0, 25.0, 8, 0.5f);
+    auto a = bank.share(7.025e6, 7.175e6, 1000);
+    auto b = bank.share(7.075e6, 7.225e6, 1000);
+    CHECK(a && b && a->reads_bins() && b->reads_bins());
+    if (!a || !b) return;
+    const double bin = channelizer.bin_hz();
+    const long first = static_cast<long>(std::floor(7.025e6 / bin)) / 1024;
+    const long last = static_cast<long>(std::ceil(7.225e6 / bin)) / 1024;
+    CHECK(bank.tile_count() <= static_cast<size_t>(last - first + 1));
+    const size_t block = channelizer.block_size();
+    std::vector<float> samples(block);
+    size_t n = 0;
+    const auto feed = [&](int blocks) {
+        for (int k = 0; k < blocks; k++) {
+            for (size_t i = 0; i < block; i++, n++)
+                samples[i] = static_cast<float>(0.02 * std::cos(2 * M_PI * std::fmod(7.1e6 / rate * static_cast<double>(n), 1.0))) +
+                             1e-5f * static_cast<float>((n * 2654435761u) % 1000) / 1000.0f;
+            channelizer.process_real(samples.data());
+            bank.process(channelizer.current_block(), nullptr);
+        }
+    };
+    feed(40);
+    CHECK(a->ready() && b->ready());
+    // Finer than the bins, so both draw from their own bins as they are;
+    // coarser, each pyramid pairs bins from its own first one.
+    std::vector<float> ra(2560), rb(2560);
+    a->line().render(7.075e6, 7.175e6, ra.data(), ra.size());
+    b->line().render(7.075e6, 7.175e6, rb.data(), rb.size());
+    CHECK(ra == rb);
+    // Panned by 20 kHz, the view's tiles are nearly all running: it has a
+    // line once the tiles make their next one, a line period at most.
+    auto c = bank.share(7.045e6, 7.195e6, 1000);
+    CHECK(c && !c->ready());
+    if (!c) return;
+    int blocks = 0;
+    while (!c->ready() && blocks < 100) {
+        feed(1);
+        blocks++;
+    }
+    CHECK(blocks <= static_cast<int>(std::ceil(1.0 / 25.0 / channelizer.block_seconds())) + 1);
+    // Released views release their tiles.
+    a.reset();
+    b.reset();
+    c.reset();
+    feed(1);
+    CHECK_EQ(bank.tile_count(), 0u);
+    CHECK_EQ(bank.zoom_count(), 0u);
 }
 
 namespace {
