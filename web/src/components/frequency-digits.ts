@@ -6,7 +6,7 @@
  */
 
 /**
- * 100 MHz down to 1 Hz.
+ * 1 GHz down to 1 Hz; the upper two only on a receiver that reaches them.
  *
  * Nine digits, not eight. With eight the readout silently truncated anything
  * at or above 100 MHz - a real off-air capture at 145.9 MHz displayed as
@@ -15,7 +15,7 @@
  * The hundreds digit only appears on a receiver that can reach it. Showing
  * 007.100.000 on an HF band would fix the bug by making the common case worse.
  */
-const PLACES = [1e8, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2, 1e1, 1] as const;
+const PLACES = [1e9, 1e8, 1e7, 1e6, 1e5, 1e4, 1e3, 1e2, 1e1, 1] as const;
 
 /** The places worth showing for a receiver whose highest frequency is `topHz`. */
 export function placesFor(topHz: number): readonly number[] {

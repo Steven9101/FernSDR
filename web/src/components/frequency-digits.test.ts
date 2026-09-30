@@ -6,7 +6,7 @@ function render(hz: number, topHz: number): string {
   const places = placesFor(topHz);
   const digits = digitsOf(hz, places);
   return places
-    .map((place, index) => (place === 1e5 || place === 1e2 ? '.' : '') + digits[index])
+    .map((place, index) => ((place === 1e8 || place === 1e5 || place === 1e2) && index > 0 ? '.' : '') + digits[index])
     .join('');
 }
 
@@ -30,7 +30,13 @@ describe('frequency readout', () => {
   it('handles the extremes of each range', () => {
     expect(render(0, 30_000_000)).toBe('00.000.000');
     expect(render(99_999_999, 30_000_000)).toBe('99.999.999');
-    expect(render(999_999_999, 1_000_000_000)).toBe('999.999.999');
+    expect(render(999_999_999, 999_999_999)).toBe('999.999.999');
+  });
+
+  it('shows a frequency above 1 GHz in full', () => {
+    expect(render(1_296_174_000, 1_766_000_000)).toBe('1.296.174.000');
+    expect(render(145_900_000, 1_766_000_000)).toBe('0.145.900.000');
+    expect(placesFor(1_000_000_000)).toHaveLength(10);
   });
 
   it('adds the digit as soon as the band can reach it', () => {
