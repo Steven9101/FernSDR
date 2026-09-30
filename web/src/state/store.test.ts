@@ -156,6 +156,17 @@ describe('live controls', () => {
     expect(load({ 'fernsdr.preferences.v1': { agc: 'fast' } })).toBe('fast');
     expect(load({ 'fernsdr.preferences.v2': { agc: 'slow' }, 'fernsdr.preferences.v1': { agc: 'fast' } })).toBe('slow');
   });
+  it('restores a saved data profile with its waterfall row rate', () => {
+    vi.stubGlobal('location', { origin: 'https://receiver.test', pathname: '/', hash: '' });
+    for (const profile of BANDWIDTH_PROFILES) {
+      vi.stubGlobal('localStorage', { getItem: (key: string) => key === 'fernsdr.preferences.v2' ? JSON.stringify({ profile: profile.id }) : null });
+      bandwidthProfile.value = BANDWIDTH_PROFILES[1];
+      viewport.value = { ...viewport.value, fps: 12 };
+      loadPreferences();
+      expect(bandwidthProfile.value.id).toBe(profile.id);
+      expect(viewport.value.fps).toBe(profile.waterfallFps);
+    }
+  });
   it('restores each band frequency, filter and zoom when switching back', () => {
     const radio = new RadioController();
     radio.tune(14_215_000);

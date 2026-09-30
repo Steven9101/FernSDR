@@ -169,7 +169,13 @@ export function loadPreferences(): void {
   if (typeof stored.muted === 'boolean') muted.value = stored.muted;
 
   const profile = BANDWIDTH_PROFILES.find((p) => p.id === stored?.profile);
-  if (profile) bandwidthProfile.value = profile;
+  if (profile) {
+    // The profile's row rate as well as the profile: this runs before the
+    // first connection, and the viewport sent then is where the server takes
+    // the rate from. Choosing a profile on the page does the same.
+    bandwidthProfile.value = profile;
+    viewport.value = { ...viewport.value, fps: profile.waterfallFps };
+  }
 
   if (stored.display) {
     display.value = { ...display.value, ...stored.display };
