@@ -2311,6 +2311,14 @@ TEST_CASE(session_warns_a_minute_before_the_listener_timeout_and_expires_once) {
 // disk: an address may read 16 MB at once and a megabyte a second after
 // that, and is told to wait beyond it.
 TEST_CASE(server_holds_one_address_to_a_budget_for_the_waterfall_archive) {
+    // The budget is a rate against the wall clock. Under qemu-user, which
+    // `make release-test` runs the ARM builds under, the server answers so
+    // much slower that one client never reads faster than the budget fills;
+    // the rule is the same code on every platform and is tested natively.
+    if (std::getenv("FERNSDR_TEST_UNDER_QEMU")) {
+        std::fprintf(stderr, "  skipped under qemu-user, which runs the server too slowly to outrun a rate\n");
+        return;
+    }
     char directory[] = "/tmp/fernsdr-history-budget-XXXXXX";
     CHECK(::mkdtemp(directory) != nullptr);
     {
