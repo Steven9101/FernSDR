@@ -1,0 +1,66 @@
+# UberSDR's radiod: madpsy's fork of ka9q-radio, with the lab's rtl_tcp and
+# FIFO front end drivers, for the benchmark lab.
+#
+# UberSDR's README installs by cloning github.com/madpsy/ka9q-radio next to
+# ka9q_ubersdr and building both with docker compose; the compose file
+# builds radiod from that clone's head, 77d0fba on the day (its Docker Hub
+# image madpsy/ka9q-radio:0.9.1 does not say which commit it holds). This
+# follows the fork's own docker/Dockerfile (Ubuntu 24.04, `make`, `make
+# install` of src and share) with two deviations, each for the lab:
+# only radiod is built, with the lab's drivers instead of the hardware
+# ones, and the container is not privileged (lab-radiod says why it need
+# not be). The build context is bench/:
+#
+#   flock /tmp/fernbench-build.lock docker build \
+#       -f bench/receivers/ubersdr/Dockerfile.radiod -t fernbench/ubersdr-radiod:77d0fba bench
+#
+# The fork's src/Makefile hard-codes -march=native on x86; the capacity
+# suite's portable variant builds with --build-arg ARCHOPTS=-march=x86-64-v3.
+FROM ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254 AS build
+
+ARG COMMIT=77d0fbab81a1d617162a60f3d53bb8be2aa06f75
+ARG ARCHOPTS=-march=native
+
+# The fork's build dependencies that radiod itself needs.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      ca-certificates git build-essential \
+      libbsd-dev libiniparser-dev libopus-dev libfftw3-dev libusb-1.0-0-dev uuid-dev \
+      libavahi-client-dev libavahi-common-dev \
+ && rm -rf /var/lib/apt/lists/*
+
+RUN git init -q /src/ka9q-radio \
+ && cd /src/ka9q-radio \
+ && git remote add origin https://github.com/madpsy/ka9q-radio.git \
+ && git fetch -q --depth 1 origin "$COMMIT" \
+ && git checkout -q FETCH_HEAD \
+ && test "$(git rev-parse HEAD)" = "$COMMIT" \
+ && cd src \
+ && make -j2 ARCHOPTS="$ARCHOPTS" radiod \
+ && install -d /out/usr/local/sbin /out/usr/local/lib/ka9q-radio /out/usr/local/share/ka9q-radio \
+ && install -m 0755 radiod /out/usr/local/sbin/ \
+ && install -m 0644 ../share/presets.conf ../share/bandplan.txt /out/usr/local/share/ka9q-radio/
+
+COPY drivers/ka9q /src/drivers
+RUN make -C /src/drivers KA9Q_SRC=/src/ka9q-radio/src ARCHOPTS="$ARCHOPTS" \
+ && install -m 0755 /src/drivers/rtltcp.so /src/drivers/fifos16.so /out/usr/local/lib/ka9q-radio/
+
+FROM ubuntu:24.04@sha256:224a1869083a311ef3f13648a154ba79832fbef6364d31493642ca03082da254
+# radiod's runtime libraries. avahi-utils as in the fork's image: radiod
+# always forks avahi-publish-service and avahi-publish-address, which with
+# --no-fail just wait for a daemon that never comes; without them the fork
+# would carry on as a second radiod (NOTES.md, upstream bugs). iproute2 for
+# the loopback multicast flag.
+RUN apt-get update \
+ && apt-get install -y --no-install-recommends \
+      libbsd0 libfftw3-single3 libiniparser1 libopus0 libusb-1.0-0 libuuid1 \
+      libavahi-client3 libavahi-common3 avahi-utils iproute2 \
+ && rm -rf /var/lib/apt/lists/* \
+ && install -d /var/lib/ka9q-radio /etc/ka9q-radio /etc/fftw
+COPY --from=build /out/ /
+COPY receivers/ubersdr/lab-radiod /usr/local/bin/lab-radiod
+# Fails the build if a library is missing.
+RUN ldconfig \
+ && ! ldd /usr/local/sbin/radiod /usr/local/lib/ka9q-radio/*.so | grep 'not found'
+ENTRYPOINT ["/usr/local/bin/lab-radiod"]
+CMD ["/etc/ka9q-radio/radiod@ubersdr.conf"]

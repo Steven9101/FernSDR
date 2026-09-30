@@ -1,0 +1,10 @@
+# What running the lab makes; the published round's summaries are the
+# only runs kept in the repository.
+node_modules/
+build/
+__pycache__/
+*.pyc
+runs/*
+!runs/20260929-final/
+!runs/20260929-capacity-R1/
+!runs/20260929-capacity-R1y/

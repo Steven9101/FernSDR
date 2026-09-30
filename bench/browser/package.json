@@ -1,0 +1,9 @@
+{
+  "name": "fernbench-browser",
+  "private": true,
+  "type": "module",
+  "description": "The lab's instrumented browser; Playwright pinned to the version whose Chromium is cached here.",
+  "dependencies": {
+    "playwright": "1.62.1"
+  }
+}

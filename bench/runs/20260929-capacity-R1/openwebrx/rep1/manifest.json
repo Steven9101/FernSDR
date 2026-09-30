@@ -1,0 +1,80 @@
+{
+ "receiver": "openwebrx",
+ "repeat": 1,
+ "environment": {
+  "mem_available_mb": 6558,
+  "disk_free_gb": 24.3
+ },
+ "steps": [
+  {
+   "listeners": 1,
+   "cpu_percent": 7.791811391620543,
+   "mem_mb": 141.6640625,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 0.998499534883721,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 44.39946666666666,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 10,
+   "cpu_percent": 33.22374554932705,
+   "mem_mb": 264.328125,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.0047013953488373,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 44.673066666666664,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 50,
+   "cpu_percent": 131.87484793071397,
+   "mem_mb": 805.875,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 0.998499534883721,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 44.403733333333335,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 100,
+   "cpu_percent": 110.85739446087561,
+   "mem_mb": 1023.9765625,
+   "audio_ok_share": 0.0,
+   "audio_ratio_median": 0.37831348837209305,
+   "waterfall_ratio_median": 0.38520444444444446,
+   "audio_kbit_median": 17.0992,
+   "closed_early": 100,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [
+    "1006"
+   ],
+   "receiver_lost": "cannot sample /sys/fs/cgroup/fernbench.slice/docker-fbda63d07cd7b75c4b3ca8eef773d283088f0b762c7d9a50e7bd4b5714af1916.scope/cpu.stat",
+   "passed": false
+  }
+ ],
+ "browser_rates": {
+  "control": 3.8998050097495125,
+  "control_bytes": 196.24018799060045,
+  "waterfall": 8.999550022498875,
+  "waterfall_bytes": 18485.07574621269,
+  "audio": 10.749462526873655,
+  "audio_bytes": 5558.47207639618
+ },
+ "browser_exit": 0,
+ "knee": 50,
+ "state": "done"
+}

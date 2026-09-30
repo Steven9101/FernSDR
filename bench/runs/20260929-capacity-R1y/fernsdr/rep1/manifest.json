@@ -1,0 +1,35 @@
+{
+ "receiver": "fernsdr",
+ "repeat": 1,
+ "environment": {
+  "mem_available_mb": 6622,
+  "disk_free_gb": 23.9
+ },
+ "steps": [
+  {
+   "listeners": 1600,
+   "cpu_percent": 134.80902134792453,
+   "mem_mb": 138.7265625,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.0005333333333333,
+   "waterfall_ratio_median": 1.0,
+   "audio_kbit_median": 20.970133333333333,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  }
+ ],
+ "browser_rates": {
+  "control": 9.85,
+  "control_bytes": 255.9,
+  "audio": 31.25,
+  "audio_bytes": 3956.1,
+  "waterfall": 12.0,
+  "waterfall_bytes": 2582.35
+ },
+ "browser_exit": 0,
+ "knee": 1600,
+ "state": "done"
+}

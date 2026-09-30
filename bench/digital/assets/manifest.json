@@ -1,0 +1,154 @@
+{
+ "ft8": [
+  {
+   "msg": "K0ABA W0XY EN30",
+   "f0": 500,
+   "snr": -24,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-00.wav"
+  },
+  {
+   "msg": "K1ABB W1XY EN31",
+   "f0": 580,
+   "snr": -22,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-01.wav"
+  },
+  {
+   "msg": "K2ABC W2XY EN32",
+   "f0": 660,
+   "snr": -20,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-02.wav"
+  },
+  {
+   "msg": "K3ABD W3XY EN33",
+   "f0": 740,
+   "snr": -18,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-03.wav"
+  },
+  {
+   "msg": "K4ABE W4XY EN34",
+   "f0": 820,
+   "snr": -16,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-04.wav"
+  },
+  {
+   "msg": "K5ABF W5XY EN35",
+   "f0": 900,
+   "snr": -14,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-05.wav"
+  },
+  {
+   "msg": "K6ABG W6XY EN36",
+   "f0": 980,
+   "snr": -12,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-06.wav"
+  },
+  {
+   "msg": "K7ABH W7XY EN37",
+   "f0": 1060,
+   "snr": -10,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-07.wav"
+  },
+  {
+   "msg": "K8ABI W8XY EN38",
+   "f0": 1140,
+   "snr": -8,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-08.wav"
+  },
+  {
+   "msg": "K9ABJ W9XY EN39",
+   "f0": 1220,
+   "snr": -6,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-09.wav"
+  },
+  {
+   "msg": "K10ABK W10XY EN40",
+   "f0": 1300,
+   "snr": -4,
+   "wav": "/root/develop/websdr/bench/digital/assets/ft8-10.wav"
+  }
+ ],
+ "wspr": [
+  {
+   "msg": "K0WSP FN20 33",
+   "f0": 1410,
+   "snr": -36,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-00.wav"
+  },
+  {
+   "msg": "K1WSP FN21 33",
+   "f0": 1430,
+   "snr": -34,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-01.wav"
+  },
+  {
+   "msg": "K2WSP FN22 33",
+   "f0": 1450,
+   "snr": -32,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-02.wav"
+  },
+  {
+   "msg": "K3WSP FN23 33",
+   "f0": 1470,
+   "snr": -30,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-03.wav"
+  },
+  {
+   "msg": "K4WSP FN24 33",
+   "f0": 1490,
+   "snr": -28,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-04.wav"
+  },
+  {
+   "msg": "K5WSP FN25 33",
+   "f0": 1510,
+   "snr": -26,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-05.wav"
+  },
+  {
+   "msg": "K6WSP FN26 33",
+   "f0": 1530,
+   "snr": -24,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-06.wav"
+  },
+  {
+   "msg": "K7WSP FN27 33",
+   "f0": 1550,
+   "snr": -22,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-07.wav"
+  },
+  {
+   "msg": "K8WSP FN28 33",
+   "f0": 1570,
+   "snr": -20,
+   "wav": "/root/develop/websdr/bench/digital/assets/wspr-08.wav"
+  }
+ ],
+ "rtty": [
+  {
+   "mark": 1700,
+   "space": 1870,
+   "snr": -6,
+   "wav": "/root/develop/websdr/bench/digital/assets/rtty-0.wav",
+   "text": "RYRYRY THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789 "
+  },
+  {
+   "mark": 2000,
+   "space": 2170,
+   "snr": 4,
+   "wav": "/root/develop/websdr/bench/digital/assets/rtty-1.wav",
+   "text": "RYRYRY THE QUICK BROWN FOX JUMPS OVER THE LAZY DOG 0123456789 "
+  }
+ ],
+ "cw": [
+  {
+   "pitch": 2400,
+   "snr": 10,
+   "text": "CQ CQ TEST DE K1FRN K1FRN K"
+  },
+  {
+   "pitch": 2550,
+   "snr": 20,
+   "text": "CQ CQ TEST DE K1FRN K1FRN K"
+  }
+ ]
+}

@@ -1,0 +1,24 @@
+{
+  "//": "Identical to the documented tier (no session time limits exist to turn off). The receiver of docs/CONFIG.md 'Minimal working config' (the same entry the setup wizard writes for stdin input), changed only for input and frequency.",
+  "receivers": [
+    {
+      "id": "rx0",
+      "name": "Main",
+      "input": {
+        "//": "frequency: 7100000 (was 100900000), the scene's centre. driver: fifo on the lab's pipe (was stdin; same bytes, u8 IQ). defaults.frequency: 7159000 USB (was -1, the band centre).",
+        "sps": 2048000,
+        "frequency": 7100000,
+        "signal": "iq",
+        "fft_size": 131072,
+        "audio_sps": 12000,
+        "waterfall_size": 1024,
+        "waterfall_compression": "zstd",
+        "audio_compression": "opus",
+        "accelerator": "none",
+        "smeter_offset": 0,
+        "driver": { "kind": "fifo", "format": "u8", "path": "/iq/in" },
+        "defaults": { "frequency": 7159000, "modulation": "USB", "squelch_enabled": false }
+      }
+    }
+  ]
+}

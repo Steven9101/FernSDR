@@ -1,0 +1,76 @@
+{
+  "id": "ubersdr",
+  "name": "UberSDR",
+  "upstream": "https://github.com/madpsy/ka9q_ubersdr",
+  "version": {
+    "ref": "0.1.66",
+    "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+    "radiod": "77d0fbab81a1d617162a60f3d53bb8be2aa06f75",
+    "why": "official0.1.66 image and its compose radiod pin"
+  },
+  "image": "fernbench/ubersdr:0.1.66",
+  "memory": "512m",
+  "input": {
+    "transport": "fifo",
+    "format": "s16"
+  },
+  "smoke_scene": "smoke-real",
+  "http_port": 8080,
+  "run": {
+    "entrypoint": "sh",
+    "volumes": [
+      "{CONFIG}:/etc/fernbench:ro",
+      "{CONFIG}/radiod@ubersdr.conf:/etc/ka9q-radio/radiod@ubersdr.conf:ro"
+    ],
+    "writable": [
+      "/app/config",
+      "/tmp",
+      "/var/run/restart-trigger",
+      "/var/run/updater",
+      "/etc/caddy-shared",
+      "/app/tunnel-client-config"
+    ],
+    "command": [
+      "-c",
+      "ADMIN_PASSWORD=$(od -An -N24 -tx1 /dev/urandom | tr -d \" \\n\"); export ADMIN_PASSWORD; cp /etc/fernbench/config.yaml /app/config/config.yaml; exec /entrypoint.sh ka9q_ubersdr"
+    ]
+  },
+  "sidecars": [
+    {
+      "id": "radiod",
+      "image": "fernbench/ubersdr-radiod:77d0fba",
+      "memory": "512m",
+      "run": {
+        "volumes": [
+          "{FIFO}:/iq/in",
+          "{CONFIG}/radiod@ubersdr.conf:/etc/ka9q-radio/radiod@ubersdr.conf:ro"
+        ],
+        "writable": [
+          "/tmp",
+          "/var/lib/ka9q-radio"
+        ]
+      }
+    }
+  ],
+  "ready": {
+    "http": "/v2/"
+  },
+  "caps": {
+    "listeners": 20,
+    "per_address": 2,
+    "compile_time": false
+  },
+  "modes": {
+    "usb": true,
+    "lsb": true,
+    "am": true,
+    "sam": true,
+    "fm": true,
+    "cw": true
+  },
+  "small_viewport": [
+    1280,
+    800
+  ],
+  "small_viewport_why": "below about 1000 px wide the v2 page switches to its compact Multipad layout, which has no .dial__digit"
+}

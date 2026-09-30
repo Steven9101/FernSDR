@@ -1,0 +1,660 @@
+{
+  "receiver": "ubersdr",
+  "checked": "2026-09-27",
+  "repos": {
+    "ubersdr": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c"
+  },
+  "scope": "Static pinned-source inventory; unknown means unresolved. No runtime capability claims. No private candidates or credential literals exported. Classic and v2 UIs coexist; missing classic controls do not prove global absence.",
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 581,
+          "quote": "<button onclick=\"setMode('usb')\" id=\"mode-usb\" class=\"mode-btn active\" title=\"Upper Sideband (U key)\">USB</button>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 580,
+          "quote": "<button onclick=\"setMode('lsb')\" id=\"mode-lsb\" class=\"mode-btn\" title=\"Lower Sideband (L key)\">LSB</button>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 584,
+          "quote": "<button onclick=\"setMode('am')\" id=\"mode-am\" class=\"mode-btn\" title=\"Amplitude Modulation (J key to toggle AM/SAM)\">AM</button>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "SAM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 585,
+          "quote": "<button onclick=\"setMode('sam')\" id=\"mode-sam\" class=\"mode-btn\" title=\"Synchronous AM (J key to toggle AM/SAM)\">SAM</button>"
+        }
+      ],
+      "note": ""
+    },
+    "sam_carrier_display": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Spectrum carrier-peak detection is not proof of SAM PLL lock readout."
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM/NFM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 586,
+          "quote": "<button onclick=\"setMode('fm')\" id=\"mode-fm\" class=\"mode-btn\" title=\"Frequency Modulation (K key to toggle)\">FM</button>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CWU/CWL",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 582,
+          "quote": "<button onclick=\"setMode('cwl')\" id=\"mode-cwl\" class=\"mode-btn\" title=\"CW Lower (C key to toggle)\">CWL</button>"
+        }
+      ],
+      "note": ""
+    },
+    "cw_pitch": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Classic code uses 500 Hz offset; v2 IQ pitch is not proven to control ordinary radiod CW. Announcer pitch is not receiver pitch."
+    },
+    "modes_other": {
+      "value": "partial",
+      "cell": "IQ in decoder/v2 paths",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "config/extensions.yaml.example",
+          "line": 11,
+          "quote": "# Uses an IQ session; the v2 interface switches the receiver to IQ for you."
+        }
+      ],
+      "note": ""
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Width and separate edges",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 592,
+          "quote": "<input type=\"range\" id=\"bandwidth-low\" min=\"-8000\" max=\"500\" value=\"50\" step=\"10\" oninput=\"updateBandwidthDisplay()\" onchange=\"updateBandwidth()\">"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 605,
+          "quote": "<input type=\"range\" id=\"bandwidth-high\" min=\"500\" max=\"6000\" value=\"3000\" step=\"100\" oninput=\"updateBandwidthDisplay()\" onchange=\"updateBandwidth()\">"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Browser NR/NR2",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 939,
+          "quote": "<input type=\"checkbox\" id=\"noise-reduction-enable\" onchange=\"toggleNoiseReduction()\">"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 940,
+          "quote": "Noise Reduction <span id=\"nr-mode-label\" title=\"Click to switch between NR and NR2\" style=\"cursor:pointer;text-decoration:underline dotted;min-width:0;margin-left:4px;\" onclick=\"event.preventDefault()"
+        }
+      ],
+      "note": ""
+    },
+    "noise_blanker": {
+      "value": "yes",
+      "cell": "Browser noise blanker",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 684,
+          "quote": "<button id=\"nb-quick-toggle\" onclick=\"toggleNBQuick()\" style=\"background-color: #6c757d; margin-left: 3px; padding: 8px 12px;\" title=\"Toggle Noise Blanker (B key)\">NB</button>"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/app.js",
+          "line": 11006,
+          "quote": "nb = new NoiseBlanker(audioContext, sampleRate);"
+        }
+      ],
+      "note": ""
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Up to five manual notches",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 874,
+          "quote": "<input type=\"checkbox\" id=\"notch-enable\" onchange=\"toggleNotchFilter()\">"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 875,
+          "quote": "Notch Filters <span id=\"notch-count\" style=\"color: #888;\">(0/5)</span>"
+        }
+      ],
+      "note": ""
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Listener squelch, mode-dependent",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 611,
+          "quote": "<input type=\"range\" id=\"squelch\" min=\"0\" max=\"100\" value=\"71\" step=\"1\" oninput=\"updateSquelchDisplay()\" onchange=\"updateSquelch()\">"
+        }
+      ],
+      "note": ""
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "radiod AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "websocket.go",
+          "line": 1170,
+          "quote": "case \"set_agc\":"
+        }
+      ],
+      "note": ""
+    },
+    "agc_settings": {
+      "value": "yes",
+      "cell": "SSB hang, recovery and threshold",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/app.js",
+          "line": 8637,
+          "quote": "{ id: 'agcHangTime',     label: 'AGC Hang Time',     min: 0,   max: 10,  step: 0.1, default: 1.1,  unit: 's',    decimals: 1 },"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/app.js",
+          "line": 8639,
+          "quote": "{ id: 'agcThreshold',    label: 'AGC Threshold',     min: -30, max: 0,   step: 1,   default: -15,  unit: 'dB',   decimals: 0 },"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/app.js",
+          "line": 8653,
+          "quote": "usb: AGC_MODE_SETTINGS,"
+        }
+      ],
+      "note": ""
+    },
+    "smeter": {
+      "value": "yes",
+      "cell": "S-unit display",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 626,
+          "quote": "<div id=\"s-meter-value-display\" style=\"font-size: 18px; font-weight: bold; color: #ecf0f1;\">S0</div>"
+        }
+      ],
+      "note": ""
+    },
+    "smeter_calibration": {
+      "value": "yes",
+      "cell": "Frequency-range gain table",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "websocket.go",
+          "line": 1757,
+          "quote": "for _, freqRange := range cfg.Spectrum.GainDBFrequencyRanges {"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "websocket.go",
+          "line": 1768,
+          "quote": "basebandPower += gainAdjustment"
+        }
+      ],
+      "note": ""
+    },
+    "freq_offset_correction": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Browser recording",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 1260,
+          "quote": "<button id=\"recorder-start-btn\" onclick=\"startRecording()\" class=\"recorder-btn recorder-start-btn\" title=\"Start Recording (Spacebar)\">"
+        }
+      ],
+      "note": ""
+    },
+    "band_presets": {
+      "value": "yes",
+      "cell": "Listener band selector",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 537,
+          "quote": "<select id=\"band-selector\" onchange=\"selectBandFromDropdown(this.value)\" style=\"padding: 5px 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; cursor: pointer; "
+        }
+      ],
+      "note": ""
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Local and operator bookmarks",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 541,
+          "quote": "<select id=\"bookmark-selector\" onchange=\"selectBookmarkFromDropdown(this.value)\" style=\"padding: 5px 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px; cursor: p"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 544,
+          "quote": "<select id=\"local-bookmark-selector\" onchange=\"selectLocalBookmarkFromDropdown(this.value)\" style=\"padding: 5px 10px; background: #34495e; color: #ecf0f1; border: 1px solid #7f8c8d; border-radius: 4px"
+        }
+      ],
+      "note": ""
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "WebSocket listener chat",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/chat.js",
+          "line": 13,
+          "quote": "constructor(websocket) {"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/chat.js",
+          "line": 62,
+          "quote": "const ws = await this.waitForWebSocket(5000);"
+        }
+      ],
+      "note": ""
+    },
+    "multi_band": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "full_spectrum": {
+      "value": "yes",
+      "cell": "RX888 full HF documented",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "README.md",
+          "line": 13,
+          "quote": "> **Note:** This is currently designed for RX888 MKII SDR hardware. Coverage follows the radiod front end sample rate: 0-30 MHz (full HF) at the default 64.8 Msps, or 0-60 MHz — 6 m included — at 129."
+        }
+      ],
+      "note": ""
+    },
+    "decoders": {
+      "value": "yes",
+      "cell": "DRM, time, FSK, FT8, CW, NAVTEX, Olivia, SSTV, WEFAX, packet",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "config/extensions.yaml.example",
+          "line": 12,
+          "quote": "- drm"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "config/extensions.yaml.example",
+          "line": 25,
+          "quote": "- ft8"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "config/extensions.yaml.example",
+          "line": 51,
+          "quote": "- soundmodem"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/extension-loader.js",
+          "line": 7,
+          "quote": "const response = await fetch('/api/extensions/bundle').then(r => r.json());"
+        }
+      ],
+      "note": "Extension list is enabled in example configuration; several require external server binaries. No default extension auto-opens. Runtime availability was not tested."
+    },
+    "waterfall_history": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "waterfall_rate": {
+      "value": "partial",
+      "cell": "Operator poll interval in classic UI",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/spectrum-display.js",
+          "line": 1508,
+          "quote": "const pollMs = window.instanceDescription?.spectrum_poll_period;"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "yes",
+      "cell": "Maximum session and spectrum-only timeout",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "session.go",
+          "line": 482,
+          "quote": "maxSessionTime:       time.Duration(config.Server.MaxSessionTime) * time.Second,"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "session.go",
+          "line": 495,
+          "quote": "go sm.maxSessionTimeLoop()"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "session.go",
+          "line": 2338,
+          "quote": "cfgSecs := sm.config.Server.SpectrumOnlyTimeout"
+        }
+      ],
+      "note": ""
+    },
+    "per_address_limit": {
+      "value": "yes",
+      "cell": "Enforced unique users per IP",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "session.go",
+          "line": 655,
+          "quote": "if sm.config.Server.MaxSessionsIP > 0 && clientIP != \"\" && userSessionID != \"\" {"
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "session.go",
+          "line": 670,
+          "quote": "return nil, fmt.Errorf(\"maximum unique users per IP reached (%d)\", sm.config.Server.MaxSessionsIP)"
+        }
+      ],
+      "note": ""
+    },
+    "admin_panel": {
+      "value": "yes",
+      "cell": "Web administration UI",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "static/index.html",
+          "line": 1598,
+          "quote": "<p class=\"footer-mobile\" style=\"display: none\"><a href=\"https://ubersdr.org\" target=\"_blank\">UberSDR</a> • <a href=\"/admin.html\" target=\"_blank\">Admin</a> • <a href=\"/noisefloor.html\" target=\"_blank\">"
+        }
+      ],
+      "note": ""
+    },
+    "https": {
+      "value": "partial",
+      "cell": "Caddy-managed HTTPS",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "config/config.yaml.example",
+          "line": 1705,
+          "quote": "# Generate TLS certificate with Caddy (default: false)"
+        }
+      ],
+      "note": ""
+    },
+    "signed_updates": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "installer": {
+      "value": "yes",
+      "cell": "Automated prebuilt Docker-image installer",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "README.md",
+          "line": 29,
+          "quote": "This will install Docker, fetch prebuilt images, and perform automated installation tasks to get you up and running quickly."
+        }
+      ],
+      "note": ""
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "Documented RX888 MKII and x86_64",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "README.md",
+          "line": 13,
+          "quote": "> **Note:** This is currently designed for RX888 MKII SDR hardware. Coverage follows the radiod front end sample rate: 0-30 MHz (full HF) at the default 64.8 Msps, or 0-60 MHz — 6 m included — at 129."
+        },
+        {
+          "kind": "code",
+          "repo": "ubersdr",
+          "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+          "path": "README.md",
+          "line": 20,
+          "quote": "> - UberSDR only works on x86_64 machines and is not compatible with ARM devices like the Raspberry Pi"
+        }
+      ],
+      "note": ""
+    }
+  },
+  "health": {
+    "last_commit_date": "2026-09-24",
+    "commits_12months": 6568,
+    "author_identities_12months": 6,
+    "shallow": false,
+    "tracked_files": 3252,
+    "project_github_workflows": [],
+    "note": "Counts include merges and use distinct author name/email identities, not deduplicated humans. Release pin history, not current project HEAD."
+  },
+  "license": {
+    "kind": "code",
+    "repo": "ubersdr",
+    "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+    "path": "LICENSE.TXT",
+    "line": 1,
+    "quote": "GNU GENERAL PUBLIC LICENSE"
+  },
+  "runtime_dependencies": [
+    {
+      "kind": "code",
+      "repo": "ubersdr",
+      "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+      "path": "go.mod",
+      "line": 3,
+      "quote": "go 1.25.0"
+    },
+    {
+      "kind": "code",
+      "repo": "ubersdr",
+      "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+      "path": "go.mod",
+      "line": 8,
+      "quote": "github.com/gorilla/websocket v1.5.3"
+    },
+    {
+      "kind": "code",
+      "repo": "ubersdr",
+      "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+      "path": "go.mod",
+      "line": 10,
+      "quote": "github.com/klauspost/compress v1.17.9"
+    },
+    {
+      "kind": "code",
+      "repo": "ubersdr",
+      "commit": "2bc8e6c9ba6aa334657d43264e917c6e50b2a63c",
+      "path": "go.mod",
+      "line": 26,
+      "quote": "gopkg.in/hraban/opus.v2 v2.0.0-20230925203106-0188a62cb302"
+    }
+  ]
+}

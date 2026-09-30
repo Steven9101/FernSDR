@@ -1,0 +1,57 @@
+{
+ "suite": "capacity",
+ "order": [
+  [
+   "websdr",
+   1
+  ],
+  [
+   "ubersdr",
+   1
+  ],
+  [
+   "openwebrx-plus",
+   1
+  ],
+  [
+   "vertexsdr",
+   1
+  ],
+  [
+   "openwebrx",
+   1
+  ],
+  [
+   "phantomsdr",
+   1
+  ],
+  [
+   "fernsdr",
+   1
+  ],
+  [
+   "novasdr",
+   1
+  ],
+  [
+   "phantomsdr-plus-sv1btl",
+   1
+  ],
+  [
+   "ka9q-web",
+   1
+  ],
+  [
+   "phantomsdr-plus",
+   1
+  ]
+ ],
+ "steps": [
+  1,
+  10,
+  50,
+  100,
+  200,
+  400
+ ]
+}

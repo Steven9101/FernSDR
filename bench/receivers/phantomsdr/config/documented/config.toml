@@ -1,0 +1,24 @@
+# Lab: config.example.rtlsdr.toml of b9951cb, changed only where a line
+# says "Lab:". Everything it leaves out takes the server's default: threads
+# 1, fft_threads 1, waterfall_size 1024, audio_compression "flac",
+# waterfall_compression "zstd", limits 1000 each, [register] off.
+[server]
+port=9002 # Server port
+html_root="html-svelte/dist/" # HTML files to be hosted
+otherusers=1 # Send where other users are listening, 0 to disable
+
+[input]
+sps=2048000 # Lab: the scene's rate (was 2880000)
+fft_size=131072 # FFT bins
+frequency=7100000 # Lab: the scene's centre (was 145000000)
+signal="iq" # real or iq
+accelerator="none" # Accelerator: none, cuda, opencl
+audio_sps=12000 # Audio Sample Rate
+
+[input.driver]
+name="stdin" # Driver name
+format="u8" # Sample format: u8, s8, u16, s16, u32, s32, f32, f64
+
+[input.defaults]
+frequency=7159000 # Lab: 7.159 MHz (was 145500000)
+modulation="USB" # Lab: USB (was FM)

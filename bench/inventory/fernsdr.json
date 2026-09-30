@@ -1,0 +1,1184 @@
+{
+  "receiver": "fernsdr",
+  "checked": "2026-09-29",
+  "repos": {
+    "websdr": "4cfe28e2cb633534798d62a97bd84d5337cab3d9"
+  },
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 22,
+          "quote": "{ value: 'usb', label: 'USB', title: 'Upper sideband', formValue: 'USB' },"
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 23,
+          "quote": "{ value: 'lsb', label: 'LSB', title: 'Lower sideband', formValue: 'LSB' },"
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 26,
+          "quote": "{ value: 'am', label: 'AM', title: 'Envelope detection', formValue: 'AM' },"
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "SAM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 27,
+          "quote": "{ value: 'sam', label: 'SAM', title: 'Synchronous AM: steadier through fading', formValue: 'AM' },"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/listener.cpp",
+          "line": 766,
+          "quote": "telemetry_.pll_offset_hz = demodulator_.pll_offset_hz();"
+        }
+      ],
+      "note": ""
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "NFM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 28,
+          "quote": "{ value: 'nfm', label: 'NFM', title: 'Narrow FM', formValue: 'FM' },"
+        }
+      ],
+      "note": "CTCSS tone readout, tone removal and tone squelch on NFM (ReceivePanel.svelte:166-190, server/src/dsp/ctcss.h)."
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CW and CW-L",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 24,
+          "quote": "{ value: 'cw', label: 'CW', title: 'Morse, upper side', formValue: 'CW' },"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 25,
+          "quote": "{ value: 'cwl', label: 'CW-L', title: 'Morse, lower side', formValue: 'CW' },"
+        }
+      ],
+      "note": ""
+    },
+    "sam_carrier_display": {
+      "value": "yes",
+      "cell": "Lock state and carrier offset in Hz",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 156,
+          "quote": "? `${meter.value.pll_offset >= 0 ? '+' : '\\u2212'}${Math.abs(meter.value.pll_offset).toFixed(1)} Hz`"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 161,
+          "quote": "<span class=\"carrier-lock__word\">{meter.value.pll_locked ? 'Locked' : 'Searching'}</span>"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/session.cpp",
+          "line": 536,
+          "quote": "meter.set(\"pll_offset\", std::round(telemetry.pll_offset_hz * 10.0) / 10.0);"
+        }
+      ],
+      "note": "Shown in the Receive panel while SAM is selected: Locked with the offset to 0.1 Hz, or Searching; the server sends pll_locked and pll_offset in the meter message."
+    },
+    "cw_pitch": {
+      "value": "partial",
+      "cell": "200 to 1500 Hz through a shared link only",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/state/persist.ts",
+          "line": 68,
+          "quote": "if (Number.isFinite(pitch) && pitch >= 200 && pitch <= 1500) out.cwPitch = pitch;"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/state/persist.ts",
+          "line": 121,
+          "quote": "if (tune.mode === 'cw' || tune.mode === 'cwl') params.set('pitch', String(Math.round(tune.cwPitch)));"
+        }
+      ],
+      "note": "The link's pitch parameter is parsed and sent to the server (cw_pitch, default 700 Hz at state/store.ts:202). No pitch control is rendered on the listener page."
+    },
+    "modes_other": {
+      "value": "yes",
+      "cell": "DSB; WFM with RDS (mono)",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 29,
+          "quote": "{ value: 'dsb', label: 'DSB', title: 'Both sidebands', formValue: 'AM' },"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 30,
+          "quote": "{ value: 'wfm', label: 'WFM', title: 'Broadcast FM', formValue: 'FM' },"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 106,
+          "quote": "const modes = $derived(currentBand.value?.wfm ? MODES : MODES.filter((mode) => mode.value !== 'wfm'));"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/FrequencyDisplay.svelte",
+          "line": 184,
+          "quote": "<div class=\"frequency__rds\" title={radiotext || undefined}>"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/shared_fm.h",
+          "line": 27,
+          "quote": "constexpr double kWfmAudioHz = 15000.0;"
+        }
+      ],
+      "note": "WFM is offered only on bands sampled wide enough for it (and wfm = yes, the default, server/src/core/band.cpp:63). WFM is mono: audio stops at 15 kHz and the 19 kHz pilot is filtered out, with no stereo decoding. RDS shows PS, PTY and radiotext."
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Presets, typed edges, IF shift, draggable edges",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/SpectrumDisplay.svelte",
+          "line": 595,
+          "quote": "controller.setPassband(Math.min(low + deltaHz, high - 50), high, 'low');"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 212,
+          "quote": "aria-label=\"Lower edge in hertz\" onchange={(event) => setEdge('low', event.currentTarget.value)} />"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 230,
+          "quote": "title=\"IF shift: moves the passband up or down without changing its width, away from a neighbour.\""
+        }
+      ],
+      "note": "Typed edges and the Shift (IF shift) slider are in the Full control level."
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Server-side Wiener noise reduction",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 322,
+          "quote": "onChange={(value) => controller.setDsp({ nr: value / 100 })}"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/dsp/audio_post.h",
+          "line": 31,
+          "quote": "// 0 disables noise reduction; 1 applies the full Wiener gain."
+        }
+      ],
+      "note": "Listener slider 0 to 100%."
+    },
+    "noise_blanker": {
+      "value": "partial",
+      "cell": "Operator-set wideband impulse blanker",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/band.cpp",
+          "line": 115,
+          "quote": "blanker_.set_strength(static_cast<float>(std::clamp(section.get_double(\"noise_blanker\", 0.0), 0.0, 1.0)));"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/admin/pages/Bands.svelte",
+          "line": 512,
+          "quote": "title=\"Noise blanker\""
+        }
+      ],
+      "note": "Per band, set in the config file or the admin panel's Bands page (Off/Light/Medium/Strong or exact %). Band-wide input processing, not a listener control."
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Server-side automatic notch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 330,
+          "quote": "onChange={(autonotch) => controller.setDsp({ autonotch })}"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/session.cpp",
+          "line": 424,
+          "quote": "for (size_t i = 0; i < list.size() && notches.size() < 8; i++) {"
+        }
+      ],
+      "note": "Only the auto notch has a listener control. The protocol accepts up to eight manual notches, but the page offers no way to set them; do not advertise manual notch."
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Automatic and manual threshold; CTCSS tone squelch on NFM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 337,
+          "quote": "onChange={(autoSquelch) => controller.setDsp({ autoSquelch })}"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 346,
+          "quote": "onChange={(value) => controller.setDsp({ squelch: value <= -140 ? -200 : value })}"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 182,
+          "quote": "onchange={(event) => controller.setDsp({ ctcssSquelch: Number(event.currentTarget.value) })}>"
+        }
+      ],
+      "note": "Auto squelch works from the noise shape and needs no threshold; the manual level is in dBFS. Tone squelch is in the Full control level, NFM only. Either can mute."
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "Server-side AGC; none on FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 245,
+          "quote": "onChange={(agc) => controller.setDsp({ agc })}"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 238,
+          "quote": "value={fm ? 'None on FM' : meter.value ? `${formatSigned(meter.value.gain_db, 0)} dB` : ''}"
+        }
+      ],
+      "note": "Disabled on NFM and WFM, where the discriminator makes gain irrelevant."
+    },
+    "agc_settings": {
+      "value": "yes",
+      "cell": "Speed presets and off with manual gain",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 42,
+          "quote": "{ value: 'off', label: 'Off', title: 'Manual gain' },"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ReceivePanel.svelte",
+          "line": 287,
+          "quote": "onChange={(gain) => controller.setDsp({ gain })}"
+        }
+      ],
+      "note": "Auto (Slow), Fast 0.3 s, Med 1 s, Slow 2.5 s and Long 5 s hang at ReceivePanel.svelte:37-41; manual gain -20 to 60 dB when Off."
+    },
+    "smeter": {
+      "value": "yes",
+      "cell": "S-units; dBm when calibrated",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/SMeter.svelte",
+          "line": 94,
+          "quote": "/** Signal level in dBm, or null on an uncalibrated receiver. */"
+        }
+      ],
+      "note": "Uncalibrated readings are dBFS and labelled relative. Four meter faces: bar, needle, numeric and history."
+    },
+    "smeter_calibration": {
+      "value": "yes",
+      "cell": "Frequency-point calibration table",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/band.cpp",
+          "line": 105,
+          "quote": "if (calibration_.parse(calibration_text, problem)) {"
+        }
+      ],
+      "note": ""
+    },
+    "freq_offset_correction": {
+      "value": "yes",
+      "cell": "Software Hz offset and ppm for all inputs",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/band.cpp",
+          "line": 45,
+          "quote": "rf_scale_ = 1.0 + (std::isfinite(ppm) ? std::clamp(ppm, -500.0, 500.0) : 0.0) * 1e-6;"
+        }
+      ],
+      "note": "Applied in the common Band frequency-axis mapping, not only a hardware driver."
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Browser recording and download",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ToolsRow.svelte",
+          "line": 136,
+          "quote": "aria-label={recording ? `Stop recording, ${clock(elapsed)}` : 'Record what you hear'}"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/audio/recorder.ts",
+          "line": 43,
+          "quote": "this.recorder = new MediaRecorder(stream, { mimeType: type, audioBitsPerSecond: 24_000 });"
+        }
+      ],
+      "note": "MediaRecorder in the browser (Opus in WebM or Ogg, AAC in MP4 on Safari), stops by itself after one hour, saved as a file; nothing is uploaded."
+    },
+    "band_presets": {
+      "value": "partial",
+      "cell": "Operator bands; amateur band-plan overlay",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/BandSelector.svelte",
+          "line": 57,
+          "quote": "onclick={() => choose(band)}"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/state/bandplan.ts",
+          "line": 18,
+          "quote": "export type BandPlanChoice = 'auto' | 'none' | 'r1' | 'r2' | 'r3' | 'us' | 'ca' | 'gb' | 'de' | 'au' | 'jp';"
+        }
+      ],
+      "note": "Band buttons are the operator's configured bands. The band-plan overlay covers IARU Regions 1 to 3 and US, CA, GB, DE, AU and JP plans, but there is no amateur-band jump menu."
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Browser bookmarks with import/export",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/tools/BookmarksPanel.svelte",
+          "line": 32,
+          "quote": "const added = addBookmark({"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/state/bookmarks.ts",
+          "line": 20,
+          "quote": "const STORAGE_KEY = 'fernsdr.bookmarks.v1';"
+        }
+      ],
+      "note": "Kept in the listener's browser (up to 1000), with mode and filter, renamed or removed, and moved between browsers as a JSON file. No operator-defined bookmark list."
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "Listener chat",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/Chat.svelte",
+          "line": 45,
+          "quote": "const signal = signalForCarrier(now.freq, now.mode, now.cwPitch);"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/WidgetPanel.svelte",
+          "line": 89,
+          "quote": "<Chat height={widget.height ?? 260} />"
+        }
+      ],
+      "note": "A widget the operator adds (the default theme has no widgets); chat = no refuses messages. Frequency links use the current mode and pitch."
+    },
+    "multi_band": {
+      "value": "yes",
+      "cell": "Multiple front ends in one process",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/BandSelector.svelte",
+          "line": 57,
+          "quote": "onclick={() => choose(band)}"
+        }
+      ],
+      "note": ""
+    },
+    "full_spectrum": {
+      "value": "yes",
+      "cell": "Real-sample direct sampling: RX-888 module or external producer",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/fernsdr.example.conf",
+          "line": 186,
+          "quote": "# An RX-888 MkII through the RX-888 module: HF by direct sampling, from 0 Hz"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/fernsdr.example.conf",
+          "line": 262,
+          "quote": "#   rx888_stream -s 64000000 | fernsdr fernsdr.conf"
+        }
+      ],
+      "note": "Real-input path is in this repository. The RX-888 driver is the separate Fern-RX888 module, not inspected at a pin here; physical RX-888 operation is not established by this audit."
+    },
+    "decoders": {
+      "value": "yes",
+      "cell": "FT8 through the Fern-FT8 module, off by default",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/admin/pages/Decoders.svelte",
+          "line": 133,
+          "quote": "const FT8_REPOSITORY = 'steven9101/fern-ft8';"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/decoder.h",
+          "line": 45,
+          "quote": "bool listed = false;"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/DecodesPanel.svelte",
+          "line": 24,
+          "quote": "<Panel title=\"Decodes\">"
+        }
+      ],
+      "note": "The receiver runs decoder modules in a sandbox, shows public decodes to listeners (list and map, operator opt-in) and reports to PSK Reporter (opt-in). The FT8 decoding itself is the separate Fern-FT8 module, installed from the Decoders admin page; FT8 only, not inspected at a pin here."
+    },
+    "waterfall_history": {
+      "value": "no",
+      "cell": "No automatic listener backlog on connect",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/SpectrumDisplay.svelte",
+          "line": 230,
+          "quote": "// History arrives one line at a time, so a fresh visitor watches it grow"
+        },
+        {
+          "kind": "absence",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "searched": "waterfall_history|recent_spectrum",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 7,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "A new visitor's waterfall builds row by row. Separately, an operator-enabled disk archive per band feeds a listener History tab spanning 15 minutes to 24 hours when history = public (private keeps it for the signed-in operator) (server/src/core/archive.h, web/src/components/HistoryPanel.svelte); it does not meet this connect-backlog definition."
+    },
+    "waterfall_rate": {
+      "value": "yes",
+      "cell": "Listener bandwidth profiles: 8/12/20 rows/s",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/ConnectionPanel.svelte",
+          "line": 69,
+          "quote": "const next = BANDWIDTH_PROFILES.find((p) => p.id === id);"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/state/store.ts",
+          "line": 107,
+          "quote": "waterfallFps: 8,"
+        }
+      ],
+      "note": "Profile values at state/store.ts:107,118,129; the server can reduce them under congestion."
+    },
+    "listener_time_limit": {
+      "value": "yes",
+      "cell": "Configurable listener-inactivity timeout, default off",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/fernsdr.example.conf",
+          "line": 40,
+          "quote": "# listener_timeout = 60"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/app.cpp",
+          "line": 315,
+          "quote": "if (session->check_inactivity(timeout_minutes * 60000LL, steady_now) == Session::Inactivity::Expired) {"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/components/Banner.svelte",
+          "line": 64,
+          "quote": "<span>Still listening? Without an answer this receiver lets your place go in {secondsLeft} s.</span>"
+        }
+      ],
+      "note": "Minutes without tuning or touching anything (0 to 1440, 0 = never); the page asks a minute before. Also settable on the admin Station page. No maximum session length regardless of activity."
+    },
+    "per_address_limit": {
+      "value": "yes",
+      "cell": "IPv4 and IPv6 /64 listener limit",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/app.cpp",
+          "line": 132,
+          "quote": "\"rejecting %s: %d listeners from %s already (max_users_per_address); if that is a \""
+        }
+      ],
+      "note": "An IPv6 /48 may hold four times the per-address limit."
+    },
+    "admin_panel": {
+      "value": "yes",
+      "cell": "Web configuration and operations panel",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/admin/lib/router.svelte.ts",
+          "line": 20,
+          "quote": "{ id: 'bands', label: 'Bands', icon: RadioTower },"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "web/src/admin/lib/router.svelte.ts",
+          "line": 28,
+          "quote": "{ id: 'updates', label: 'Updates', icon: ArrowUpCircle },"
+        }
+      ],
+      "note": "Overview, Bands, Modules, Decoders, Log, Station, Appearance, Widgets, Configuration and Updates, plus a first sign-in setup flow."
+    },
+    "https": {
+      "value": "partial",
+      "cell": "Installer sets up Caddy HTTPS for a domain",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "tools/install.sh",
+          "line": 1200,
+          "quote": "setup_https() {"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "tools/install.sh",
+          "line": 1203,
+          "quote": "say \"Installing Caddy, for HTTPS\""
+        }
+      ],
+      "note": "The receiver itself serves HTTP only. With a domain under systemd, the installer installs Caddy from the distribution and writes its site; elsewhere it prints the Caddyfile lines."
+    },
+    "signed_updates": {
+      "value": "yes",
+      "cell": "Built-in updater verifies Ed25519",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/update/release.cpp",
+          "line": 251,
+          "quote": "if (ed25519_verify(key.data(), reinterpret_cast<const uint8_t*>(message.data()), message.size(),"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/update/release_keys.h",
+          "line": 18,
+          "quote": "// FERNSDR_RELEASE_KEY), 59928fb2118b5d95360a86fad202c42a009b323ebcc41632dfd1ae29c02007dd."
+        }
+      ],
+      "note": "Two release keys are compiled in (CI key and offline key). The first install's installer checks the signature only where OpenSSL 3 is present, otherwise relies on HTTPS and SHA-256 (tools/install.sh:344); do not conflate that with verified runtime updates."
+    },
+    "installer": {
+      "value": "yes",
+      "cell": "One-command installer, prebuilt x86_64/aarch64/armhf, Docker",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "tools/install.sh",
+          "line": 8,
+          "quote": "#   curl -fsSL https://github.com/Steven9101/FernSDR/releases/latest/download/install.sh | sudo sh"
+        }
+      ],
+      "note": "Installer is implemented; release publication and availability are outside this static feature audit."
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "File/FIFO/stdin, UDP/RTP, modules: RTL-SDR, RX-888, SDRplay",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/fernsdr.example.conf",
+          "line": 94,
+          "quote": "#        = file    read IQ from a file, FIFO, or '-' for standard input"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/fernsdr.example.conf",
+          "line": 95,
+          "quote": "#        = udp     receive IQ datagrams, e.g. from ka9q-radio"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/radio.cpp",
+          "line": 211,
+          "quote": "for (char c : modules.get(\"catalog\", \"Steven9101/Fern-RTLSDR Steven9101/Fern-RX888 Steven9101/Fern-SDRPlay Steven9101/Fern-FT8\") + \" \") {"
+        }
+      ],
+      "note": "Hardware modules are separate repositories in the default catalog, not inspected at a pin here."
+    }
+  },
+  "security": {
+    "default_credentials": {
+      "summary": "Release installer generates a random 20-character password and stores only its PBKDF2 hash in the receiver config; the password goes to a root-only file. Without a password hash the admin panel is off.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "tools/install.sh",
+          "line": 482,
+          "quote": "PASSWORD=$(od -An -N20 -tu1 /dev/urandom | awk -v alphabet=abcdefghjkmnpqrstuvwxyz023456789 '"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/app.cpp",
+          "line": 55,
+          "quote": "admin.enabled = section.get_bool(\"enabled\", true) && !admin.password_hash.empty();"
+        }
+      ],
+      "literal": null
+    },
+    "admin_reachability": {
+      "summary": "Password required. Secure requests accepted; plain-HTTP administration restricted to direct loopback, an explicitly allowed home network, or an explicit plain_http_anywhere opt-in.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/admin.cpp",
+          "line": 175,
+          "quote": "if (request.secure || anywhere) return \"\";"
+        }
+      ]
+    },
+    "version_exposed": {
+      "summary": "Exact version in the authenticated operator config response and backups, not in public status. When the operator enables PSK Reporter reporting, the exact version is sent there as the decoding software. No claim that every public artifact was exhaustively checked.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/app.cpp",
+          "line": 726,
+          "quote": "// For the operator, not the public: an exact version tells a"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/core/radio.cpp",
+          "line": 1376,
+          "quote": "receiver.software = std::string(\"FernSDR \") + kVersion;"
+        }
+      ]
+    },
+    "update_signing": {
+      "summary": "Runtime updater verifies Ed25519-signed manifests against two compiled-in release keys; installer bootstrap checks the signature only with OpenSSL 3, otherwise HTTPS and SHA-256.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/update/release.cpp",
+          "line": 251,
+          "quote": "if (ed25519_verify(key.data(), reinterpret_cast<const uint8_t*>(message.data()), message.size(),"
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "server/src/update/release_keys.h",
+          "line": 18,
+          "quote": "// FERNSDR_RELEASE_KEY), 59928fb2118b5d95360a86fad202c42a009b323ebcc41632dfd1ae29c02007dd."
+        },
+        {
+          "kind": "code",
+          "repo": "websdr",
+          "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+          "path": "tools/install.sh",
+          "line": 344,
+          "quote": "*) SIGNATURE=\"signature not checked, with no OpenSSL 3 here; fetched over HTTPS\" ;;"
+        }
+      ]
+    },
+    "other": [
+      {
+        "summary": "Per-network and global authentication-failure budgets.",
+        "sources": [
+          {
+            "kind": "code",
+            "repo": "websdr",
+            "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+            "path": "server/src/core/admin.cpp",
+            "line": 35,
+            "quote": "constexpr int kMaxAttempts = 5;"
+          },
+          {
+            "kind": "code",
+            "repo": "websdr",
+            "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+            "path": "server/src/core/admin.cpp",
+            "line": 52,
+            "quote": "constexpr size_t kGlobalFailures = 100;"
+          }
+        ]
+      },
+      {
+        "summary": "Module packages are checked against the SHA-256 in their own manifest (integrity, not signature) and come only from repositories listed in the config file's [modules] catalog, which an admin session cannot change.",
+        "sources": [
+          {
+            "kind": "code",
+            "repo": "websdr",
+            "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+            "path": "server/src/core/module_store.cpp",
+            "line": 558,
+            "quote": "if (to_hex(digest, sizeof(digest)) != manifest.sha256) {"
+          },
+          {
+            "kind": "code",
+            "repo": "websdr",
+            "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+            "path": "server/src/core/admin.cpp",
+            "line": 667,
+            "quote": "{\"modules\", \"it decides which programs this receiver may download and run.\"},"
+          }
+        ]
+      },
+      {
+        "summary": "Decoder modules run with no-new-privileges and, where the kernel has it, Landlock; source modules are not sandboxed.",
+        "sources": [
+          {
+            "kind": "code",
+            "repo": "websdr",
+            "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+            "path": "server/src/util/sandbox.cpp",
+            "line": 74,
+            "quote": "::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);"
+          }
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Static pinned-source audit, not runtime proof. Source lines and exact quotes machine-validated while emitting this file. All closed-binary limits and mutable frontend dependencies are explicit.",
+    "Hardware and decoder modules (Fern-RTLSDR, Fern-RX888, Fern-SDRPlay, Fern-FT8) are separate repositories and were not inspected at a pin; features that rely on them say so."
+  ],
+  "health": {
+    "scope": "Local history reachable from the pin, not live GitHub health; commit-author identities are not necessarily distinct humans. The repository's history was squashed into one initial commit (1186e78, 2026-09-29), so these counts cover only the commits since then, not the project's development history.",
+    "shallow_repository": false,
+    "last_commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9 2026-09-29T18:16:11+00:00 Carry the release keys, so that release builds take signed updates",
+    "commits_per_month": {
+      "2026-09": 26
+    },
+    "commits_last12months": 26,
+    "authors_raw": [
+      "    26\tmagicint1337"
+    ],
+    "ci_files": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml"
+    ],
+    "test_files": [
+      "server/tests/main.cpp",
+      "server/tests/rds_signal.h",
+      "server/tests/support/fake_decoder.cpp",
+      "server/tests/support/fake_module.cpp",
+      "server/tests/test_admin.cpp",
+      "server/tests/test_agc.cpp",
+      "server/tests/test_archive.cpp",
+      "server/tests/test_band_hours.cpp",
+      "server/tests/test_bitio.cpp",
+      "server/tests/test_blanker.cpp",
+      "server/tests/test_calibration.cpp",
+      "server/tests/test_channelizer.cpp",
+      "server/tests/test_chat.cpp",
+      "server/tests/test_config.cpp",
+      "server/tests/test_ctcss.cpp",
+      "server/tests/test_cw_filter.cpp",
+      "server/tests/test_decoder.cpp",
+      "server/tests/test_decoder_tap.cpp",
+      "server/tests/test_demod.cpp",
+      "server/tests/test_directory.cpp",
+      "server/tests/test_dns.cpp",
+      "server/tests/test_dsp_workers.cpp",
+      "server/tests/test_ed25519.cpp",
+      "server/tests/test_fft.cpp",
+      "server/tests/test_fft_split.cpp",
+      "server/tests/test_fir_decimator.cpp",
+      "server/tests/test_hardware.cpp",
+      "server/tests/test_http.cpp",
+      "server/tests/test_input_conditioner.cpp",
+      "server/tests/test_integration.cpp",
+      "server/tests/test_json.cpp",
+      "server/tests/test_limits.cpp",
+      "server/tests/test_magnitude.cpp",
+      "server/tests/test_mdct.cpp",
+      "server/tests/test_modules.cpp",
+      "server/tests/test_nac.cpp",
+      "server/tests/test_noise_floor.cpp",
+      "server/tests/test_output_queue.cpp",
+      "server/tests/test_password.cpp",
+      "server/tests/test_pipeline.cpp",
+      "server/tests/test_queue_delay.cpp",
+      "server/tests/test_rds.cpp",
+      "server/tests/test_release.cpp",
+      "server/tests/test_row_ring.cpp",
+      "server/tests/test_sandbox.cpp",
+      "server/tests/test_schedule.cpp",
+      "server/tests/test_server.cpp",
+      "server/tests/test_shared_waterfall.cpp",
+      "server/tests/test_simd.cpp",
+      "server/tests/test_source_lifecycle.cpp",
+      "server/tests/test_source_test.cpp",
+      "server/tests/test_space_weather.cpp",
+      "server/tests/test_spectrum.cpp",
+      "server/tests/test_spots.cpp",
+      "server/tests/test_squelch.cpp",
+      "server/tests/test_stream_budget.cpp",
+      "server/tests/test_stream_delivery.cpp",
+      "server/tests/test_supervisor.cpp",
+      "server/tests/test_theme.cpp",
+      "server/tests/test_update_files.cpp",
+      "server/tests/test_update_service.cpp",
+      "server/tests/test_update_system.cpp",
+      "server/tests/test_updater.cpp",
+      "server/tests/test_ustar.cpp",
+      "server/tests/test_utf8.cpp",
+      "server/tests/test_util.h",
+      "server/tests/test_waterfall_codec.cpp",
+      "server/tests/test_waterfall_rc.cpp",
+      "server/tests/test_websocket.cpp",
+      "web/src/admin/api.test.ts",
+      "web/src/admin/config-schema.test.ts",
+      "web/src/admin/crypto.test.ts",
+      "web/src/admin/lib/backup.test.ts",
+      "web/src/admin/lib/band-suggestions.test.ts",
+      "web/src/admin/lib/decoders.test.ts",
+      "web/src/admin/lib/format.test.ts",
+      "web/src/admin/lib/frequency.test.ts",
+      "web/src/admin/lib/hours.test.ts",
+      "web/src/admin/lib/ini-sections.test.ts",
+      "web/src/admin/lib/ini.test.ts",
+      "web/src/admin/lib/log.test.ts",
+      "web/src/admin/lib/number.test.ts",
+      "web/src/admin/lib/release-notes.test.ts",
+      "web/src/admin/lib/spectrum.test.ts",
+      "web/src/admin/lib/theme.test.ts",
+      "web/src/admin/lib/updates.test.ts",
+      "web/src/admin/version.test.ts",
+      "web/src/audio/jitter.test.ts",
+      "web/src/audio/playback-engine.test.ts",
+      "web/src/audio/player.test.ts",
+      "web/src/audio/recorder.test.ts",
+      "web/src/cat/drivers.test.ts",
+      "web/src/cat/link.test.ts",
+      "web/src/compat/khz.test.ts",
+      "web/src/components/chat.test.ts",
+      "web/src/components/frequency-digits.test.ts",
+      "web/src/components/smeter-peak.test.ts",
+      "web/src/components/sustained.test.ts",
+      "web/src/components/tooltip-timing.test.ts",
+      "web/src/data/bandplan/bandplan.test.ts",
+      "web/src/dsp/bitio.test.ts",
+      "web/src/dsp/vectors.test.ts",
+      "web/src/net/client.test.ts",
+      "web/src/net/protocol.test.ts",
+      "web/src/render/overlay.test.ts",
+      "web/src/state/band-memory.test.ts",
+      "web/src/state/bookmarks.test.ts",
+      "web/src/state/decodes.test.ts",
+      "web/src/state/layout.test.ts",
+      "web/src/state/logbook.test.ts",
+      "web/src/state/reactive.test.ts",
+      "web/src/state/store.test.ts",
+      "web/src/state/tone.test.ts",
+      "web/src/state/vfo.test.ts",
+      "web/src/util/band-hours.test.ts",
+      "web/src/util/clipboard.test.ts",
+      "web/src/util/cw.test.ts",
+      "web/src/util/frequency.test.ts",
+      "web/src/util/history.test.ts",
+      "web/src/util/itu-region.test.ts",
+      "web/src/util/links.test.ts",
+      "web/src/util/locator.test.ts",
+      "web/src/util/passband.test.ts",
+      "web/src/util/rds.test.ts",
+      "web/src/util/receivers.test.ts",
+      "web/src/util/spectrum-gesture.test.ts",
+      "web/src/util/spectrum-samples.test.ts",
+      "web/src/util/spots.test.ts",
+      "web/src/util/storage.test.ts",
+      "web/src/util/sun.test.ts",
+      "web/src/util/viewport.test.ts",
+      "web/src/util/waterfall-levels.test.ts"
+    ],
+    "issue_response_times": {
+      "value": "unknown",
+      "reason": "Requires dated issue API data; not inferable from local git."
+    },
+    "releases": {
+      "value": "unknown",
+      "reason": "Git tags alone do not establish published release artifacts."
+    },
+    "image_or_binary_size": {
+      "value": "unknown",
+      "reason": "Must be recorded for the actual lab build/image, not inferred from source."
+    }
+  },
+  "security_scope": "Static feature inventory only. No exploit/probe performed; empty private_candidates does not assert absence of vulnerabilities.",
+  "license": {
+    "summary": "AGPL-3.0; license file and source declaration",
+    "sources": [
+      {
+        "kind": "code",
+        "repo": "websdr",
+        "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+        "path": "LICENSE",
+        "line": 1,
+        "quote": "GNU AFFERO GENERAL PUBLIC LICENSE"
+      },
+      {
+        "kind": "code",
+        "repo": "websdr",
+        "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+        "path": "web/src/components/ConnectionPanel.svelte",
+        "line": 119,
+        "quote": "FernSDR is free software under the <a href=\"https://www.gnu.org/licenses/agpl-3.0.html\" target=\"_blank\" rel=\"noreferrer noopener\">AGPL v3</a>. <a href={sourceUrl} target=\"_blank\" rel=\"noreferrer noopener\">Source for this receiver</a>. <a href=\"/licenses.txt\" target=\"_blank\" rel=\"noreferrer noopener\">Third-party licences</a>."
+      }
+    ]
+  },
+  "build_runtime": {
+    "summary": "C++17 server with no dependencies beyond the operating system; Svelte/TypeScript web build. Release architecture targets x86_64, aarch64, armhf; the release workflow also publishes a container image. Hardware and decoder modules are additional runtime programs.",
+    "sources": [
+      {
+        "kind": "code",
+        "repo": "websdr",
+        "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+        "path": "server/Makefile",
+        "line": 5,
+        "quote": "CXXSTD   ?= -std=c++17"
+      },
+      {
+        "kind": "code",
+        "repo": "websdr",
+        "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+        "path": "server/Makefile",
+        "line": 161,
+        "quote": "RELEASE_CXX_x86_64  := g++"
+      },
+      {
+        "kind": "code",
+        "repo": "websdr",
+        "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+        "path": "server/Makefile",
+        "line": 162,
+        "quote": "RELEASE_CXX_aarch64 := aarch64-linux-gnu-g++"
+      },
+      {
+        "kind": "code",
+        "repo": "websdr",
+        "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+        "path": "server/Makefile",
+        "line": 163,
+        "quote": "RELEASE_CXX_armhf   := arm-linux-gnueabihf-g++"
+      },
+      {
+        "kind": "code",
+        "repo": "websdr",
+        "commit": "4cfe28e2cb633534798d62a97bd84d5337cab3d9",
+        "path": ".github/workflows/release.yml",
+        "line": 134,
+        "quote": "tools/build-image.sh \"$RUNNER_TEMP/release\" ghcr.io/steven9101/fernsdr push"
+      }
+    ]
+  }
+}

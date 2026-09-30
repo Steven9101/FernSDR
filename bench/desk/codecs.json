@@ -1,0 +1,163 @@
+{
+ "_about": "How each receiver compresses audio and waterfall, as its code and docs say at the pinned version. Sources are the research reports kept with the plan (report-nova-phantom-vertex.md, report-owrx-pa3fwm-ka9q-uber.md) and the files named. bins_per_row is what the listener's socket carries per waterfall row at the lab's settings; null where it depends on the viewport and was not read from the protocol. Measured rates are in bench/runs/*/summary-compression.*.",
+ "fernsdr": {
+  "audio": {
+   "codec": "NAC3, FernSDR's own MDCT transform codec",
+   "lossy": true,
+   "notes": "quantisation noise held a set margin under the channel noise it measures (docs/CODEC.md)",
+   "source": "docs/CODEC.md"
+  },
+  "waterfall": {
+   "codec": "WFC5: dB levels rounded to 1 dB (at most 0.5 dB error) or, as the page asks in Low and Balanced, 2 dB (at most 1 dB), range -200 to +100 dB; each residual against the bin to the left coded as binary decisions with adaptive probabilities, in contexts from the row above, through LZMA's range coder; a key row every 24 rows",
+   "lossy": true,
+   "lossy_part": "only the level rounding; the range coder reconstructs the rounded levels exactly",
+   "bins_per_row": 1536,
+   "notes": "row width follows the viewport; FFT bins are mapped to pixels by peak selection so narrow carriers stay visible; zoomed in, native FFT bins are sent. In the lab the page asked for wfc5 with step_db 2; pages without WFC5 get WFC4.",
+   "source": "docs/CODEC.md, Range-coded rows (WFC5); docs/PROTOCOL.md"
+  }
+ },
+ "novasdr": {
+  "audio": {
+   "codec": "IMA ADPCM (default), Opus 40 kbit/s optional",
+   "lossy": true,
+   "notes": "4 bits a sample",
+   "source": "crates/novasdr-server main.rs:176-185, ws/audio.rs"
+  },
+  "waterfall": {
+   "codec": "8-bit dB rows in CBOR, zstd stream",
+   "lossy": true,
+   "notes": "lossy only by the 8-bit quantisation; zstd itself is lossless",
+   "bins_per_row": null,
+   "source": "docs/PROTOCOL.md"
+  }
+ },
+ "phantomsdr": {
+  "audio": {
+   "codec": "FLAC of 16-bit samples in CBOR",
+   "lossy": false,
+   "notes": "lossless coding of 16-bit PCM",
+   "source": "src/audio.cpp:26-36"
+  },
+  "waterfall": {
+   "codec": "int8 dB rows, zstd stream",
+   "lossy": true,
+   "notes": "lossy only by the 8-bit quantisation",
+   "bins_per_row": null,
+   "source": "src/waterfallcompression.cpp:24-37"
+  }
+ },
+ "phantomsdr-plus": {
+  "audio": {
+   "codec": "FLAC at 8 bits a sample in CBOR",
+   "lossy": true,
+   "notes": "samples cut to 8 bits, then lossless FLAC",
+   "source": "src/signal.cpp:53, :346"
+  },
+  "waterfall": {
+   "codec": "int8 dB rows, zstd stream",
+   "lossy": true,
+   "notes": "lossy only by the 8-bit quantisation",
+   "bins_per_row": null,
+   "source": "src/waterfall.cpp"
+  }
+ },
+ "phantomsdr-plus-sv1btl": {
+  "audio": {
+   "codec": "FLAC of 16-bit samples (default); Opus for C-QUAM",
+   "lossy": false,
+   "notes": "lossless in the default mode",
+   "source": "src/audio.cpp:17-34"
+  },
+  "waterfall": {
+   "codec": "int8 dB rows, zstd stream",
+   "lossy": true,
+   "notes": "lossy only by the 8-bit quantisation",
+   "bins_per_row": null,
+   "source": "src/waterfall.cpp"
+  }
+ },
+ "vertexsdr": {
+  "audio": {
+   "codec": "the PA3FWM WebSDR audio format (tag-byte frames)",
+   "lossy": true,
+   "notes": "compatible with PA3FWM's client",
+   "source": "src/client.c"
+  },
+  "waterfall": {
+   "codec": "PA3FWM waterfall format 9, variable-length coded",
+   "lossy": true,
+   "bins_per_row": 1024,
+   "source": "socket URL /~~waterstream0?format=9&width=1024"
+  }
+ },
+ "websdr": {
+  "audio": {
+   "codec": "PA3FWM's own 8 kHz compression",
+   "lossy": true,
+   "notes": "closed source; FAQ: about 100 kbit/s a user with one slow waterfall",
+   "source": "websdr.org FAQ"
+  },
+  "waterfall": {
+   "codec": "PA3FWM waterfall format 9/10, 1.5 to 2.3 bits a pixel",
+   "lossy": true,
+   "bins_per_row": 1024,
+   "source": "dist11 client JavaScript, socket URL"
+  }
+ },
+ "openwebrx": {
+  "audio": {
+   "codec": "IMA ADPCM, 4 bits a sample at 12 kHz",
+   "lossy": true,
+   "notes": "about 48 kbit/s",
+   "source": "csdr adpcm.cpp:199-221"
+  },
+  "waterfall": {
+   "codec": "ADPCM-coded FFT rows",
+   "lossy": true,
+   "bins_per_row": 4096,
+   "notes": "9 rows a second by default",
+   "source": "owrx/defaults.py:14-18"
+  }
+ },
+ "openwebrx-plus": {
+  "audio": {
+   "codec": "IMA ADPCM, 4 bits a sample at 12 kHz",
+   "lossy": true,
+   "source": "as OpenWebRX"
+  },
+  "waterfall": {
+   "codec": "ADPCM-coded FFT rows",
+   "lossy": true,
+   "bins_per_row": 4096,
+   "source": "as OpenWebRX"
+  }
+ },
+ "ka9q-web": {
+  "audio": {
+   "codec": "Opus (default) over RTP; 16-bit PCM at 12 kHz optional",
+   "lossy": true,
+   "source": "ka9q-web.c:742-1030"
+  },
+  "waterfall": {
+   "codec": "one byte a bin, uncompressed, after a float header",
+   "lossy": true,
+   "bins_per_row": 1620,
+   "notes": "lossy only by the 8-bit quantisation; 10 rows a second",
+   "source": "ka9q-web.c"
+  }
+ },
+ "ubersdr": {
+  "audio": {
+   "codec": "Opus 48 kbit/s (default)",
+   "lossy": true,
+   "source": "config.yaml.example:752-759"
+  },
+  "waterfall": {
+   "codec": "binary8 spectrum frames (\"SPEC\")",
+   "lossy": true,
+   "bins_per_row": 1024,
+   "notes": "one byte a bin; 10 rows a second",
+   "source": "websocket.go, user-spectrum"
+  }
+ }
+}

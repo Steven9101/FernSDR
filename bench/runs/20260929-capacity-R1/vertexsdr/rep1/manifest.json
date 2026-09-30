@@ -1,0 +1,105 @@
+{
+ "receiver": "vertexsdr",
+ "repeat": 1,
+ "environment": {
+  "mem_available_mb": 6594,
+  "disk_free_gb": 24.3
+ },
+ "steps": [
+  {
+   "listeners": 1,
+   "cpu_percent": 5.177286931709165,
+   "mem_mb": 149.92578125,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.012871153846154,
+   "audio_kbit_median": 33.291199999999996,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 10,
+   "cpu_percent": 6.068445277079915,
+   "mem_mb": 150.01171875,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.012871153846154,
+   "audio_kbit_median": 33.355199999999996,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 50,
+   "cpu_percent": 9.518075183406026,
+   "mem_mb": 150.16796875,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 0.9995166400000001,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 33.32533333333333,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 100,
+   "cpu_percent": 13.981145425803449,
+   "mem_mb": 150.39453125,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 33.3344,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 200,
+   "cpu_percent": 22.689464991047302,
+   "mem_mb": 150.92578125,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 0.9995166400000001,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 33.30773333333333,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 400,
+   "cpu_percent": 27.39223965776818,
+   "mem_mb": 151.23046875,
+   "audio_ok_share": 0.64,
+   "audio_ratio_median": 0.9995166400000001,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 33.252266666666664,
+   "closed_early": 144,
+   "spread_share": 0.64,
+   "errors": 0,
+   "first_errors": [
+    "1006"
+   ],
+   "passed": false
+  }
+ ],
+ "browser_rates": {
+  "audio": 62.49687515624218,
+  "audio_bytes": 3398.0800959952,
+  "waterfall": 5.199740012999349,
+  "waterfall_bytes": 941.4529273536323
+ },
+ "browser_exit": 0,
+ "knee": 200,
+ "state": "done"
+}

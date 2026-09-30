@@ -1,0 +1,1032 @@
+{
+  "receiver": "phantomsdr-plus",
+  "checked": "2026-09-27",
+  "repos": {
+    "phasor-labs_PhantomSDR-Plus": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c"
+  },
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "USB:{type:\"USB\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "LSB:{type:\"LSB\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "AM:{type:\"AM\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "SAM, hold AM button",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "Hold to choose AM/SAM",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "src/signal.cpp",
+          "line": 304,
+          "quote": "// SAM demodulation with PLL optimization"
+        }
+      ],
+      "note": "Requires liquid-dsp build support."
+    },
+    "sam_carrier_display": {
+      "value": "unknown",
+      "cell": "Not established by pinned evidence",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Not credited or treated as absence without sufficient evidence.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "sam.*(carrier|offset|freq|lock)|(carrier|offset|freq|lock).*sam",
+          "where": "all tracked files at commit",
+          "matching_lines": 71,
+          "matching_files": [
+            "config-rx888mk2.toml",
+            "jsdsp/include/avif/avif.h",
+            "jsdsp/include/liquid/liquid.h",
+            "jsdsp/src/LiquidDSP.js",
+            "src/fft.h",
+            "src/fft_impl.cpp",
+            "src/spectrumserver.cpp"
+          ]
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "sam.*(carrier|offset|freq|lock)|(carrier|offset|freq|lock).*sam",
+          "where": "shipped release modern bundle",
+          "matches": 1
+        }
+      ]
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "FM:{type:\"FM\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "mode_cw": {
+      "value": "unknown",
+      "cell": "CW label; BFO not established",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "CW:{type:\"USB\",offsets:[250,250]}",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "W.bfo||0",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "Shipped preset is USB with symmetric 250 Hz offsets and no bfo property. Do not credit rubric CW behavior until tone measurement resolves it."
+    },
+    "cw_pitch": {
+      "value": "unknown",
+      "cell": "No pitch control established",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "CW:{type:\"USB\",offsets:[250,250]}",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "cw.?pitch|bfo|pitch",
+          "where": "all tracked files at commit",
+          "matching_lines": 7,
+          "matching_files": [
+            ".gitignore",
+            "jsdsp/compilejs.sh",
+            "jsdsp/include/avif/avif.h"
+          ]
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "cw.?pitch|bfo|pitch",
+          "where": "shipped release modern bundle",
+          "matches": 8
+        }
+      ]
+    },
+    "modes_other": {
+      "value": "yes",
+      "cell": "WBFM",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "WBFM:{type:\"FM\",offsets:[95e3,95e3]}",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "filter_bw": {
+      "value": "unknown",
+      "cell": "UI ranges present; control not fully traced",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "getAudioRange().map(jr)",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Browser WASM NR",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "le.decoder.set_nr(",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "Shipped bundle wires listener control to WASM DSP. Exact algorithm not established from minified bundle."
+    },
+    "noise_blanker": {
+      "value": "yes",
+      "cell": "Browser WASM NB",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "le.decoder.set_nb(",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "Shipped bundle wires listener control to WASM DSP. Exact algorithm not established from minified bundle."
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Browser WASM auto notch",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "le.decoder.set_an(",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "Shipped bundle wires listener control to WASM DSP. Exact algorithm not established from minified bundle."
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Browser squelch",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "handleSquelchChange()",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "this.squelchThreshold=0",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "Server AGC + browser compressor",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "src/signal.cpp",
+          "line": 344,
+          "quote": "agc.process(audio_real.data(), audio_fft_size / 2);"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "setAGCSpeed(t,n,r)",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "agc_settings": {
+      "value": "yes",
+      "cell": "Off, speeds, custom attack/release",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "case\"custom\":",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "customAttack",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "cmd:\"agc\",speed:t",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "smeter": {
+      "value": "partial",
+      "cell": "Relative meter plus constant offset",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "le.getPowerDb()/150*100+le.smeter_offset",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "No S-unit or dBm scale established in release UI."
+    },
+    "smeter_calibration": {
+      "value": "partial",
+      "cell": "One constant input offset",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 35,
+          "quote": "smeter_offset=0"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "src/websocket.cpp",
+          "line": 79,
+          "quote": "{\"smeter_offset\", offset_smeter_value},"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "smeter|s_meter|calibrat",
+          "where": "all tracked files at commit",
+          "matching_lines": 9,
+          "matching_files": [
+            "config-airspyhf.toml",
+            "config-rsp1a.toml",
+            "config-rx888mk2.toml",
+            "config.example.hackrf.toml",
+            "config.example.rtlsdr.toml",
+            "config.toml",
+            "src/websocket.cpp"
+          ]
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "smeter|s_meter|calibrat",
+          "where": "shipped release modern bundle",
+          "matches": 8
+        }
+      ]
+    },
+    "freq_offset_correction": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "frequency.?correction|freq.?offset|ppm",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "frequency.?correction|freq.?offset|ppm",
+          "where": "shipped release modern bundle",
+          "matches": 0
+        }
+      ]
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Browser MediaRecorder download",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "new MediaRecorder(this.destinationNode.stream)",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "le.downloadRecording()",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "MediaRecorder|recording|downloadRecording",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "MediaRecorder|recording|downloadRecording",
+          "where": "shipped release modern bundle",
+          "matches": 27
+        }
+      ]
+    },
+    "band_presets": {
+      "value": "unknown",
+      "cell": "Amateur menu exists; tuning path untraced",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "name:\"160m\",start:1810",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "showBandsMenu",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "band.?preset|160m|160 m|jumpToBand",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "band.?preset|160m|160 m|jumpToBand",
+          "where": "shipped release modern bundle",
+          "matches": 4
+        }
+      ]
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Personal bookmarks, import/export",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "N.download=\"bookmarks.json\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "a.textContent=\"Bookmarks\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ],
+      "note": ""
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "Listener chat",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "n.textContent=\"Chatting as:\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "src/client.cpp",
+          "line": 127,
+          "quote": "using msg_variant = std::variant<window_cmd, demodulation_cmd, userid_cmd, mute_cmd, chat_cmd, agc_c"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "chat",
+          "where": "all tracked files at commit",
+          "matching_lines": 162,
+          "matching_files": [
+            "README.md",
+            "config-airspyhf.toml",
+            "config-rsp1a.toml",
+            "config-rx888mk2.toml",
+            "config.example.hackrf.toml",
+            "config.example.rtlsdr.toml",
+            "config.toml",
+            "meson.build",
+            "src/chat.cpp",
+            "src/chat.h",
+            "src/client.cpp",
+            "src/client.h",
+            "src/http.cpp",
+            "src/spectrumserver.cpp",
+            "src/spectrumserver.h",
+            "src/websocket.cpp"
+          ]
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "chat",
+          "where": "shipped release modern bundle",
+          "matches": 25
+        }
+      ]
+    },
+    "multi_band": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "receivers|receiver_id|multi.band",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "receivers|receiver_id|multi.band",
+          "where": "shipped release modern bundle",
+          "matches": 0
+        }
+      ]
+    },
+    "full_spectrum": {
+      "value": "yes",
+      "cell": "RX888 60 Msps real s16",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config-rx888mk2.toml",
+          "line": 29,
+          "quote": "sps=60000000 # Input sample rate (RX888 MK2: up to 64MHz, 60MHz = 30MHz bandwidth)"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config-rx888mk2.toml",
+          "line": 34,
+          "quote": "signal=\"real\" # Signal type: \"real\" for direct sampling (RX888 MK2 direct sampling)"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config-rx888mk2.toml",
+          "line": 44,
+          "quote": "format=\"s16\" # Sample format for RX888 MK2: s16 (16-bit signed integers)"
+        }
+      ],
+      "note": "Pinned release config actually says 60000000, contrary to old head-based research note."
+    },
+    "decoders": {
+      "value": "unknown",
+      "cell": "Not established by pinned evidence",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Not credited or treated as absence without sufficient evidence.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "FT8|RTTY|PSK31|decoder",
+          "where": "all tracked files at commit",
+          "matching_lines": 113,
+          "matching_files": [
+            "config.toml",
+            "jsdsp/.gitignore",
+            "jsdsp/include/avif/avif.h",
+            "jsdsp/include/avif/internal.h",
+            "jsdsp/include/liquid/liquid.h",
+            "jsdsp/lib/dav1d.cpp",
+            "jsdsp/redsea.js",
+            "jsdsp/src/index.js"
+          ]
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "FT8|RTTY|PSK31|decoder",
+          "where": "shipped release modern bundle",
+          "matches": 86
+        }
+      ]
+    },
+    "waterfall_history": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "waterfall.?history|waterfall.?buffer|history.?waterfall",
+          "where": "all tracked files at commit",
+          "matching_lines": 2,
+          "matching_files": [
+            "src/fft_impl.cpp",
+            "src/fft_mkl.cpp"
+          ]
+        },
+        {
+          "kind": "absence-search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "waterfall.?history|waterfall.?buffer|history.?waterfall",
+          "where": "shipped release modern bundle",
+          "matches": 0
+        }
+      ]
+    },
+    "waterfall_rate": {
+      "value": "no",
+      "cell": "Fixed target near 10 fps",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "src/fft.cpp",
+          "line": 65,
+          "quote": "int skip_num = std::max(1, (int)floor(((float)sps / fft_size) / 10.) * 2);"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "session.?timeout|session.?limit|idle.?timeout|inactivity|max.?session",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "session.?timeout|session.?limit|idle.?timeout|inactivity|max.?session",
+          "where": "shipped release modern bundle",
+          "matches": 0
+        }
+      ]
+    },
+    "per_address_limit": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "per_ip|per.address|ws_per_ip",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "per_ip|per.address|ws_per_ip",
+          "where": "shipped release modern bundle",
+          "matches": 0
+        }
+      ]
+    },
+    "admin_panel": {
+      "value": "no",
+      "cell": "No operator web admin",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config.toml",
+          "line": 19,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Tracked admin/sysop hits are absent (Phantom) or a reserved chat username (Plus), not administrative routes.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "admin|sysop|password|authentication",
+          "where": "all tracked files at commit",
+          "matching_lines": 2,
+          "matching_files": [
+            "LICENSE",
+            "src/chat.cpp"
+          ]
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "admin|sysop|password|authentication",
+          "where": "shipped release modern bundle",
+          "matches": 0
+        }
+      ]
+    },
+    "https": {
+      "value": "unknown",
+      "cell": "Not established by pinned evidence",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "src/websocket.h",
+          "line": 4,
+          "quote": "#include <websocketpp/config/asio_no_tls.hpp>"
+        }
+      ],
+      "note": "Backend explicitly uses asio_no_tls. This audit did not establish pinned external wiki reverse-proxy instructions, so overall rubric HTTPS remains unknown rather than no.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "searched": "asio_no_tls|reverse.proxy|nginx|caddy|https",
+          "where": "all tracked files at commit",
+          "matching_lines": 70,
+          "matching_files": [
+            ".gitmodules",
+            "README.md",
+            "config-airspyhf.toml",
+            "config-rsp1a.toml",
+            "config-rx888mk2.toml",
+            "config.example.hackrf.toml",
+            "config.example.rtlsdr.toml",
+            "config.toml",
+            "install.sh",
+            "jsdsp/extract_EXPORTED_FUNCTIONS.js",
+            "jsdsp/include/avif/avif.h",
+            "jsdsp/lib/CMSIS_DSP/BUILDING.txt",
+            "jsdsp/lib/NR_spectral.c",
+            "jsdsp/redsea.js",
+            "src/spectrumserver.cpp",
+            "src/websocket.h",
+            "subprojects/flac.wrap",
+            "subprojects/glaze.wrap",
+            "subprojects/libcds.wrap",
+            "subprojects/libflac.wrap",
+            "subprojects/libvolk.wrap",
+            "subprojects/ogg.wrap",
+            "subprojects/opus.wrap",
+            "subprojects/tomlplusplus.wrap",
+            "subprojects/websocketpp.wrap",
+            "subprojects/zlib.wrap",
+            "subprojects/zstd.wrap"
+          ]
+        },
+        {
+          "kind": "search",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "searched": "asio_no_tls|reverse.proxy|nginx|caddy|https",
+          "where": "shipped release modern bundle",
+          "matches": 12
+        }
+      ]
+    },
+    "signed_updates": {
+      "value": "partial",
+      "cell": "Release downloads; signatures not verified",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "README.md",
+          "line": 97,
+          "quote": "- Go to the [Releases](https://github.com/Steven9101/PhantomSDR-Plus/releases) page"
+        }
+      ],
+      "note": "Documented prebuilt download path exists; pinned install/update source contains no artifact signature-verification path established by this review."
+    },
+    "installer": {
+      "value": "yes",
+      "cell": "Official prebuilt release documented",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "README.md",
+          "line": 97,
+          "quote": "- Go to the [Releases](https://github.com/Steven9101/PhantomSDR-Plus/releases) page"
+        }
+      ],
+      "note": ""
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "stdin; external RX888/AirspyHF/RSP/RTL/HackRF",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "src/spectrumserver.cpp",
+          "line": 597,
+          "quote": "if (driver_str == \"stdin\") {"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "config-rx888mk2.toml",
+          "line": 43,
+          "quote": "name=\"stdin\" # Input driver: \"stdin\" for piped data from rx888_stream"
+        }
+      ],
+      "note": ""
+    }
+  },
+  "security": {
+    "default_credentials": {
+      "summary": "No admin credentials established; listener service is anonymous. Do not interpret this as an authenticated admin surface.",
+      "literal": null
+    },
+    "admin_reachability": {
+      "summary": "No operator web admin established in pinned service."
+    },
+    "version_exposed": {
+      "summary": "Shipped frontend footer defaults to 2.0.0; this is frontend version, not proof of backend build identity.",
+      "sources": [
+        {
+          "kind": "built-code",
+          "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+          "line": 1,
+          "quote": "version:r=\"2.0.0\"",
+          "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8"
+        }
+      ]
+    },
+    "update_signing": {
+      "summary": "Release downloads; signatures not verified",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_PhantomSDR-Plus",
+          "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+          "path": "README.md",
+          "line": 97,
+          "quote": "- Go to the [Releases](https://github.com/Steven9101/PhantomSDR-Plus/releases) page"
+        }
+      ]
+    },
+    "other": []
+  },
+  "health": {
+    "pin": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c 2025-07-18 Merge branch 'main' of https://github.com/Steven9101/PhantomSDR-Plus",
+    "observed_clone_head": "bc500380e14798ca9e0bfc5e80778ca18c9b7ebb 2025-12-31",
+    "reachable_commits_at_pin": 222,
+    "ci_files": [],
+    "test_paths": [],
+    "license_evidence": [
+      {
+        "kind": "code",
+        "repo": "phasor-labs_PhantomSDR-Plus",
+        "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+        "path": "LICENSE",
+        "line": 1,
+        "quote": "GNU GENERAL PUBLIC LICENSE"
+      },
+      {
+        "kind": "code",
+        "repo": "phasor-labs_PhantomSDR-Plus",
+        "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+        "path": "LICENSE",
+        "line": 2,
+        "quote": "Version 3, 29 June 2007"
+      }
+    ],
+    "runtime_note": "Static capabilities only. No processes, RSS, latency or throughput measured by this audit.",
+    "build_evidence": [
+      {
+        "kind": "code",
+        "repo": "phasor-labs_PhantomSDR-Plus",
+        "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+        "path": "meson.build",
+        "line": 13,
+        "quote": "add_project_arguments('-march=native', language: 'cpp')"
+      }
+    ]
+  },
+  "limitations": [
+    "Static source review, not execution. Unknown cells deliberately remain unknown where evidence does not establish listener behavior."
+  ],
+  "extra": [
+    {
+      "path": "phantomsdr-plus-2.0.0-opencl-linux-x86_64/frontend/dist/assets/index-PDmDzGTl.js",
+      "sha256": "dd091dc02c7384a04b10daf5e95bc94747395051d074b1f51c2c662e03ca96d8",
+      "note": "Release artifact is authoritative frontend. Do not substitute currently checked-out frontend submodule, which is NovaSDR."
+    }
+  ]
+}

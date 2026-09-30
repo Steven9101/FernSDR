@@ -1,0 +1,21 @@
+; Quiet-band traffic input: receiver noise floor and three fixed carriers.
+; The 7.160 MHz carrier checks USB tuning at 7.159 MHz (1000 Hz audio).
+[scene]
+rate = 2048000
+center = 7.1M
+noise = -97 dB/Hz
+
+[signal tuning]
+kind = carrier
+freq = 7.160M
+level = -30
+
+[signal reference]
+kind = carrier
+freq = 7.150M
+level = -40
+
+[signal distant]
+kind = carrier
+freq = 7.074M
+level = -35

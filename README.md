@@ -28,8 +28,8 @@ listening and each receiver on the same two CPU cores:
 | The listener's page on a first visit | 127 kB | 130 kB, VertexSDR |
 
 Others do better on the stream's size, on CPU with a handful of listeners,
-and on audio SNR. The method, the raw data and every figure, including those,
-are in [bench/](bench/).
+and on audio SNR. The method, the lab and every figure, including those, are
+in [bench/](bench/); each run's own data is an archive on the release.
 
 ## If none of that meant anything
 

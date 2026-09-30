@@ -1,0 +1,2696 @@
+# UberSDR's config/config.yaml.example as the 0.1.66 image ships it
+# (/etc/ka9q_ubersdr/config.yaml.example), changed only where a line says
+# "fernbench": the frequency of the lab's input and settings that reach
+# the Internet on their own, which the lab does not have. admin.password
+# is a template value. The harness supplies a fresh random ADMIN_PASSWORD
+# before invoking the entrypoint; its value is never printed or committed.
+# ka9q_ubersdr Configuration
+
+# Admin settings
+admin:
+  # Show setup wizard on first run (automatically set to false after completion)
+  wizard: true
+  # Admin password for configuration access
+  password: "mypassword"
+  # Name - plain text station name shown in the UI
+  name: 'SDR with Active Loop'
+  # Admin email address
+  email: "me@example.com"
+  # Callsign (optional)
+  callsign: "N0CALL"
+  # GPS coordinates
+  gps:
+    lat: 51.507  # Latitude
+    lon: -0.128  # Longitude
+    # Enable GPS time synchronization (default: false)
+    gps_enabled: false
+    # Enable TDOA (Time Difference of Arrival) calculations (default: false)
+    tdoa_enabled: false
+  # Height above sea level (meters)
+  asl: 30
+  # Location description
+  location: "London, England, UK"
+  # IANA timezone name for the server's local time display
+  # Daylight saving time is handled automatically — no manual updates needed.
+  # See https://en.wikipedia.org/wiki/List_of_tz_database_time_zones for valid names.
+  # Examples: "Europe/London", "America/New_York", "Asia/Kolkata", "Australia/Sydney"
+  # Default: "UTC"
+  timezone: "UTC"
+  # Antenna description (displayed in KiwiSDR client and status page)
+  antenna: "Multi-band HF antenna"
+
+  # Default tuning frequency for new visitors (Hz)
+  # This is the frequency shown when a user first opens the web UI
+  # Can be overridden per-link with the URL parameter: ?freq=7074000
+  # Valid range: the receiver's own, from 10000 (10 kHz) up to whatever its front end
+  # covers. That follows the radiod sample rate, so it is 30000000 (30 MHz) on a
+  # 64.8 Msps RX888 and 60000000 (60 MHz) at 129.6 Msps -- see RECEIVER_SPAN.md.
+  # A frequency outside it is ignored and the built-in default used instead.
+  # Set to 0 (or omit) to use the built-in default of 14175000 (14.175 MHz - 20m USB calling frequency)
+  # fernbench: the lab's band is 7.1 MHz +/- 1 MHz; 14.175 MHz is outside it (was: default_frequency: 14175000)
+  default_frequency: 7100000
+
+  # Default demodulation mode for new visitors
+  # This is the mode selected when a user first opens the web UI
+  # Can be overridden per-link with the URL parameter: ?mode=lsb
+  # Valid values: usb, lsb, cwu, cwl, am, sam, fm, nfm
+  # Leave empty (or omit) to use the built-in default of "usb"
+  default_mode: "usb"
+
+  # Automatic version checking from GitHub
+  # When enabled, checks for new versions periodically and writes to /var/run/updater/latest
+  # fernbench: offline: update check against GitHub (was: version_check_enabled: true)
+  version_check_enabled: false
+  # Version check interval in minutes (default: 60)
+  # How often to check GitHub for new versions
+  # Minimum: 60 minutes
+  version_check_interval: 60
+
+  # Login rate limiting settings
+  # Protects against brute force password attacks by temporarily banning IPs
+  # after too many failed login attempts
+
+  # Maximum failed login attempts before temporary ban (default: 5)
+  # After this many failed attempts within the time window, the IP is banned
+  max_login_attempts: 5
+
+  # Time window for counting failed attempts in seconds (default: 600 = 10 minutes)
+  # Failed attempts are counted within this rolling time window
+  # If attempts are spread out beyond this window, the counter resets
+  login_attempt_window: 600
+
+  # Duration of temporary ban in seconds (default: 600 = 10 minutes)
+  # How long an IP is banned after exceeding max_login_attempts
+  # After this duration, the ban expires and the IP can try again
+  login_ban_duration: 600
+
+  # List of IP addresses or CIDR ranges allowed to access admin endpoints
+  # Only these IPs can access the admin interface (password is still required)
+  # This provides an additional layer of security beyond password authentication
+  # Supports both IPv4 and IPv6 addresses with CIDR notation
+  # Examples:
+  #   - "127.0.0.1"           # Single IPv4 address (localhost)
+  #   - "192.168.1.0/24"      # IPv4 CIDR range (local network)
+  #   - "::1"                 # Single IPv6 address (localhost)
+  #   - "2001:db8::/32"       # IPv6 CIDR range
+  #   - "0.0.0.0/0"           # Allow all IPv4 addresses (default)
+  # By default, all IPs are allowed (0.0.0.0/0) for backward compatibility
+  # Restrict this list to trusted networks for better security
+  allowed_ips:
+    - "0.0.0.0/0"
+  # Additional examples (uncomment to use):
+  #   - "127.0.0.1"           # Localhost only
+  #   - "192.168.1.0/24"      # Local network only
+  #   - "10.0.0.0/8"          # Private network
+
+  # Docker container names or IPs permitted to manage widgets without the admin
+  # password.  Requests whose raw source IP matches one of these hosts skip the
+  # admin password / session check on all /admin/widgets/* endpoints:
+  #
+  #   GET/POST /admin/widgets/enabled              list / replace the enabled widget list
+  #   GET      /admin/widgets/mine                 widgets owned by this instance
+  #   GET      /admin/widgets/public               public widgets from the collector
+  #   GET      /admin/widgets/public-with-instances
+  #   POST     /admin/widgets/create               create a new widget
+  #   POST     /admin/widgets/update               update an existing widget
+  #   DELETE   /admin/widgets/delete               delete a widget
+  #   GET      /admin/widgets/versions             version history for a widget
+  #   GET      /admin/widgets/version              fetch one version's HTML
+  #
+  # Container names are resolved via DNS every 5 seconds (same mechanism as
+  # server.trusted_containers), so they keep working when Docker reassigns IPs.
+  # Matching uses the RAW source IP, so X-Real-IP / X-Forwarded-For headers
+  # cannot be used to impersonate a trusted host.  These hosts are NOT trusted
+  # as proxies and gain no access to any other admin endpoint.
+  #
+  # Set to [] to require the admin password for all widget management.
+  # Default: ["ubersdr-claude"]
+  widget_trusted_hosts:
+    - "ubersdr-claude"
+
+# Radiod connection settings
+radiod:
+  # Multicast group for status/control messages
+  status_group: "239.185.143.241:5006"
+  # Multicast group for PCM audio data
+  data_group: "239.69.232.124:5004"
+  # Network interface to use (empty = auto-detect)
+  interface: "lo"
+
+  # ── How much spectrum this receiver covers ──────────────────────────────────
+  #
+  # Nothing to set here. The frequency range is derived from the front end
+  # sample rate, and the only place that is configured is `samprate` in the
+  # [rx888] section of the radiod config itself:
+  #
+  #     /etc/ka9q-radio/radiod@ubersdr.conf
+  #
+  # ka9q-radio's rx888 driver sets the usable top to 0.47 x samprate, so:
+  #
+  #   samprate = 64800000   ->  30.456 MHz usable  ->  0-30 MHz  (the default)
+  #   samprate = 129600000  ->  60.912 MHz usable  ->  0-60 MHz
+  #
+  # The span is rounded down to a whole megahertz, which keeps the display edge
+  # clear of the anti-alias rolloff. Everything else follows from it: the
+  # spectrum centre, the default bin count (so Hz-per-bin at full zoom-out does
+  # not move when the receiver widens), the noise-floor wideband channel, the
+  # tuning limits, and the range the v2 frontend enforces.
+  #
+  # Deliberately not settable here: the span is a property of the hardware, not
+  # an operator preference, and a second place to say it is a second place for
+  # it to be wrong. If the radiod config cannot be read the server assumes
+  # 64.8 Msps and behaves exactly as it always has (0-30 MHz).
+  #
+  # Whatever is resolved is cross-checked against what radiod actually reports
+  # once a channel is up; a mismatch appears in the admin health panel as
+  # "Receiver span" rather than silently changing the geometry.
+  #
+  # See RECEIVER_SPAN.md.
+
+# Multicast Relay settings
+# Controls the multicast-relay Docker container that bridges multicast traffic
+# between the Docker network and the host network interface
+# The relay automatically discovers multicast groups from the radiod section above
+# These settings are read directly by the multicast-relay container from this config file
+multicast_relay:
+  # Enable or disable the multicast relay (default: false)
+  # When enabled, the relay container will bridge radiod multicast traffic
+  # When disabled, the relay container sleeps indefinitely (does nothing)
+  # The container reads this setting from config.yaml on startup and restart
+  enabled: false
+  
+  # Host network interface for multicast relay (default: "auto")
+  # Specifies which host network interface to relay multicast traffic to
+  # When set to "auto", the relay will automatically discover the appropriate interface
+  # You can specify a specific interface name (e.g., "eth0", "wlan0", "enp0s3")
+  # Use "auto" for automatic discovery in most cases
+  # Default: "auto" (automatic interface discovery)
+  host_interface: "auto"
+  
+  # Attempt mDNS lookup before falling back to FNV-1 hash (default: false)
+  # When false, skips mDNS resolution and uses FNV-1 hash directly (faster startup)
+  # When true, attempts to resolve multicast addresses via mDNS/Avahi first
+  # Set to false if you don't have Avahi running or want faster startup
+  attempt_mdns_lookup: false
+  
+  # TTL increment value (default: 1)
+  # Increments the TTL (Time To Live) of multicast packets by this amount
+  # Used to extend the reach of multicast packets across network boundaries
+  # Range: 0-255 (0 = no increment, 1 = increment by 1, etc.)
+  # Default: 1 (increment TTL by 1 hop)
+  ttl_increment: 1
+
+  # Relay only extra_groups, skipping status_group and data_group (default: false)
+  # When false (default), the relay forwards status_group, data_group, AND any extra_groups.
+  # When true, only the groups listed in extra_groups are relayed.
+  # Useful when the core status/data groups are already handled elsewhere,
+  # or when you only need to bridge specific IQ streams to the host network.
+  # Has no effect if extra_groups is empty.
+  # Default: false
+  extra_groups_only: false
+
+  # Additional multicast groups to relay beyond status_group and data_group (default: [])
+  # Use this to relay per-band IQ streams generated by ka9q-radio demod sections.
+  # Each entry corresponds to a 'data =' value in a radiod.conf [section].
+  # Format: hostname.local (bare hostname; no port needed)
+  #   - smcroute routes by multicast group IP, not port — no port required.
+  #   - The multicast IP is derived using the same FNV-1 hash as ka9q-radio (make_maddr),
+  #     or resolved via mDNS/Avahi if attempt_mdns_lookup is true.
+  #   - Duplicates (including entries that resolve to the same IP as status_group or
+  #     data_group) are automatically detected and skipped with a log message.
+  # Default: [] (empty — only status_group and data_group are relayed)
+  #
+  # Example (uncomment and adjust to match your radiod.conf demod sections):
+  # extra_groups:
+  #   - websdrLF.local
+  #   - websdr160m.local
+  #   - websdr80m.local
+  #   - websdr60m.local
+  #   - websdr40m.local
+  #   - websdr30m.local
+  #   - websdr20m.local
+  #   - websdr17m.local
+  #   - websdr15m.local
+  #   - websdr12m.local
+  #   - websdr10m.local
+  extra_groups: []
+
+# Web server settings
+server:
+  # Listen address and port
+  listen: ":8080"
+  # Maximum concurrent unique users (by user_session_id UUID)
+  # Each unique user can have multiple sessions (e.g., audio + spectrum)
+  # but they all count as one user toward this limit
+  max_sessions: 20
+  # Maximum concurrent unique users (UUIDs) per IP address (0 = unlimited)
+  # This limits the number of unique user_session_ids from a single IP
+  # Each unique user can have multiple sessions (e.g., audio + spectrum)
+  # For example, if set to 1, only one UUID can connect from an IP, but that
+  # UUID can establish both audio and spectrum channels
+  # Useful for preventing abuse from a single source
+  # Set to 0 to disable IP-based limiting
+  max_sessions_ip: 2
+  # Session idle timeout in seconds (0 = no timeout). This tracks a heartbeat message to websocket
+  # connections. The UI sends a ping every 10 seconds if the user is detected as being active.
+  # Client will show warning dialog 30 seconds before this timeout. If they do not interact
+  # with the UI within the 30 seconds the session UUID will be kicked.
+  session_timeout: 0
+  # Maximum session time in seconds (0 = unlimited)
+  # This is the maximum total time a user session can exist, regardless of activity
+  # After this time, the user will be automatically kicked and must reconnect
+  # Useful for ensuring fair access and preventing long-term monopolisation
+  # Set to 0 to disable time-based limiting
+  max_session_time: 3600
+  # Maximum total connected time per IP address per rolling 24-hour window in seconds (0 = unlimited)
+  # Tracks cumulative connected time across all sessions from the same IP within any 24-hour period.
+  # Uses a rolling window (not a fixed midnight reset), so a user cannot exploit a reset boundary.
+  # Example: if set to 3600, an IP can connect for up to 1 hour in any 24-hour period.
+  # When the limit is reached, new connections from that IP are rejected until enough time has elapsed.
+  # Active sessions that push the IP over the limit are kicked by the background enforcement loop.
+  # IPs in timeout_bypass_ips and users with a valid bypass_password are automatically exempt.
+  # Set to 0 to disable (default).
+  max_daily_time_per_ip: 0
+  # Spectrum-only session timeout in seconds.
+  # Kicks non-bypassed users who have a spectrum (waterfall) session but no audio
+  # session, and have had no audio session for this many seconds. The countdown
+  # starts when the user first connects without audio, or when their audio session
+  # closes. Bypassed IPs and bypass-password sessions are never evicted.
+  # Set to 0 to disable (users can watch the waterfall indefinitely without listening).
+  # Default: 60
+  spectrum_only_timeout: 60
+  # Command rate limit per UUID (commands per second per channel)
+  # This limits how many commands (tune, zoom, pan, etc.) a user can send per second
+  # Applies separately to audio and spectrum channels (e.g., 20 means 20 audio commands/sec + 20 spectrum commands/sec)
+  # Minimum 50 (required for smooth spectrum dragging at 40 pan msgs/sec + headroom for other commands)
+  # Values below 50 are raised to 50 automatically.
+  cmd_rate_limit: 50
+  # WebSocket connection rate limit per IP (connections per second)
+  # This limits how many new WebSocket connections can be established from a single IP per second
+  # Helps prevent connection flooding and DoS attacks
+  # Minimum 4, and values from 1 to 3 are raised to 4 automatically.
+  # A page load opens the audio and the spectrum socket at the same instant and both
+  # are counted here, so a lower limit refuses an ordinary visitor's waterfall rather
+  # than an abuser. Sustained reconnect churn is caught by session_create_rate_limit
+  # below, which is the better tool for it.
+  # Set to a negative value to disable (0 is treated as "not set" and becomes 4).
+  # Recommended: 4 (allows normal reconnections while preventing abuse)
+  conn_rate_limit: 4
+  # /connection endpoint rate limit per IP (requests per minute)
+  # This limits how many /connection pre-flight checks can be made from a single IP per minute
+  # Helps prevent abuse of the connection check endpoint
+  # Set to 0 to disable rate limiting
+  # Recommended: 10 (allows normal usage while preventing abuse)
+  sessions_per_minute: 10
+  # Session creation rate limit per user (new sessions per minute)
+  # Keyed by user_session_id UUID (falling back to IP when no UUID is supplied) and
+  # applied separately to audio and spectrum sessions, so a page load - which creates
+  # one of each - spends one allowance from each rather than two from a shared pool.
+  # This catches slow reconnect loops that conn_rate_limit is too coarse to see: a
+  # client reconnecting every few seconds stays under a per-second limit forever while
+  # tearing down and re-creating a radiod channel each time. max_sessions/max_sessions_ip
+  # do not catch it either, as they count concurrent users, not churn.
+  # Uses a continuously-refilling token bucket, so the window slides - there is no
+  # fixed minute boundary to game.
+  # IPs in timeout_bypass_ips and users with a valid bypass_password are exempt.
+  # Set to a negative value to disable.
+  session_create_rate_limit: 6
+  # How many sessions may be created back-to-back before the per-minute rate applies.
+  # Covers legitimate bursts such as a few rapid page refreshes.
+  # Minimum 1.
+  session_create_burst: 3
+
+  # List of IP addresses or CIDR ranges that bypass all session limits
+  # Useful for trusted IPs like localhost, admin networks, or specific users
+  # Bypassed IPs are exempt from:
+  #   - session_timeout (idle timeout)
+  #   - max_session_time (maximum session duration)
+  #   - max_sessions (maximum unique users globally)
+  #   - max_sessions_ip (maximum unique users per IP)
+  #   - Wide IQ mode restrictions (iq48, iq96, iq192, iq384)
+  # Supports both IPv4 and IPv6 addresses with CIDR notation
+  # Examples:
+  #   - "127.0.0.1"           # Single IPv4 address
+  #   - "192.168.1.0/24"      # IPv4 CIDR range
+  #   - "::1"                 # Single IPv6 address (localhost)
+  #   - "2001:db8::/32"       # IPv6 CIDR range
+  # By default, localhost is bypassed. Add more IPs/ranges as needed.
+  timeout_bypass_ips:
+    - "127.0.0.1"
+    - "10.0.0.0/8"
+    - "172.16.0.0/12"
+    - "192.168.0.0/16"
+  # Additional examples (uncomment to use):
+  #   - "::1"
+  #   - "192.168.1.0/24"
+  #   - "10.0.0.0/8"
+
+  # Docker container names to resolve via DNS and trust as reverse proxies.
+  # UberSDR resolves these names at startup and every 5 seconds thereafter,
+  # so containers that restart and get new IPs are picked up automatically.
+  # Resolution uses the OS resolver (/etc/resolv.conf), which inside Docker
+  # points to Docker's embedded DNS (127.0.0.11) — the same mechanism used
+  # by 'ping <container-name>'. Silent on success; warns only on failure.
+  # Defaults (used when this key is absent): tunnel-client, caddy
+  trusted_containers:
+    - "tunnel-support-client"
+    - "tunnel-client"
+    - "caddy"
+
+  # Additional static IP addresses or CIDR ranges to trust X-Real-IP from.
+  # The trusted_containers above are resolved dynamically and do not need to
+  # be listed here. Add entries for proxies outside the Docker network or
+  # for static IPs that do not have a resolvable hostname.
+  # Supports both IPv4 and IPv6 addresses with CIDR notation.
+  # If you add a CIDR that overlaps with an existing entry (e.g. a broader
+  # range that contains another entry) that is fine — overlapping entries
+  # are handled seamlessly.
+  # trusted_proxy_ips:
+  #   - "172.20.0.0/24"       # Docker sdr-network subnet (if not using trusted_containers)
+  #   - "127.0.0.1"           # Trust localhost
+  #   - "172.17.0.0/16"       # Trust Docker bridge network
+  #   - "10.0.0.0/8"          # Trust private network
+  #   - "192.168.1.100"       # Trust specific proxy server
+
+  # Password-based bypass authentication (optional)
+  # When set, clients can provide this password to gain the same bypass privileges
+  # as IPs in the timeout_bypass_ips list. This allows remote users to access
+  # wide IQ modes and bypass session limits without being on the IP whitelist.
+  #
+  # Usage:
+  #   - WebSocket: Add ?password=yourpassword to the WebSocket URL
+  #   - /connection endpoint: Include "password": "yourpassword" in the JSON body
+  #
+  # Security notes:
+  #   - Use a strong, unique password
+  #   - Password is transmitted in plain text, so use HTTPS/WSS in production
+  #   - Leave empty (or comment out) to disable password-based bypass
+  #   - This grants the same privileges as being in timeout_bypass_ips
+  #
+  # Example: bypass_password: "my-secret-bypass-password-123"
+  bypass_password: ""
+
+  # Restrict access to bypassed users only (default: false)
+  # When true, only users with a valid bypass_password (or a trusted IP in
+  # timeout_bypass_ips) are allowed to connect. All other users are rejected
+  # with a "requires a password" message, which triggers the password prompt
+  # in the browser UI — the same UI shown when all slots are full.
+  #
+  # Use cases:
+  #   - Private/invite-only receiver: share bypass_password with trusted users
+  #   - Restrict to local network only: add your LAN CIDR to timeout_bypass_ips
+  #     and leave bypass_password empty
+  #
+  # Notes:
+  #   - If both bypass_password and timeout_bypass_ips are unconfigured (or only
+  #     contain localhost), all public connections will be rejected. The admin
+  #     interface remains accessible regardless of this setting.
+  #   - A warning is logged at startup if this is enabled with no bypass method set.
+  #   - Default: false (open access)
+  bypassed_users_only: false
+
+  # Public IQ modes configuration
+  # Controls which wide IQ modes can be accessed without bypass authentication
+  # By default, all wide IQ modes (iq48-iq384) require bypass (IP or password)
+  # Set any mode to 'true' to make it publicly accessible without authentication
+  #
+  # Available wide IQ modes:
+  #   - iq48: 48 kHz bandwidth (48 kHz sample rate)
+  #   - iq96: 96 kHz bandwidth (96 kHz sample rate)
+  #   - iq192: 192 kHz bandwidth (192 kHz sample rate)
+  #   - iq384: 384 kHz bandwidth (384 kHz sample rate)
+  #
+  # Note: Standard 'iq' mode (10 kHz) is always publicly accessible
+  #
+  # Use cases:
+  #   - Allow public access to lower bandwidth modes while restricting higher ones
+  #   - Enable iq48 publicly for general users, keep iq96+ for authenticated users
+  #   - Control server bandwidth usage by limiting public access
+  #
+  # Example: Allow iq48 publicly but keep others restricted
+  # public_iq_modes:
+  #   iq48: true
+  #   iq96: false
+  #   iq192: false
+  #   iq384: false
+  #
+  # Default: All false except 48 KHz (require bypass authentication)
+  public_iq_modes:
+    # Allow 48 kHz IQ without bypass authentication (default: true)
+    iq48: true
+    # Allow 96 kHz IQ without bypass authentication (default: false)
+    iq96: false
+    # Allow 192 kHz IQ without bypass authentication (default: false)
+    iq192: false
+    # Allow 384 kHz IQ without bypass authentication (default: false)
+    iq384: false
+
+  # Enable CORS
+  enable_cors: true
+
+  # KiwiSDR protocol compatibility
+  # Allows KiwiSDR clients (like kiwirecorder.py) to connect to UberSDR.
+  #
+  # Usage with kiwirecorder.py:
+  #   python3 kiwirecorder.py -s your-host -p 8073 -f 14074 -m usb --tlimit 60
+
+  # Enable/disable KiwiSDR compatibility (default: false)
+  # When enabled, starts a separate HTTP server on the configured port.
+  # This creates standard UberSDR sessions with full IP tracking and
+  # authentication. The KiwiSDR server always listens on port 8073
+  # (the standard KiwiSDR port).
+  enable_kiwisdr: true
+
+  # Port advertised to rx.kiwisdr.com for directory registration (default: 8073)
+  # This is the port KiwiSDR clients will use to connect from the public
+  # directory. Change this if your KiwiSDR port is exposed publicly on a
+  # different port (e.g. via NAT).
+  kiwisdr_port: 8073
+
+  # Public email address shown in the KiwiSDR status endpoint.
+  # This is the operator contact email displayed to KiwiSDR clients.
+  # If not set, defaults to "admin@example.com".
+  # Use this to provide a public contact email separate from your admin email.
+  kiwisdr_public_email: "admin@example.com"
+
+  # Calibration offset for S-meter readings (dBFS to dBm conversion).
+  # This value is added to the baseband power (in dBFS) to convert to
+  # approximate dBm. Adjust based on your system's calibration to get accurate
+  # S-meter readings.
+  # Typical values: 25-35 (default: 30)
+  #   Higher values = higher S-meter readings (more sensitive)
+  #   Lower values = lower S-meter readings (less sensitive)
+  # Example: if -43 dBFS signals should show as S9 (-73 dBm), the offset is
+  # -73 - (-43) = -30, so use 30.
+  kiwisdr_smeter_offset: 20.0
+
+  # Public hostname advertised to rx.kiwisdr.com (required for registration)
+  # This is the hostname that KiwiSDR clients will use to connect to your SDR.
+  # Must be a publicly reachable hostname or IP address.
+  # Example: "mysdr.example.com" or "203.0.113.42"
+  # Leave empty to disable registration even if kiwisdr_register_kiwisdrcom is true.
+  kiwisdr_host: "kiwisdr.mydomain.com"
+
+  # Waterfall poll rate for KiwiSDR clients, as a divisor of spectrum.poll_period_ms
+  # (default: 2). At the default 100 ms poll period this is a 200 ms waterfall.
+  #
+  # Every poll makes radiod produce a whole spectrum response, and at wide zoom
+  # levels that is an FFT over the entire front end, so CPU is linear in this rate.
+  # 2 rather than 1 because the KiwiSDR protocol has no waterfall-speed control and
+  # its client has no idle throttle: a forgotten browser tab polls forever at
+  # whatever rate is set here.
+  #
+  # 1 = the full rate the native UberSDR frontend uses. Raise it to trade waterfall
+  # smoothness for CPU on a busy receiver. Capped so a channel still polls well
+  # inside its own keepalive.
+  kiwisdr_spectrum_divisor: 2
+
+  # Register with the rx.kiwisdr.com public receiver directory (default: false)
+  # Requires enable_kiwisdr: true — the directory entry points clients at port
+  # 8073, so the KiwiSDR server must be running for the listing to be useful.
+  # Also requires kiwisdr_host to be set to your public hostname.
+  # When enabled, sends a GET to kiwisdr.com/php/update.php every 45 minutes
+  # with station metadata (name, location, antenna, URL, user count, version).
+  # Setting to false sends a deregister packet on the next cycle.
+  kiwisdr_register_kiwisdrcom: false
+
+  # ─────────────────────────────────────────────────────────────────────────
+  # WebSDR Protocol Compatibility
+  # ─────────────────────────────────────────────────────────────────────────
+
+  # Enable/disable the WebSDR compatibility server (default: false).
+  # UberSDR can emulate a WebSDR server (websdr.org software) on a separate
+  # TCP port, so the original WebSDR browser frontend and any
+  # WebSDR-compatible tools can connect directly.
+  enable_websdr: true
+
+  # Waterfall dBFS→pixel calibration offset (default: -13.0).
+  # Adjust this if the WebSDR waterfall appears too bright or too dark.
+  websdr_waterfall_calibration: 20.0
+
+  # Waterfall poll rate for WebSDR clients at their "fast" Speed setting, as a
+  # divisor of spectrum.poll_period_ms (default: 2). At the default 100 ms poll
+  # period this is a 200 ms waterfall.
+  #
+  # Every poll makes radiod produce a whole spectrum response, and at wide zoom
+  # levels that is an FFT over the entire front end, so CPU is linear in this rate.
+  # 2 rather than 1 because the WebSDR client has no idle throttle -- a forgotten
+  # browser tab polls forever.
+  #
+  # The client's Speed selector multiplies this rather than replacing it, so it sets
+  # the ceiling on the rate and a client may only go below it:
+  #   fast = this value, medium = x2, slow = x4
+  #
+  # 1 = the full rate the native UberSDR frontend uses. Capped so even the slowest
+  # Speed setting still polls well inside the channel's keepalive.
+  websdr_spectrum_divisor: 2
+
+  # Operator contact email shown in the WebSDR UI /~~orgstatus response.
+  # XOR-obfuscated before transmission. Defaults to admin.email if not set.
+  websdr_email: "operator@example.com"
+
+  # Register this receiver with the websdr.org public directory (default: false).
+  # Requires enable_websdr: true.
+  #
+  # Listing is a two-phase protocol and BOTH phases must work:
+  #   1. Outbound: UberSDR sends
+  #        GET /~~websdrorg?host=<websdr_hostname>&port=<websdr_tcp_port>
+  #      to websdr.ewi.utwente.nl:80 every 60 seconds. A "200 OK / ok" reply
+  #      only means the ping was accepted — NOT that you will be listed.
+  #   2. Inbound: websdr.org then opens a TCP connection back to the
+  #      advertised hostname:port, waits about 60 seconds, sends
+  #      GET /~~orgstatus, and reuses that same connection for status polls
+  #      roughly every 10 seconds. UberSDR handles this natively.
+  #
+  # Because of phase 2 the advertised endpoint must be a real TCP endpoint
+  # reachable from the internet. An HTTP reverse proxy is NOT equivalent —
+  # use a plain TCP forward/tunnel if you are not directly reachable.
+  websdr_register_websdrorg: false
+
+  # Public hostname advertised to websdr.org.
+  # Leave empty to derive it from admin.public_url.
+  # Only used when websdr_register_websdrorg is true.
+  websdr_hostname: ""
+
+  # Public TCP port advertised to websdr.org (default: 8901).
+  # This is the port the OUTSIDE WORLD connects to, which is not necessarily
+  # the port UberSDR listens on — behind a NAT mapping or TCP tunnel it will
+  # differ from the local WebSDR listen port.
+  # Only used when websdr_register_websdrorg is true.
+  websdr_tcp_port: 8901
+
+  # HTTP request logging (Apache combined log format)
+  # Enable/disable HTTP request logging to disk (default: false)
+  # When enabled, logs all HTTP requests to the specified logfile
+  # Logs include: client IP, timestamp, method, path, status code, response size, referer, user agent
+  # Useful for monitoring traffic, debugging, security auditing, and performance analysis
+  logfile_enabled: false
+
+  # HTTP request log file path (default: "web.log")
+  # Path can be relative (to working directory) or absolute
+  # Only used when logfile_enabled is true
+  logfile: "web.log"
+
+  # Session Activity Logging
+  # Logs all session activity to disk for historical analysis and charting
+  # Creates JSONL (JSON Lines) files with snapshots of active sessions
+  # Each line contains timestamp, event type, and list of all active unique users
+  #
+  # Tracks unique users by UUID (not individual websocket connections)
+  # One user can have both audio and spectrum sessions simultaneously
+  # Logs include: UUID, IP addresses, auth method, session types, timestamps, user agent
+  #
+  # Session activity is stored in the SQLite database (ubersdr.db) as one row per
+  # session, updated in place: created when the session starts, refreshed while it
+  # runs, closed when it ends. Bands and modes visited are recorded once each.
+  # The session_activity_log_dir option is no longer used.
+  #
+  # Earlier versions appended a snapshot of every active session on each event,
+  # which meant the table grew as (events x concurrent sessions) and answering
+  # "what happened this month" meant replaying all of it. That table is converted
+  # to the current form once, on the first start after upgrading, and then dropped;
+  # progress is shown in the admin page banner.
+  #
+  # Enable session activity logging (default: false)
+  session_activity_log_enabled: true
+
+  # Interval in seconds between refreshes of the live session rows (default: 300)
+  # This sets how promptly a session's bands, modes and last-seen time are
+  # persisted, and how precisely a session that ended without a clean shutdown can
+  # be dated. It no longer affects how fast the table grows.
+  session_activity_log_interval_sec: 300
+
+  # Number of days to retain session history in the SQLite database (default: 30)
+  # Sessions that ended more than this many days ago are pruned by the DB retention
+  # loop, taking their band and mode rows with them. Sessions still running are
+  # never pruned.
+  # Set to 0 to keep data forever (no automatic pruning).
+  session_activity_log_retention_days: 30
+
+  # Public session statistics endpoint (default: true)
+  # When true, exposes a public, unauthenticated endpoint at
+  #   /api/session-stats
+  # returning privacy-conscious aggregates over the last 28 days: session counts
+  # per country, duration buckets, average activity per hour and weekday, and top
+  # browsers/operating systems/bands/modes. No IPs or session IDs are exposed.
+  # This is what the built-in statistics page (session_stats.html) charts, and
+  # what the UberSDR directory collector polls to build its fleet-wide stats.
+  #
+  # Answering it walks the whole session activity retention window, so the result
+  # is computed at most once every 15 minutes and shared by all callers. Set to
+  # false to remove the endpoint entirely (it then returns 404); the statistics
+  # page will show no data and the directory will not list stats for this receiver.
+  # Requires session_activity_log_enabled to produce anything useful.
+  public_session_stats_enabled: true
+
+  # Active-listener GeoJSON feed for maps (e.g. Home Assistant)
+  # When true, exposes a public, unauthenticated endpoint at
+  #   /api/sessions.geojson
+  # returning the current listeners as a GeoJSON FeatureCollection of Point
+  # features (approximate, GeoIP city-level location). Intended for Home
+  # Assistant's built-in GeoJSON integration (geo_json_events), which renders
+  # them as transient geo_location markers on a map that appear/vanish as users
+  # come and go. Requires the GeoIP service to be enabled for locations to
+  # resolve. Leave false unless you want visitor approximate locations exposed.
+  sessions_geojson_enabled: true
+
+  # Custom HTML injection for analytics, ads, and meta tags
+  # This HTML will be inserted into the <head> section of index.html
+  # Supports Google Analytics, Google Ads, meta tags, and other tracking scripts
+  # Leave empty (or comment out) to disable custom HTML injection
+  # Injected into both interfaces: the classic one at / and v2 at /v2/
+  #
+  # Example usage:
+  # custom_head_html: |
+  #   <!-- Google tag (gtag.js) -->
+  #   <script async src="https://www.googletagmanager.com/gtag/js?id=G-XXXXXXXXXX"></script>
+  #   <script>
+  #     window.dataLayer = window.dataLayer || [];
+  #     function gtag(){dataLayer.push(arguments);}
+  #     gtag('js', new Date());
+  #     gtag('config', 'G-XXXXXXXXXX');
+  #   </script>
+  #
+  #   <!-- Google Ads -->
+  #   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-XXXXXXXXXXXXXXXX" crossorigin="anonymous"></script>
+  #
+  #   <!-- Meta tags -->
+  #   <meta name="google-site-verification" content="your-verification-code" />
+  #   <meta property="og:title" content="Your SDR Title" />
+  #
+  custom_head_html: ""
+
+  # Custom HTML injection before </body> in index.html
+  # Use this for visible content that needs the DOM: banners, popups, Google Ads display unit <div>s,
+  # or any script that calls document.getElementById / document.body.appendChild.
+  # Scripts placed here run after the full page DOM is available.
+  # Leave empty (or comment out) to disable.
+  # Injected into both interfaces. In v2 it lands outside #root, so React never
+  # overwrites it — but anything targeting v1's own elements will find nothing there.
+  #
+  # Example usage:
+  # custom_body_html: |
+  #   <div id="my-banner" style="position:fixed;bottom:0;left:0;right:0;background:#222;color:#fff;text-align:center;padding:8px;z-index:9999;">
+  #     Welcome to my SDR! <a href="https://example.com" style="color:#4af;">Learn more</a>
+  #     <button onclick="this.parentElement.remove()" style="margin-left:12px;">✕</button>
+  #   </div>
+  #
+  custom_body_html: ""
+
+  # Widget UUIDs from the UberSDR collector to inject into index.html after custom_body_html.
+  # Each widget is rendered as a sandboxed <iframe srcdoc="..."> to prevent XSS.
+  # Widgets are fetched from the collector at startup and cached in memory (refreshed every 15 min).
+  # Add/remove widgets live from the admin UI (UI tab → Widgets) without restarting.
+  # Maximum 10 widgets enabled at once. Widget HTML is created/managed via the admin UI.
+  #
+  # Example:
+  # enabled_widgets:
+  #   - "550e8400-e29b-41d4-a716-446655440000"
+  #   - "a1b2c3d4-e5f6-7890-abcd-ef1234567890"
+  #
+  enabled_widgets: []
+
+  # Custom ads.txt content for Google AdSense verification
+  # This content will be served at /ads.txt endpoint
+  # Used for Google AdSense publisher verification and ad network authorization
+  # Leave empty (or comment out) to disable /ads.txt endpoint
+  #
+  # Example usage:
+  # custom_ads_txt: |
+  #   google.com, pub-1921837281690843, DIRECT, f08c47fec0942fa0
+  #   # Additional ad networks can be added here
+  #
+  # Format: domain, publisher_id, relationship, certification_authority_id
+  # See: https://iabtechlab.com/ads-txt/
+  #
+  custom_ads_txt: ""
+
+  # Default AGC parameters for USB/LSB sessions.
+  # These values are applied automatically when a user opens a USB or LSB channel,
+  # or switches into USB/LSB from another mode (e.g. AM → USB).
+  # If a user adjusts the AGC sliders, their values take priority for that session.
+  # Defaults match ka9q-radio's share/presets.conf usb/lsb preset values.
+  # Omit this section (or any field) to use the built-in defaults shown below.
+  ssb_agc:
+    hang_time_s: 1.1          # AGC hang time in seconds (0.0–10.0)
+    recovery_rate_db_s: 20.0  # AGC recovery rate in dB/s (1.0–100.0)
+    threshold_db: -15.0       # AGC threshold in dB relative to headroom (-30.0–0.0)
+                              # More negative = quieter background noise but weaker signals harder to hear
+                              # Less negative (e.g. -8.0) = louder background but weak signals more audible
+                              # Clamped to -30.0 minimum — values below this effectively silence the receiver
+
+  # CPU temperature threshold in °C for the cpu_temperature system-health probe.
+  # When the host's thermal sensor reports a temperature at or above this value,
+  # the cpu_temperature component is marked unhealthy and any matching
+  # system_health notification rule fires (see config/notifications.yaml).
+  # On systems with no readable thermal sensor the probe is silently skipped.
+  # Default: 95
+  cpu_temp_threshold_c: 95
+
+# Audio settings
+audio:
+  # Audio buffer size in samples
+  buffer_size: 4096
+  # Default sample rate in Hz (fallback for unknown modes; normally not needed)
+  default_sample_rate: 12000
+  # Note: per-mode sample rates are hardcoded in config.go (GetSampleRateForMode)
+  # and must match the samprate settings in ka9q-radio's presets.conf.
+  # Do NOT add a mode_sample_rates block here — it will be silently ignored.
+  # Opus compression settings
+  opus:
+    # Opus bitrate in bits per second (6000-510000, typical: 24000-64000)
+    # Lower = more compression but lower quality, Higher = better quality but more bandwidth
+    # 24000 = good for voice, 48000 = excellent for voice, 64000 = near-transparent
+    bitrate: 48000
+    # Opus complexity (0-10, higher = better quality but more CPU)
+    # 0 = fastest/lowest quality, 10 = slowest/highest quality
+    complexity: 5
+
+# Spectrum analyzer settings - per-user dynamic channels
+spectrum:
+  # Enable per-user spectrum channels
+  enabled: true
+
+  # Number of FFT bins across the receiver's full-span view — the horizontal
+  # resolution of the spectrum display and waterfall. Server-wide: this applies to
+  # every user, it is not a per-session setting. Bin bandwidth is derived
+  # automatically (span / bin_count) so the display always covers exactly the
+  # receiver's span, which follows the radiod sample rate: 0-30 MHz on a 64.8 Msps
+  # RX888, 0-60 MHz at 129.6 Msps. See RECEIVER_SPAN.md.
+  #
+  # Only three values are accepted; anything else snaps to the nearest:
+  #    512 = low     (58593.75 Hz/bin at full zoom-out, ~5 KB/s per client)
+  #   1024 = normal  (29296.875 Hz/bin at full zoom-out, ~10 KB/s per client)
+  #   2048 = high    (14648.4375 Hz/bin at full zoom-out, ~20 KB/s per client)
+  #
+  # Bandwidth figures are worst case (full frames at poll_period_ms: 100);
+  # delta encoding means typical traffic is well below this. Higher values also
+  # cost more CPU in radiod. Above 2048 gains nothing on a typical display, as
+  # the bins are interpolated onto a canvas only ~1000-2500 pixels wide.
+  #
+  # Maximum zoom depth is the same for all three settings.
+  # Default: 1024
+  bin_count: 1024
+
+  # Poll period in milliseconds (how often to request spectrum data for user WebSocket sessions).
+  # Lower values = faster updates but more CPU/network usage.
+  # Range: 10–250 ms (values outside this range are clamped). Default: 100ms (10 Hz).
+  poll_period_ms: 100
+  # Background poll period in milliseconds (how often to request spectrum data for internal
+  # sessions such as noise floor monitoring and frequency reference).
+  # This also controls the update rate of the /api/noisefloor/spectrum/stream SSE endpoint.
+  # Lower values give smoother real-time waterfall updates at the cost of slightly more
+  # CPU and radiod multicast traffic.
+  # Range: 100–2000 ms (values outside this range are clamped). Default: 250ms.
+  background_poll_period_ms: 250
+  # Maximum spectrum sessions per user (to prevent abuse)
+  max_sessions_per_user: 2
+  # Master gain adjustment in dB applied to all spectrum data
+  # This is a global offset applied to all frequencies
+  # Positive values increase displayed signal levels (brighten)
+  # Negative values decrease displayed signal levels (darken)
+  # Default: 0 (no adjustment)
+  # Example: 20 adds 20 dB to all spectrum values
+  gain_db: 0
+
+  # Frequency-dependent gain adjustments (optional)
+  # Allows per-band calibration to compensate for antenna gain variations,
+  # cable losses, or other frequency-dependent effects
+  # Each range adds its gain_db to the master gain_db value
+  #
+  # Use cases:
+  #   - Compensate for antenna gain variations across bands
+  #   - Adjust for frequency-dependent cable losses
+  #   - Calibrate S-meter readings to match real-world signal reports
+  #   - Normalize spectrum display across different frequency ranges
+  #
+  # Format:
+  #   - start_freq: Start frequency in Hz
+  #   - end_freq: End frequency in Hz
+  #   - gain_db: Gain adjustment in dB (positive or negative)
+  #   - transition_hz: Transition width in Hz (0 = hard cutoff, creates smooth slopes)
+  #
+  # Transition behavior:
+  #   - 0 Hz: Hard cutoff (instant on/off at start_freq and end_freq)
+  #   - Non-zero: Smooth linear ramp over the specified width
+  #   - Example: transition_hz: 20000 creates a 20 kHz smooth transition on each side
+  #
+  # Example: If master gain_db = 5.0 and a range has gain_db = 2.0,
+  #          signals in that range will have total gain of 7.0 dB
+  #
+  # Note: Overlapping ranges are allowed - first match is used
+  #
+  # Default: Empty map (no frequency-dependent adjustments)
+  # All ranges below are set to 0.0 dB (no adjustment) by default
+  # Modify the gain_db values as needed to calibrate your system
+  # You can add or remove ranges as needed - the name is just for identification
+  gain_db_frequency_ranges:
+    2200m:
+      start_freq: 135700
+      end_freq: 137800
+      gain_db: 0.0
+      transition_hz: 1000      # 1 kHz smooth transition
+
+    630m:
+      start_freq: 472000
+      end_freq: 479000
+      gain_db: 0.0
+      transition_hz: 2000      # 2 kHz smooth transition
+
+    160m:
+      start_freq: 1800000
+      end_freq: 2000000
+      gain_db: 0.0
+      transition_hz: 50000      # 50 kHz smooth transition
+
+    80m:
+      start_freq: 3500000
+      end_freq: 4000000
+      gain_db: 0.0
+      transition_hz: 75000      # 75 kHz smooth transition
+
+    60m:
+      start_freq: 5250000
+      end_freq: 5450000
+      gain_db: 0.0
+      transition_hz: 50000      # 50 kHz smooth transition
+
+    40m:
+      start_freq: 7000000
+      end_freq: 7200000
+      gain_db: 0.0
+      transition_hz: 50000      # 50 kHz smooth transition
+
+    30m:
+      start_freq: 10100000
+      end_freq: 10150000
+      gain_db: 0.0
+      transition_hz: 25000      # 25 kHz smooth transition (narrow band)
+
+    20m:
+      start_freq: 14000000
+      end_freq: 14350000
+      gain_db: 0.0
+      transition_hz: 75000      # 75 kHz smooth transition
+
+    17m:
+      start_freq: 18068000
+      end_freq: 18168000
+      gain_db: 0.0
+      transition_hz: 50000      # 50 kHz smooth transition
+
+    15m:
+      start_freq: 21000000
+      end_freq: 21450000
+      gain_db: 0.0
+      transition_hz: 100000     # 100 kHz smooth transition
+
+    12m:
+      start_freq: 24890000
+      end_freq: 24990000
+      gain_db: 0.0
+      transition_hz: 50000      # 50 kHz smooth transition
+
+    10m:
+      start_freq: 28000000
+      end_freq: 29700000
+      gain_db: 0.0
+      transition_hz: 150000     # 150 kHz smooth transition (wide band)
+
+    broadcast:
+      start_freq: 300000
+      end_freq: 1640000
+      gain_db: 0.0
+      transition_hz: 60000      # 60 kHz smooth transition
+
+  # Binary protocol delta encoding threshold in dB
+  # When using binary mode (mode=binary), only bins that change by more than this threshold
+  # are transmitted in delta frames, significantly reducing bandwidth
+  # Range: 1.0 to 10.0 dB
+  #   1.0 = very sensitive - transmits small noise variations (higher bandwidth)
+  #   3.0 = balanced - ignores noise, captures signal changes (recommended)
+  #   6.0 = aggressive - one S-unit, only major signal changes (lower bandwidth)
+  #   10.0 = very aggressive - only very large signal changes (lowest bandwidth)
+  # Default: 3.0 dB
+  # Note: Higher values reduce bandwidth but may miss weak signal variations
+  delta_threshold_db: 3.0
+
+  # How many FFTs radiod averages into each spectrum response (SPECTRUM_AVG).
+  #
+  # This is the main trade-off between how fast the waterfall reacts and how
+  # noisy it looks, and it is applied inside radiod rather than here:
+  #   1  = no averaging. Fastest reaction, grainiest display.
+  #   4  = default. A good compromise for most receivers.
+  #   10 = radiod's own default. Smoothest, but transients take several frames
+  #        to appear and it can look like the spectrum has stalled.
+  #
+  # It also costs CPU in radiod, roughly proportionally: each average is a
+  # separate FFT run on every poll. radiod's spectrum thread is deliberately
+  # scheduled below the demodulators, so on a busy receiver a high value here is
+  # the first thing to fall behind — and when it does, polls are dropped rather
+  # than delayed, which shows up as missed frames.
+  #
+  # Applied when a spectrum channel is created, so a change needs the affected
+  # sessions to reconnect (or a restart) to take effect.
+  # Valid range 1-10; values outside it are clamped and logged. Default: 4
+  spectrum_fft_averages: 4
+
+  # Smoothing settings for waterfall display
+  # Reduces fuzziness and noise in the spectrum display
+  smoothing:
+    # Enable/disable smoothing (set to false to disable all smoothing)
+    enabled: true
+
+    # Temporal smoothing (time domain) - Exponential Moving Average (EMA)
+    # Controls smoothing between consecutive waterfall frames
+    # Range: 0.0 to 1.0
+    #   0.1 = heavy smoothing (90% old data, 10% new) - very smooth but slower response
+    #   0.3 = moderate smoothing (70% old, 30% new) - good balance (recommended)
+    #   0.5 = light smoothing (50% old, 50% new) - faster response
+    #   1.0 = no temporal smoothing (100% new data)
+    # Default: 0.3
+    temporal_alpha: 0.3
+
+    # Spatial smoothing (frequency domain) - Gaussian filter
+    # Controls smoothing across adjacent frequency bins
+    # Range: 0.0 to 5.0 (0 = disabled)
+    #   0.0 = no spatial smoothing
+    #   1.0 = light smoothing - subtle, preserves detail
+    #   1.5 = moderate smoothing - good balance (recommended)
+    #   2.0 = medium smoothing - smoother appearance
+    #   3.0+ = heavy smoothing - very smooth but may blur signals
+    # Default: 1.5
+    spatial_sigma: 1.5
+
+# Logging settings
+logging:
+  # Log level: debug, info, warn, error
+  level: "info"
+  # Log format: text, json
+  format: "text"
+
+# Database settings
+#
+# UberSDR stores its history (spots, sessions, chat, noise floor, decoder
+# metrics and the WSPR/PSK/RBN leaderboards) in a single SQLite database.
+# A pruning loop runs once at startup and then hourly, deleting rows older
+# than the retention period configured for each subsystem.
+#
+# Retention for spots and session activity is configured elsewhere:
+#   decoder.spots_log_max_age_days              (decoder.yaml)
+#   server.session_activity_log_retention_days  (this file)
+#
+database:
+  # Number of days of WSPR/PSK/RBN leaderboard history to keep.
+  # Covers the stats tables: wspr_rank_windows, wspr_rank_rows,
+  # psk_rank_snapshots, psk_rank_entries, psk_software, rbn_skew, rbn_stats.
+  #
+  # These tables are by far the largest in the database — a WSPR snapshot is
+  # taken hourly and each one holds a full leaderboard, adding roughly 150,000
+  # rows per day. The /api/stats/* history endpoints reject any query spanning
+  # more than 30 days, so rows older than that cannot be read back regardless
+  # of this setting; raising it above 30 grows the database without making the
+  # extra history reachable through the API.
+  #
+  # Set to 0 to keep all leaderboard history forever (unbounded growth).
+  # Default: 30
+  stats_retention_days: 30
+
+  # Number of days of notification dispatch history to keep in the
+  # notification_log table (every rule -> channel send attempt, with its
+  # success/failure status and response details). See notifications.yaml for
+  # channel and rule configuration.
+  #
+  # Set to 0 to keep all notification history forever (unbounded growth).
+  # Default: 30
+  notification_log_retention_days: 30
+
+# DX Cluster settings
+dxcluster:
+  # Enable DX cluster connection
+  enabled: false
+  # DX cluster host (well-known public cluster - dxspider.co.uk is very active)
+  host: "dxspider.co.uk"
+  # DX cluster port (standard telnet port for DX clusters)
+  port: 7300
+  # Your amateur radio callsign (required for login - must be a valid callsign)
+  callsign: "N0CALL"
+  # Reconnection delay in seconds (time to wait before reconnecting after disconnect)
+  reconnect_delay: 30
+  # Keep-alive delay in seconds (time between keep-alive messages to prevent timeout)
+  keepalive_delay: 300
+  # Commands to send to the cluster server after a successful login, one per line.
+  # Each command is sent 250 ms after the previous one to give the server time to process.
+  # Useful for setting filters, enabling DX announcements, or configuring cluster behaviour.
+  # Leave empty (or omit) to send no post-login commands.
+  #
+  # Examples:
+  #   login_commands:
+  #     - "set/dx"           # Enable DX spot announcements (some clusters require this)
+  #     - "set/skimmer"      # Enable RBN/skimmer spots
+  #     - "set/filter"       # Apply a pre-configured filter
+  #     - "accept/spot 1 on hf"   # Accept only HF spots
+  #
+  login_commands: []
+
+  # Spot injection endpoint
+  # When enabled, trusted local services can POST spots directly into the feed
+  # without going through an external cluster connection.  Injected spots are
+  # indistinguishable from real cluster spots — they appear in the SSE stream,
+  # WebSocket feed, spot buffer, and frequency index (voice-activity enrichment).
+  #
+  # POST /api/dxcluster/inject
+  # Content-Type: application/json
+  # Body: { "spotter": "MM3NDH", "frequency": 14074000, "dx_call": "DL1ABC", "comment": "FT8 -12dB" }
+  #   frequency — in Hz; band, country, continent derived automatically
+  #   comment   — optional
+  #
+  # Default: true (enabled)
+  inject_enabled: true
+  #
+  # Docker container names or IPs permitted to call the inject endpoint.
+  # Container names are resolved via DNS every 5 seconds (same mechanism as
+  # server.trusted_containers), so they work correctly even when Docker
+  # reassigns IPs.  Set to [] to deny all injection requests.
+  # Default: ["dxcluster"]
+  inject_trusted_hosts:
+    - "dxcluster"
+
+# FreeDV Reporter activity monitor
+# When enabled, UberSDR connects to the FreeDV Reporter server as a view-only client
+# and makes the live activity list available to browser clients over the DX cluster
+# WebSocket (subscribe with: {"type":"subscribe_freedv_activity"}).
+# No callsign or credentials are required — this is a read-only connection.
+freedv_reporter:
+  # Enable or disable the FreeDV Reporter activity monitor
+  # Default: false
+  enabled: false
+  # WebSocket URI of the FreeDV Reporter server
+  # Default: ws://qso.freedv.org:80/socket.io/?EIO=4&transport=websocket
+  uri: "ws://qso.freedv.org:80/socket.io/?EIO=4&transport=websocket"
+  # Reconnection delay in seconds (time to wait before reconnecting after disconnect)
+  # Default: 30
+  reconnect_delay: 30
+
+# Live Chat settings
+# Provides real-time chat functionality over the DX cluster websocket
+# Users can communicate with each other while monitoring DX spots
+chat:
+  # Enable or disable live chat functionality
+  # When enabled, users can set a username and send chat messages
+  # Chat uses the same websocket connection as DX spots (no additional connections)
+  # Default: false
+  enabled: true
+  
+  # Maximum number of concurrent chat users
+  # Limits how many users can have active chat sessions simultaneously
+  # This is separate from the general max_sessions limit
+  # Set to 0 for unlimited chat users
+  # Default: 25
+  # Recommended: 25-50 for small to medium instances
+  max_users: 25
+  
+  # Number of messages to buffer for new connections
+  # When a user connects, they receive this many recent chat messages
+  # Helps new users see recent conversation context
+  # Default: 50
+  # Recommended: 25-100 depending on chat activity
+  buffered_messages: 50
+  
+  # Rate limit: maximum messages per second per user
+  # Prevents users from flooding the chat with rapid messages
+  # Default: 2 (two messages per second)
+  # Recommended: 1-2 for normal chat
+  rate_limit_per_second: 2
+  
+  # Rate limit: maximum messages per minute per user
+  # Prevents sustained spam over longer periods
+  # Default: 30 (30 messages per minute)
+  # Recommended: 20-30 for normal chat
+  rate_limit_per_minute: 30
+  
+  # Rate limit: maximum user updates per second per user
+  # Limits how often users can update their frequency/mode information
+  # Prevents spam of chat_user_update events to all connected clients
+  # Default: 10 (updates per second)
+  # Recommended: 5-10 for normal usage
+  update_rate_limit_per_second: 10
+  
+  # Historical chat messages are stored in the SQLite database (ubersdr.db).
+  # The log_to_csv and data_dir options are no longer used.
+
+  # Restrict owner callsign as username to admin IPs only (default: true)
+  # When enabled, only users connecting from admin->allowed_ips can use the
+  # admin->callsign as their chat username. This prevents impersonation of
+  # the station owner in chat.
+  # When disabled, anyone can use the owner's callsign as a username.
+  # Comparison is case-insensitive (e.g., "N0CALL", "n0call", "N0Call" all match)
+  # Recommended: true (enabled for security)
+  # Default: true
+  owner_callsign_from_admin_ip_only: true
+
+  # Welcome message sent to new clients when they subscribe to chat
+  # Appears at the bottom of the buffered message history replay, so it is
+  # the first thing a new user sees — right before live messages start.
+  # Sent under the admin callsign (admin->callsign). Leave empty to disable.
+  # Default: "" (no welcome message)
+  welcome_message: "Welcome! Please keep chat friendly and on-topic. Enjoy UberSDR!"
+
+# Space Weather settings
+spaceweather:
+  # Enable space weather monitoring from NOAA SWPC
+  # Provides solar flux, K-index, and propagation data for HF bands
+  # fernbench: offline: fetches NOAA space weather every 15 minutes (was: enabled: true)
+  enabled: false
+  
+  # Polling interval in seconds (how often to fetch data from NOAA)
+  # NOAA data updates approximately every 15 minutes
+  # Recommended: 900 seconds (15 minutes) to match NOAA update frequency
+  # Minimum recommended: 300 seconds (5 minutes) to avoid excessive API calls
+  poll_interval_sec: 900
+  # Historical data is stored in the SQLite database (ubersdr.db).
+  # The log_to_csv and data_dir options are no longer used.
+
+# Prometheus Metrics settings
+prometheus:
+  # Enable or disable Prometheus metrics endpoint
+  # When enabled, exposes metrics at /metrics endpoint for scraping
+  enabled: true
+  
+  # List of IP addresses or CIDR ranges allowed to access the metrics endpoint
+  # Only these IPs can scrape the /metrics endpoint
+  # Supports both IPv4 and IPv6 addresses with CIDR notation
+  # Examples:
+  #   - "127.0.0.1"           # Single IPv4 address (localhost)
+  #   - "192.168.1.0/24"      # IPv4 CIDR range
+  #   - "::1"                 # Single IPv6 address (localhost)
+  #   - "2001:db8::/32"       # IPv6 CIDR range
+  # By default, only localhost is allowed for security
+  allowed_hosts:
+    - "127.0.0.1"
+    - "::1"
+    - "172.20.0.1"
+  # Additional examples (uncomment to use):
+  #   - "192.168.1.0/24"      # Local network
+  #   - "10.0.0.0/8"          # Private network
+  
+  # UberSDR Pushgateway settings
+  # These settings are for sending metrics to the central ubersdr.org collector
+  pushgateway:
+    # Enable or disable pushing to Pushgateway
+    # fernbench: offline: pushes metrics to push.ubersdr.org (was: enabled: true)
+    enabled: false
+    
+    # Pushgateway URL (required if enabled)
+    # Default: "https://push.ubersdr.org:9091"
+    url: "https://push.ubersdr.org:9091"
+    
+    # Instance UUID for basic auth username (required if enabled)
+    # This should be a unique UUID for this SDR instance
+    # Used as both the Prometheus instance label and basic auth username
+    # Generate with: uuidgen (Linux/Mac) or New-Guid (PowerShell)
+    # Example: "550e8400-e29b-41d4-a716-446655440000"
+    instance: ""
+    
+    # Token UUID for basic auth password (required if enabled)
+    # This should be a secret UUID used as the basic auth password
+    # Generate with: uuidgen (Linux/Mac) or New-Guid (PowerShell)
+    # Example: "6ba7b810-9dad-11d1-80b4-00c04fd430c8"
+    token: ""
+  
+  # Metrics to expose (all enabled by default when prometheus.enabled = true)
+  #
+  # Noisefloor metrics (with 'band' label):
+  #   - noisefloor_p5_db: 5th percentile (noise floor estimate)
+  #   - noisefloor_p10_db: 10th percentile
+  #   - noisefloor_median_db: Median power level
+  #   - noisefloor_mean_db: Mean power level
+  #   - noisefloor_p95_db: 95th percentile (signal peaks)
+  #   - noisefloor_max_db: Maximum power level
+  #   - noisefloor_min_db: Minimum power level
+  #   - noisefloor_dynamic_range_db: Dynamic range (P95 - P5)
+  #   - noisefloor_occupancy_percent: Percentage of bins above noise + 10dB
+  #   - noisefloor_ft8_snr_db: FT8 SNR estimate
+  #   - noisefloor_last_update_timestamp: Unix timestamp of last measurement
+  #
+  # System metrics (no labels):
+  #   - ubersdr_active_sessions_total: Total active sessions (audio + spectrum)
+  #   - ubersdr_active_users_total: Total unique users (by UUID)
+  #   - ubersdr_active_audio_sessions_total: Active audio sessions only
+  #   - ubersdr_active_spectrum_sessions_total: Active spectrum sessions only
+  #
+  # Radiod channel metrics:
+  #   - ubersdr_radiod_channels_total: Total active radiod channels (audio + spectrum)
+  #   - ubersdr_radiod_audio_channels_total: Active audio radiod channels
+  #   - ubersdr_radiod_spectrum_channels_total: Active spectrum radiod channels
+  #
+  # WebSocket metrics:
+  #   - ubersdr_websocket_connections_total{type}: Total WebSocket connections by type (audio, spectrum, dxcluster)
+  #   - ubersdr_websocket_disconnects_total{type}: Total WebSocket disconnections by type
+  #   - ubersdr_websocket_active_connections{type}: Currently active WebSocket connections by type
+  #   - ubersdr_websocket_messages_received_total{type}: Messages received (by type: audio, spectrum, dxcluster)
+  #   - ubersdr_websocket_messages_sent_total{type}: Messages sent (by type)
+  #
+  # Data throughput metrics:
+  #   - ubersdr_audio_bytes_total: Total audio bytes sent to clients
+  #   - ubersdr_spectrum_packets_total: Total spectrum packets sent to clients
+  #
+  # DX Cluster metrics:
+  #   - ubersdr_dx_spots_total{band}: Total DX spots received from cluster by band (160m-10m, 6m, other)
+  #   - ubersdr_dx_cluster_connections_total: Total DX cluster connection attempts
+  #   - ubersdr_dx_cluster_disconnects_total: Total DX cluster disconnections
+  #   - ubersdr_dx_cluster_connected: Current DX cluster connection status (1=connected, 0=disconnected)
+  #
+  # Error metrics:
+  #   - ubersdr_session_creation_errors_total: Failed session creations
+  #   - ubersdr_radiod_errors_total: Radiod communication errors
+  #   - ubersdr_rate_limit_errors_total{type}: HTTP 429 rate limit errors by type (audio, spectrum, aggregate)
+  #   - ubersdr_idle_timeout_kicks_total{type}: Users kicked due to idle timeout by session type (audio, spectrum, mixed)
+  #
+  # Performance metrics:
+  #   - ubersdr_session_duration_seconds{type}: Session duration histogram (by type: audio, spectrum)
+  #   - ubersdr_aggregate_request_duration_seconds: Aggregate endpoint request latency histogram
+  #
+  # Resource metrics:
+  #   - ubersdr_goroutines_total: Current number of goroutines
+  #   - ubersdr_memory_alloc_bytes: Current memory allocated in bytes
+  #   - ubersdr_memory_total_bytes: Total memory allocated (cumulative) in bytes
+  #   - ubersdr_memory_heap_bytes: Current heap memory in bytes
+  #   - ubersdr_memory_stack_bytes: Current stack memory in bytes
+  #   - ubersdr_gc_pause_seconds: Last garbage collection pause duration in seconds
+  #
+  # Note: The Prometheus Go client also automatically exports standard process metrics:
+  #   - process_cpu_seconds_total: Total CPU time consumed
+  #   - process_resident_memory_bytes: Resident memory size
+  #   - process_virtual_memory_bytes: Virtual memory size
+  #   - process_open_fds: Number of open file descriptors
+  #   - go_memstats_*: Detailed Go runtime memory statistics
+  #
+  # Example Prometheus queries:
+  #   - avg(noisefloor_p5_db)                    # Average noise floor across all bands
+  #   - noisefloor_p5_db{band="20m"}             # 20m band noise floor
+  #   - noisefloor_occupancy_percent > 50        # Bands with high occupancy
+  #   - ubersdr_active_users_total               # Current number of users
+  #   - rate(ubersdr_active_sessions_total[5m])  # Session creation rate
+  #   - rate(ubersdr_audio_bytes_total[5m])      # Audio throughput (bytes/sec)
+  #   - ubersdr_websocket_active_connections{type="audio"}     # Active audio WebSocket connections
+  #   - ubersdr_websocket_active_connections{type="spectrum"}  # Active spectrum WebSocket connections
+  #   - ubersdr_websocket_active_connections{type="dxcluster"} # Active DX cluster WebSocket connections
+  #   - sum(ubersdr_websocket_active_connections)              # Total active WebSocket connections
+  #   - rate(ubersdr_websocket_messages_sent_total{type="audio"}[1m]) # Audio message rate
+  #   - histogram_quantile(0.95, rate(ubersdr_session_duration_seconds_bucket[5m])) # 95th percentile session duration
+  #   - histogram_quantile(0.99, rate(ubersdr_aggregate_request_duration_seconds_bucket[5m])) # 99th percentile aggregate latency
+  #   - ubersdr_rate_limit_errors_total{type="audio"}     # Audio command rate limit errors
+  #   - ubersdr_rate_limit_errors_total{type="spectrum"}  # Spectrum command rate limit errors
+  #   - ubersdr_rate_limit_errors_total{type="aggregate"} # Aggregate endpoint rate limit errors
+  #   - ubersdr_idle_timeout_kicks_total{type="audio"}    # Audio session idle timeout kicks
+  #   - ubersdr_idle_timeout_kicks_total{type="spectrum"} # Spectrum session idle timeout kicks
+  #   - ubersdr_idle_timeout_kicks_total{type="mixed"}    # Mixed (audio+spectrum) idle timeout kicks
+  #   - ubersdr_goroutines_total                 # Current goroutine count
+  #   - ubersdr_memory_heap_bytes / 1024 / 1024  # Heap memory in MB
+  #   - rate(process_cpu_seconds_total[1m])      # CPU usage rate
+# MQTT Metrics Publishing settings
+mqtt:
+  # Enable or disable MQTT metrics publishing
+  # When enabled, publishes metrics to an MQTT broker in JSON format
+  enabled: false
+  
+  # MQTT broker connection settings
+  broker: "tcp://mqtt.example.com:1883"  # MQTT broker URL (tcp:// or ssl://)
+  
+  # MQTT broker username. Leave empty if the broker does not require
+  # authentication.
+  username: ""
+
+  # MQTT broker password. Leave empty if the broker does not require
+  # authentication.
+  password: ""
+  
+  # Topic prefix for all metrics
+  # Metrics will be published to: {topic_prefix}/{category}/{band}
+  # Example: "ubersdr/metrics/noisefloor/40m"
+  # Spectrum data will be published to: {topic_prefix}/spectrum/{band}
+  topic_prefix: "ubersdr/metrics"
+  
+  # Publishing interval for aggregate metrics in seconds
+  # How often to publish Prometheus metrics to MQTT broker
+  # Recommended: 60 seconds (matches Pushgateway default)
+  publish_interval: 60
+  
+  # Spectrum data publishing settings
+  # Enable or disable spectrum FFT data publishing to MQTT
+  # When enabled, publishes raw FFT arrays as JSON to separate topics
+  # This is separate from aggregate metrics and uses a different interval
+  spectrum_publish_enabled: false
+  
+  # Publishing interval for spectrum data in seconds
+  # How often to publish spectrum FFT arrays to MQTT broker
+  # Recommended: 10 seconds (matches HTTP endpoint update rate)
+  # Lower values = more frequent updates but more bandwidth usage
+  spectrum_publish_interval: 10
+  
+  # MQTT Quality of Service level (0, 1, or 2)
+  # 0 = At most once (fire and forget)
+  # 1 = At least once (acknowledged delivery)
+  # 2 = Exactly once (assured delivery)
+  # Recommended: 1 for reliable delivery without overhead
+  qos: 1
+  
+  # Retain flag - if true, broker retains last message for new subscribers
+  # Recommended: false for time-series data
+  retain: false
+
+  # Home Assistant MQTT Discovery
+  # When true, UberSDR publishes retained Home Assistant discovery config
+  # messages so entities auto-appear in Home Assistant with no manual YAML.
+  # It also publishes an availability status topic ({topic_prefix}/status) with
+  # a birth ("online") / Last Will ("offline") message, so entities go
+  # unavailable if UberSDR disconnects from the broker.
+  # Requires Home Assistant's MQTT integration to be set up and pointed at the
+  # same broker. Entities created: active users (+ live session attributes),
+  # space weather (SFI / K / A / Bz / propagation), per-band noise-floor
+  # occupancy & FT8 SNR, system load / CPU temperature, and component health
+  # binary sensors. All grouped under a single "UberSDR <callsign>" device.
+  homeassistant_discovery: false
+
+  # Home Assistant discovery topic prefix. Must match HA's MQTT integration
+  # "discovery prefix" setting (default: "homeassistant").
+  homeassistant_prefix: "homeassistant"
+
+  # ---------------------------------------------------------------------------
+  # Addon → MQTT ingest
+  # ---------------------------------------------------------------------------
+  # Lets addon containers (see addons.yaml) publish their own events through
+  # UberSDR's MQTT connection, and declare their own Home Assistant entities,
+  # without having MQTT credentials of their own.
+  #
+  # NOTHING NEEDS CONFIGURING HERE. When MQTT is enabled this runs automatically,
+  # and every enabled addon in addons.yaml is permitted — installing an addon is
+  # all you have to do. The settings below exist only for tightening it.
+  #
+  # How it is kept safe:
+  #   * The listener binds a port that is NOT published in docker-compose.yml,
+  #     so it is only reachable from the sdr-network. Do not add it to "ports:".
+  #   * Every request is authenticated by matching the raw TCP source address
+  #     against the addon container names from addons.yaml, so an addon's
+  #     identity cannot be forged in a header or request body.
+  #   * Addons never supply a topic. They supply a sub-topic tail, which is
+  #     placed under {topic_prefix}/{topic_namespace}/{addon}/. One addon cannot
+  #     write to another addon's topics, to UberSDR's own topics, or to the Home
+  #     Assistant discovery tree.
+  #
+  # Addons publish with:
+  #   POST http://ubersdr:6926/publish/{sub_topic}   body = JSON payload
+  #   POST http://ubersdr:6926/discovery             body = HA entity declaration
+  #   GET  http://ubersdr:6926/health                (what UberSDR thinks you are)
+  addon_ingest:
+    # Master switch. Defaults to true when MQTT is enabled.
+    enabled: true
+
+    # Listener port. Must NOT appear in the docker-compose "ports:" list.
+    port: 6926
+
+    # Topic segment inserted between topic_prefix and the addon name, i.e.
+    # {topic_prefix}/{topic_namespace}/{addon}/{sub_topic}
+    topic_namespace: "addons"
+
+    # Optional allowlist of container hostnames. Empty (the default) means
+    # "every enabled addon in addons.yaml", which is what makes this zero-config.
+    allowed_containers: []
+
+    # Maximum size of a single published payload, in bytes.
+    max_payload_bytes: 65536
+
+    # Maximum publishes per minute, per addon.
+    rate_limit: 120
+
+    # Highest QoS an addon may request (requests above this are clamped).
+    max_qos: 1
+
+    # Whether addons may publish retained messages.
+    allow_retain: true
+
+    # How long an addon may go without publishing before UberSDR marks it
+    # offline on {topic_prefix}/{topic_namespace}/{addon}/status. Its Home
+    # Assistant entities then show as unavailable rather than showing a stale
+    # value as if it were live.
+    offline_after_sec: 300
+
+    # Maximum Home Assistant entities a single addon may declare.
+    max_entities: 20
+
+    # Whether addons may declare Home Assistant entities. Defaults to whatever
+    # homeassistant_discovery above is set to, so no extra opt-in is needed.
+    # Each addon appears as its own HA device, linked to the receiver, with a
+    # link straight through to the addon's own web UI. Set false to allow data
+    # publishing but no Home Assistant entities.
+    # homeassistant_discovery: true
+
+  # TLS/SSL settings for secure connections
+  tls:
+    # Enable TLS/SSL for the MQTT broker connection (default: false).
+    # Use together with an ssl:// broker URL above.
+    enabled: false
+    ca_cert: ""      # Path to CA certificate file
+    client_cert: ""  # Path to client certificate file (optional)
+    client_key: ""   # Path to client key file (optional)
+
+
+# Noise Floor Monitoring settings
+noisefloor:
+  # Note: enabled and poll_interval_sec are hard-coded in config.go and cannot be
+  # changed here. Noise floor monitoring is always on (enabled: true) and always
+  # polls every 60 seconds. These fields are kept in the YAML for documentation
+  # purposes only — any value set here is ignored.
+  enabled: true          # always forced true — do not change
+  poll_interval_sec: 60  # always forced to 60 — do not change
+
+  # Exit ubersdr when all spectrum channels stall after a reconnect attempt (default: true)
+  # When enabled, if all band spectrum channels are still stalled 30 seconds after the
+  # first reconnect attempt, ubersdr will exit cleanly (os.Exit(0)). The process manager
+  # (Docker) will restart ubersdr, which in turn triggers a fresh radiod restart via
+  # entrypoint.sh. This is the most reliable recovery from a radiod crash or hang.
+  # When disabled, only individual channel reconnection is attempted indefinitely.
+  # NOTE: Set explicitly to false to disable — omitting this key defaults to true.
+  restart_on_stall: true
+
+  # Historical data is stored in the SQLite database (ubersdr.db).
+  # The data_dir option is no longer used for runtime writes.
+
+  # Amateur radio bands to monitor
+  # Each band gets its own dedicated spectrum channel with optimized resolution
+  # This provides much better frequency resolution than a single wide 0-30 MHz spectrum
+  #
+  # Each band has three parameters:
+  #   - center_frequency: Center frequency for this band's spectrum (Hz)
+  #   - bin_count: Number of FFT bins for this band
+  #   - bin_bandwidth: Bandwidth per bin in Hz (determines resolution)
+  #
+  # Example: 20m band with 200 Hz/bin can clearly see 50 Hz wide FT8 signals!
+  # Compare to old 3 kHz/bin where FT8 was averaged out.
+  #
+  # KEEP bin_bandwidth AT OR BELOW 200 Hz. This is not about resolution -- it is
+  # which algorithm radiod uses, and the two cost wildly different things:
+  #
+  #   bin_bandwidth <= 200   radiod downconverts to the band and transforms only
+  #                          that. Cost is the band's width, and it does NOT rise
+  #                          with the poll rate.
+  #   bin_bandwidth >  200   radiod transforms the ENTIRE front end at that
+  #                          resolution and keeps the bins you asked for. A 300 kHz
+  #                          band at 500 Hz/bin is a 259,200-point FFT of all
+  #                          129.6 MHz, every poll, to look at 300 kHz of it.
+  #
+  # These bands were all above the crossover and cost about 26% of a CPU core at
+  # the 1000 ms default background poll -- and 200%, two whole cores, at the 100 ms
+  # people usually set for a smooth SSE spectrum stream. Below the crossover the
+  # whole set costs about 28% at ANY poll rate, and most bands gained resolution.
+  #
+  # Because the cost below the crossover is the band's width and nothing else,
+  # finer bins are free: only bin_count (and so packet size) grows. Keep bin_count
+  # even -- the FFT unwrap swaps two halves and an odd count drops a bin.
+  #
+  # If you omit these parameters, sensible defaults will be calculated automatically.
+  bands:
+    - name: 2200m
+      bin_bandwidth: 5
+      bin_count: 500
+      center_frequency: 136750
+      end: 137800
+      start: 135700
+
+    - name: 630m
+      bin_bandwidth: 7
+      bin_count: 1000
+      center_frequency: 475500
+      end: 479000
+      start: 472000
+
+    - name: "160m"            # Band label shown in the UI and in noise-floor data
+      start: 1800000          # 1.8 MHz
+      end: 2000000            # 2.0 MHz
+      center_frequency: 1900000  # Center frequency for this band's spectrum (Hz)
+      bin_count: 1000          # 400 bins × 500 Hz = 200 kHz coverage (60% fewer bins vs 1000)
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 1840000  # 1.840 MHz - FT8 calling frequency
+    
+    - name: "80m"
+      start: 3500000          # 3.5 MHz
+      end: 4000000            # 4.0 MHz
+      center_frequency: 3750000
+      bin_count: 2500
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 3573000  # 3.573 MHz - FT8 calling frequency
+    
+    - name: "60m"
+      start: 5250000          # 5.25 MHz
+      end: 5450000            # 5.45 MHz
+      center_frequency: 5350000
+      bin_count: 1000          # 400 bins × 500 Hz = 200 kHz coverage (60% fewer bins vs 1000)
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 5357000  # 5.357 MHz - FT8 calling frequency
+    
+    - name: "40m"
+      start: 7000000          # 7.0 MHz
+      end: 7200000            # 7.2 MHz
+      center_frequency: 7100000
+      bin_count: 1000          # 400 bins × 500 Hz = 200 kHz coverage (60% fewer bins vs 1000)
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 7074000  # 7.074 MHz - FT8 calling frequency
+    
+    - name: "30m"
+      start: 10100000         # 10.1 MHz
+      end: 10150000           # 10.15 MHz
+      center_frequency: 10125000
+      bin_count: 500
+      bin_bandwidth: 100      # 100 Hz resolution (narrow band)
+      ft8_frequency: 10136000 # 10.136 MHz - FT8 calling frequency
+    
+    - name: "20m"
+      start: 14000000         # 14.0 MHz
+      end: 14350000           # 14.35 MHz
+      center_frequency: 14175000
+      bin_count: 1750          # 700 bins × 500 Hz = 350 kHz coverage (30% fewer bins vs 1000)
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 14074000 # 14.074 MHz - FT8 calling frequency
+    
+    - name: "17m"
+      start: 18068000         # 18.068 MHz
+      end: 18168000           # 18.168 MHz
+      center_frequency: 18118000
+      bin_count: 500
+      bin_bandwidth: 200      # 200 Hz resolution
+      ft8_frequency: 18100000 # 18.100 MHz - FT8 calling frequency
+    
+    - name: "15m"
+      start: 21000000         # 21.0 MHz
+      end: 21450000           # 21.45 MHz
+      center_frequency: 21225000
+      bin_count: 2250          # 900 bins × 500 Hz = 450 kHz coverage (10% fewer bins vs 1000)
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 21074000 # 21.074 MHz - FT8 calling frequency
+    
+    - name: "12m"
+      start: 24890000         # 24.89 MHz
+      end: 24990000           # 24.99 MHz
+      center_frequency: 24940000
+      bin_count: 500
+      bin_bandwidth: 200      # 200 Hz resolution
+      ft8_frequency: 24915000 # 24.915 MHz - FT8 calling frequency
+    
+    - name: "10m"
+      start: 28000000         # 28.0 MHz
+      end: 28300000           # 28.3 MHz (lower portion)
+      center_frequency: 28150000
+      bin_count: 1500          # 600 bins × 500 Hz = 300 kHz coverage (40% fewer bins vs 1000)
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 28074000 # 28.074 MHz - FT8 calling frequency
+
+    # 6m — only reachable when the RX888 runs at its full 129.6 MSPS.
+    #
+    # Left in the list unconditionally: a receiver whose front end does not reach this
+    # far skips the band at startup with a one-line note and carries on, so this entry
+    # is harmless at 64.8 MSPS and starts working by itself if the sample rate is raised.
+    # Nothing needs commenting out either way.
+    #
+    # The allocation is 50–52 MHz, four times wider than any HF band here, but the
+    # narrowband activity is all in the bottom 500 kHz — CW and beacons to 50.100, then
+    # SSB and digital including FT8 at 50.313 and FT4 at 50.323. Above 50.5 is repeaters
+    # and wide-band modes, which a 500 Hz bin says nothing useful about. So this follows
+    # the same choice 10m makes above: cover the active lower portion properly rather
+    # than the whole allocation coarsely, and keep the 500 Hz resolution that makes an
+    # FT8 signal visible.
+    #
+    # To watch the entire band instead, use start/end of 50000000/52000000 with
+    # bin_count 2000 and bin_bandwidth 1000. That is a 2 MHz view at 1 kHz per bin —
+    # cheaper for radiod than this one, but too coarse to resolve FT8.
+    - name: "6m"
+      start: 50000000         # 50.0 MHz
+      end: 50500000           # 50.5 MHz (lower portion — see above)
+      center_frequency: 50250000
+      bin_count: 2500         # 1000 bins × 500 Hz = 500 kHz coverage
+      bin_bandwidth: 200      # 500 Hz resolution
+      ft8_frequency: 50313000 # 50.313 MHz - FT8 calling frequency
+
+# ==============================================================================
+# Wideband Spectrogram Recording
+# ==============================================================================
+# Records the full wideband spectrum as a PNG image, one file per UTC day.
+# The image is one pixel per FFT bin at ~7.3 kHz resolution — 4096 pixels across a
+# 30 MHz receiver, 8192 across a 60 MHz one, since the bin count follows the span
+# and grows by one row per minute throughout the day (up to 1440 rows at midnight).
+# The image is always valid and can be served at any time during the day.
+# At UTC midnight, the completed day's image is archived and a new one begins.
+#
+# Requires: noisefloor.enabled: true
+#
+# Files are stored as:
+#   data_dir/spectrogram_YYYY-MM-DD.png  — daily PNG (served via HTTP)
+#   data_dir/spectrogram_YYYY-MM-DD.bin  — raw float32 data (today only, for restart recovery)
+#
+# HTTP endpoints:
+#   GET /api/spectrogram                         — today's in-progress PNG (Cache-Control: max-age=60, ETag)
+#   GET /api/spectrogram?date=YYYY-MM-DD         — archived PNG for a past date (Cache-Control: max-age=86400, ETag)
+#   GET /api/spectrogram/latest                  — 302 → most recent complete day's PNG (ETag on redirect)
+#   GET /api/spectrogram/meta                    — today's JSON metadata (db_min/db_max, row count, per-row noise floor)
+#   GET /api/spectrogram/meta?date=YYYY-MM-DD    — JSON metadata for a past date
+#   GET /api/spectrogram/meta/latest             — 302 → metadata for the most recent complete day
+#   GET /api/spectrogram/list                    — JSON list of available dates (newest first)
+#
+# Colour scale: auto-ranged per image using the 5th/95th percentile of signal levels.
+# The Jet palette is used by default; users can switch palette and adjust contrast
+# interactively in the browser UI without re-fetching from the server.
+#
+spectrogram:
+  # Enable daily spectrogram recording (default: true)
+  # Requires noisefloor.enabled: true
+  enabled: true
+
+  # Directory to store spectrogram files (one PNG + one .bin per UTC day)
+  # Relative paths are resolved relative to the config directory (/app/config in Docker)
+  # Default: "spectrogram" → /app/config/spectrogram/
+  data_dir: "spectrogram"
+
+  # Number of completed daily PNG files to retain on disk
+  # Files older than this are automatically deleted at UTC midnight rollover
+  # Set to 0 to keep all files indefinitely
+  # Default: 30
+  retention_days: 30
+
+# Instance Reporting settings
+# Allows this UberSDR instance to report to a central registry
+instance_reporting:
+  # Enable or disable instance reporting (enabled by default)
+  # When enabled, this instance will periodically send information to the central server
+  # including: UUID, callsign, location, public URL, and basic statistics
+  enabled: false
+
+  # Enable or disable remote logging via Fluent Bit (default: false)
+  # When enabled, Docker container logs are sent to the central collector
+  # Uses the same hostname, port, and instance_uuid as instance reporting
+  # Logs are sent to /ingest/logs endpoint with Bearer token authentication
+  # Set to false to disable log shipping while keeping instance reporting enabled
+  remote_logging: false
+
+  # Notify when instance disconnects (default: true)
+  # When enabled, sends a notification to the central server when this instance
+  # is shutting down or disconnecting gracefully
+  notify_instance_disconnected: true
+
+  # Notify on instance startup (default: false)
+  # When enabled, sends an immediate notification to the central server when
+  # this instance starts up, before the first regular reporting interval
+  notify_instance_startup: false
+
+  # Create DNS subdomain for this instance (optional)
+  # When enabled, the collector will create a DNS A record pointing
+  # <callsign>.instance.ubersdr.org to your public IP address
+  # Requirements:
+  #   - host must be set to "<callsign>.instance.ubersdr.org" (lowercase)
+  #   - The collector will use your source IP for the DNS record
+  #   - TLS certificate errors are ignored during verification (no cert yet)
+  # Example: If callsign is "W1ABC", set host to "w1abc.instance.ubersdr.org"
+  # Default: false
+  create_domain: false
+
+  # Generate TLS certificate with Caddy (default: false)
+  # When true, Caddy will automatically generate a Let's Encrypt certificate
+  # When false, Caddy will not attempt to generate certificates (HTTP-only mode)
+  # Requirements for certificate generation:
+  #   - instance.host must be a valid domain name (not an IP address)
+  #   - instance.tls must be true
+  #   - admin.email must be set to a valid email (not @example.com)
+  # Default: false
+  generate_tls: false
+
+  # Redirect HTTP to HTTPS (default: true)
+  # When true and TLS is enabled, HTTP requests on port 80 will be redirected to HTTPS
+  # When false, both HTTP and HTTPS will serve content directly (no redirect)
+  # This setting only applies when generate_tls is true and HTTPS is configured
+  # Use cases for disabling (false):
+  #   - Testing HTTPS setup without forcing redirects
+  #   - Supporting clients that need HTTP access
+  #   - Using external load balancer that handles redirects
+  # Default: true (redirect HTTP to HTTPS for security)
+  redirect_to_https: true
+
+  # Automatically use your public IP address for public access
+  # When enabled, the instance reporter will automatically detect and use your public IP
+  # Default: false
+  use_myip: false
+
+  # Central server hostname for instance reporting
+  # Default: instances.ubersdr.org
+  hostname: "instances.ubersdr.org"
+
+  # Central server port
+  # Default: 443 (HTTPS) or 8443 (HTTP for local testing)
+  port: 443
+
+  # Reporting interval in seconds (how often to send updates)
+  # Default: 600 (10 minutes)
+  # Minimum recommended: 120 (2 minutes)
+  report_interval_sec: 120
+
+  # Instance UUID (automatically generated on first run if enabled)
+  # This uniquely identifies your SDR instance in the registry
+  # Do not modify this value manually - it will be auto-generated
+  # Example: "550e8400-e29b-41d4-a716-446655440000"
+  instance_uuid: ""
+
+  # Instance connection information (optional)
+  # These fields tell clients how to connect to this UberSDR instance
+  # Leave empty if you don't want to report connection details
+  instance:
+    # Hostname or IP that clients should use to reach this instance.
+    # Leave empty to omit connection details from the registry.
+    host: ""
+    # Port that clients should use to reach this instance (default: 8080).
+    port: 8080
+    # Whether clients should connect over HTTPS/WSS rather than HTTP/WS
+    # (default: false).
+    tls: false
+
+  # Enable/disable tunnel server integration (default: false)
+  # When enabled, UberSDR will manage the tunnel client configuration
+  # and automatically configure the tunnel connection
+  # Requires the tunnel-client container to be running
+  # Default: false
+  tunnel_server_enabled: false
+
+  # Tunnel server WebSocket URI
+  # The WebSocket URL for connecting to the tunnel server
+  # The tunnel client will derive the registration URL from this
+  # Default: "wss://tunnel.ubersdr.org/tunnel/connect"
+  tunnel_server_uri: "wss://tunnel.ubersdr.org/tunnel/connect"
+
+  # Enable beta frontend features (default: false)
+  # When enabled, this instance will use the beta version of the frontend
+  # This flag is passed to the tunnel client configuration
+  # Default: false
+  beta_frontend: false
+
+  # Tunnel server hostname for X-Real-IP trust verification
+  # When using the UberSDR tunnel service, this hostname is used to verify
+  # that X-Real-IP headers come from the trusted tunnel server
+  # Only requests from this server will have their X-Real-IP header trusted
+  # This prevents clients from spoofing their IP address via headers
+  #
+  # How it works:
+  #   1. DNS lookup resolves tunnel_server_host to IP address(es)
+  #   2. Incoming requests are checked: does source IP match tunnel server?
+  #   3. If yes: trust X-Real-IP header (set by tunnel server with real client IP)
+  #   4. If no: use X-Forwarded-For header (standard Caddy proxy behavior)
+  #
+  # Leave empty if not using the tunnel service (will use X-Forwarded-For)
+  # If DNS lookup fails, a warning is logged and X-Forwarded-For is used as fallback
+  #
+  # Default: "tunnel.ubersdr.org" (official UberSDR tunnel service)
+  tunnel_server_host: "tunnel.ubersdr.org"
+
+# Frequency Reference Tracking
+# Tracks an external reference tone to monitor frequency accuracy
+# Uses a narrow 1 kHz spectrum window to detect and track the reference signal
+frequency_reference:
+  # Enable frequency reference tracking (default: false)
+  # When enabled, creates a dedicated spectrum session to monitor the reference tone
+  enabled: false
+
+  # Reference tone frequency in Hz (default: 10000000 = 10 MHz)
+  # This is the expected frequency of your external reference signal
+  # The system will detect the actual frequency and calculate any offset
+  # Common reference frequencies: 10 MHz, 25 MHz, or GPS-disciplined oscillator output
+  frequency: 10000000
+
+  # Minimum SNR threshold in dB (default: 20)
+  # Peaks below this SNR will be ignored to prevent tracking noise
+  # Set lower (e.g., 10) for weaker reference signals
+  # Set higher (e.g., 30) for very clean environments
+  min_snr: 20
+
+  # Maximum frequency drift in Hz (default: 25)
+  # Only signals within ±max_drift_freq Hz of the expected frequency will be considered
+  # This prevents false locks on nearby interference or unrelated signals
+  # Set lower (e.g., 10) for very stable references like GPSDO
+  # Set higher (e.g., 50-100) for less stable oscillators or if you expect larger drift
+  # Example: If frequency is 10 MHz and max_drift_freq is 25, only signals
+  #          between 9.999975 MHz and 10.000025 MHz will be detected
+  max_drift_freq: 25
+
+# Rotator Control (rotctl) Integration
+# Provides remote control of antenna rotators via Hamlib's rotctld protocol
+# Exposes a JSON API for reading position and controlling the rotator
+rotctl:
+  # Enable rotator control integration (default: false)
+  # When enabled, connects to a rotctld daemon and exposes control API
+  # When disabled, API endpoints return appropriate "not enabled" responses
+  enabled: false
+
+  # Rotctld daemon hostname or IP address (default: localhost)
+  # The host where rotctld is running
+  # Examples: "localhost", "192.168.1.100", "rotator.local"
+  host: "172.20.0.1"
+
+  # Rotctld daemon port (default: 4533)
+  # Standard rotctld port is 4533 (rigctld uses 4532)
+  port: 4533
+
+  # Update interval in milliseconds (default: 2000)
+  # How often to poll rotctld for position updates in the background
+  # Lower values = more responsive but more network traffic
+  # Higher values = less responsive but lower overhead
+  # Recommended: 1000-5000ms depending on your needs
+  #   1000ms = very responsive (1 second updates)
+  #   2000ms = balanced (2 second updates)
+  #   5000ms = relaxed (5 second updates)
+  update_interval: 1000
+
+  # API password for control operations (optional)
+  # This password is required for all POST requests (position changes, commands)
+  # GET requests (reading position/status) do not require authentication
+  # Use a strong, unique password different from your admin password
+  #
+  # Behavior:
+  #   - If password is set: Full control mode (read + write with authentication)
+  #   - If password is empty: Read-only mode (status/position readable, control disabled)
+  #   - If enabled is false: All endpoints return "not enabled" responses
+  password: ""
+
+  # Park azimuth position in degrees (default: 0)
+  # When the park command is executed, the rotator will move to this azimuth
+  # instead of using the rotctld park command (which may not be supported by all rotators)
+  # Range: 0-360 degrees
+  # Common values:
+  #   0 = North (default)
+  #   180 = South
+  #   270 = West
+  # The elevation will remain at its current position
+  park_azimuth: 0
+
+  # Position Verification (recommended: true)
+  # When enabled, the system will:
+  # - Track rotator movement to verify it reaches the target bearing
+  # - Detect stuck rotators (no movement for 30+ seconds)
+  # - Filter out sensor jitter/oscillation (±3°)
+  # - Automatically retry failed movements (up to 3 times)
+  # - Prevent unnecessary retries while rotator is actively moving
+  # This applies to both manual commands and scheduled positions
+  # Default: true (enabled for reliability)
+  verify_position: true
+
+  # API Endpoints:
+  #   GET  /api/rotctl/position - Get current rotator position (no auth)
+  #   GET  /api/rotctl/status   - Get detailed status (no auth)
+  #   POST /api/rotctl/position - Set rotator position (password required)
+  #   POST /api/rotctl/command  - Execute commands: stop, park, reset (password required)
+  #
+  # Example usage:
+  #   # Read position (no password needed)
+  #   curl http://localhost:8080/api/rotctl/position
+  #
+  #   # Set position (password required in JSON body)
+  #   curl -X POST http://localhost:8080/api/rotctl/position \
+  #     -H "Content-Type: application/json" \
+  #     -d '{"password":"your_password","azimuth":270.0,"elevation":30.0}'
+  #
+  #   # Stop rotator (password required)
+  #   curl -X POST http://localhost:8080/api/rotctl/command \
+  #     -H "Content-Type: application/json" \
+  #     -d '{"password":"your_password","command":"stop"}'
+  #
+  # Connection features:
+  #   - Automatic reconnection with exponential backoff (1s → 60s)
+  #   - Unlimited retry attempts for resilience
+  #   - Background state updates every 2 seconds
+  #   - Thread-safe operations
+
+# ==============================================================================
+# Antenna Switch Control
+# ==============================================================================
+# Controls relay-based antenna switches via the ant-switch-daemon TCP protocol.
+# Connects to the ant-switch-daemon (xinetd service, default port 65000) running
+# on the switch host. Supports relay board backends: KMTronic, MS-S7-WEB,
+# Arduino NetShield, Snaptekk, BeagleBone GPIO, etc.
+#
+# The daemon listens on TCP port 65000 by default.
+#
+# Public API endpoints:
+#   GET  /api/ant-switch/status   - Current antenna state (always public, no auth)
+#   POST /api/ant-switch/command  - Control antennas (see deny_switching)
+#     Body: {"password":"optional","command":"select","antenna":3}
+#     Body: {"password":"optional","command":"ground"}
+#     Commands: "select" (antenna 1-N), "ground"
+#
+# Admin API endpoints (require admin authentication):
+#   GET  /admin/ant-switch-health   - Full diagnostic status
+#   POST /admin/ant-switch-command  - Control without password (admin auth)
+#     Body: {"command":"select","antenna":3}
+#     Body: {"command":"ground"}
+#     Body: {"command":"add","antenna":3}      (add without grounding others)
+#     Body: {"command":"remove","antenna":3}   (remove without grounding others)
+#     Body: {"command":"set_thunderstorm","value":true}
+#
+# HTTP response codes for control commands:
+#   200 = command sent and hardware state verified
+#   200 = verified success
+#   202 = command sent but hardware state could not be confirmed
+#   503 = could not reach the switch device
+#
+ant_switch:
+  # Enable antenna switch integration (default: false)
+  enabled: false
+
+  # Backend type — selects the HTTP driver for your switch hardware.
+  # Valid values:
+  #   ms-sNa-web  — MS-S3A/S4A/S5A/S6A/S7A-WEB (rotary switch, no mixing)
+  #   ms-s7-web   — MS-S7-WEB (7-port relay board, supports mixing)
+  #   kmtronic    — KMTronic 8-ch relay board (supports mixing)
+  #   snaptekk    — Snaptekk 8-ch relay board (supports mixing)
+  backend_type: "ms-sNa-web"
+
+  # Base URL of the switch device on your local network.
+  # Do not include a trailing slash.
+  # Examples:
+  #   http://192.168.1.234   (MS-S5A-WEB default)
+  #   http://192.168.11.100  (MS-S7-WEB default)
+  device_url: "http://192.168.1.234"
+
+  # HTTP request timeout in milliseconds (default: 2000)
+  # How long to wait for the switch device to respond to each HTTP request.
+  # For a device on the local network, 500-1000ms is usually sufficient.
+  # Increase if your switch is on a slow or unreliable WiFi connection.
+  timeout_ms: 2000
+
+  # Number of antennas supported by your switch (1-10)
+  # For ms-sNa-web this must match the N in the model name:
+  #   MS-S3A-WEB → 3,  MS-S4A-WEB → 4,  MS-S5A-WEB → 5,
+  #   MS-S6A-WEB → 6,  MS-S7A-WEB → 7
+  num_antennas: 5
+
+  # Antenna switching mode
+  # false = exclusive mode: selecting an antenna grounds all others first (safer for most setups)
+  # true  = mixing mode: antennas are toggled on/off independently
+  # Note: ms-sNa-web (rotary switch) does not support mixing — this setting is ignored for that backend.
+  allow_mixing: false
+
+  # Password for the public POST /api/ant-switch/command endpoint.
+  # When set, callers must include {"password":"..."} in the JSON body.
+  # When empty (default), the public control endpoint returns 401 Unauthorized
+  # and only the admin endpoint /admin/ant-switch-command is usable.
+  # Admin control via /admin/ant-switch-command never requires this password.
+  password: ""
+
+  # Force Sync: when true (default), if the switch device becomes unreachable
+  # and then reconnects (e.g. after a power cut or network outage), the handler
+  # automatically re-applies the last commanded state (selected antenna or
+  # grounded). This does NOT override manual hardware changes made while the
+  # device is reachable — it only fires when a comms failure is detected and
+  # then recovers. Set to false to leave the switch in whatever state it
+  # powers up in after an outage.
+  force_sync: true
+
+  # Favourite antenna — used as a visual marker in the admin UI (⭐).
+  # Set to 0 to clear the favourite.
+  default_antenna: 0
+
+  # Switch to the favourite antenna automatically on startup (default: false)
+  # When false (default), the switch is left on whatever port it is currently
+  # set to when the server starts — the favourite is only a visual marker.
+  # When true, the favourite antenna (default_antenna) is selected every time
+  # the server starts up.
+  apply_favourite_on_startup: false
+
+  # Human-readable labels for each antenna (optional)
+  # Used in API responses. Number of entries should match num_antennas.
+  antenna_labels:
+    - "Antenna 1"
+    - "Antenna 2"
+    - "Antenna 3"
+    - "Antenna 4"
+    - "Antenna 5"
+    - "Antenna 6"
+    - "Antenna 7"
+    - "Antenna 8"
+
+# ==============================================================================
+# SSH Terminal Proxy Configuration
+# ==============================================================================
+# Web-based SSH terminal access via GoTTY container
+# Provides browser-based terminal access with admin authentication
+ssh_proxy:
+  # Enable SSH terminal proxy (default: true)
+  # When enabled, proxies requests to the GoTTY container for web-based terminal access
+  # Requires admin authentication for all access
+  enabled: true
+
+  # GoTTY container hostname (default: ubersdr-gotty)
+  # This is the Docker container name on the sdr-network
+  # Change only if you've customized the container name
+  host: "ubersdr-gotty"
+
+  # GoTTY container port (default: 9980)
+  # The port where GoTTY is listening inside the container
+  port: 9980
+
+  # List of IP addresses or CIDR ranges allowed to access the SSH proxy
+  # Only these IPs can access the web-based terminal (in addition to admin auth)
+  # The proxy has a reliable way of determining the real client IP address
+  # Supports both IPv4 and IPv6 addresses with CIDR notation
+  # Examples:
+  #   - "127.0.0.1"           # Single IPv4 address (localhost)
+  #   - "192.168.1.0/24"      # IPv4 CIDR range (local network)
+  #   - "::1"                 # Single IPv6 address (localhost)
+  #   - "2001:db8::/32"       # IPv6 CIDR range
+  #   - "0.0.0.0/0"           # Allow all IPv4 addresses (default)
+  #   - "::/0"                # Allow all IPv6 addresses
+  # By default, all IPs are allowed (0.0.0.0/0)
+  # Restrict this list to trusted networks for better security
+  allowed_ips:
+    - "0.0.0.0/0"
+  # Additional examples (uncomment to use):
+  #   - "127.0.0.1"           # Localhost only
+  #   - "192.168.1.0/24"      # Local network only
+  #   - "10.0.0.0/8"          # Private network
+
+# ==============================================================================
+# GPSDO Proxy Configuration
+# ==============================================================================
+# Web dashboard proxy for the Leo Bodnar LBE-1420 GPS-disciplined oscillator.
+# The LBE-1420 provides a GPS-locked reference clock (e.g. 27 MHz) for the
+# RX888 Mk II SDR receiver.  UberSDR proxies the leobodnar container's HTTP
+# dashboard at /gpsdo/ with admin authentication.
+#
+# The GPSDO tab and monitor section are shown automatically when the
+# ubersdr-leobodnar container is running and the LBE-1420 USB HID device is
+# detected (i.e. hid_path is non-empty in the container's /json response).
+# No manual enable flag is required — presence of the device enables the UI.
+#
+# Requires the ubersdr-leobodnar Docker container to be running.
+# The dashboard provides live GPS/PLL status, frequency control, and an SSE
+# event stream at /gpsdo/events.
+gpsdo:
+  # Container hostname (default: ubersdr-leobodnar)
+  # This is the Docker container name on the sdr-network.
+  # Change only if you have customised the container name.
+  host: "ubersdr-leobodnar"
+
+  # Container port (default: 5123)
+  # The port where the LBE-1420 dashboard is listening inside the container.
+  port: 5123
+
+# ==============================================================================
+# GeoIP Configuration
+# ==============================================================================
+# IP geolocation service for internal use and admin API access only
+# Uses MaxMind GeoLite2 database for offline country-level lookups
+# NOT publicly accessible - admin authentication required
+geoip:
+  # Enable IP geolocation service (default: true)
+  # When enabled, provides country information for IP addresses
+  # When disabled, all GeoIP features are unavailable
+  enabled: true
+
+  # Path to MaxMind GeoLite2 Country database file (.mmdb format)
+  # Download from: https://www.maxmind.com/en/geolite2/signup (free account required)
+  #
+  # Installation:
+  #   1. Sign up for free MaxMind account
+  #   2. Download GeoLite2-Country.mmdb
+  #   3. Place in /var/lib/ubersdr/ or another accessible location
+  #   4. Update path below
+  #
+  # If file not found, service will disable gracefully with warning
+  # Application continues to run normally without GeoIP features
+  #
+  # Example paths:
+  #   Linux:   /var/lib/ubersdr/GeoLite2-Country.mmdb
+  #   Docker:  /data/GeoLite2-Country.mmdb
+  #   macOS:   /usr/local/var/ubersdr/GeoLite2-Country.mmdb
+  database_path: "/app/geoip/GeoLite2-Country.mmdb"
+
+  # Path to MaxMind GeoLite2 ASN database file (.mmdb format) - optional
+  # Provides ISP/organisation name and Autonomous System Number (ASN) for each IP.
+  # Download GeoLite2-ASN.mmdb from the same MaxMind account as the country database.
+  # Place it alongside the country database and name it GeoLite2-ASN.mmdb.
+  # If omitted or file not found, ASN/ISP fields are simply absent from lookup results.
+  asn_database_path: "/app/geoip/GeoLite2-ASN.mmdb"
+
+  # Admin API Endpoints (require admin authentication):
+  #   POST /admin/geoip/lookup
+  #     - Lookup country for specific IP address
+  #     - Request: {"ip": "8.8.8.8"}
+  #     - Response: {"ip":"8.8.8.8","country":"United States","country_code":"US",
+  #                  "asn":15169,"isp":"GOOGLE"}
+  #
+  #   GET /admin/sessions/countries
+  #     - Get active sessions with country information
+  #     - Response includes country name and ISO code for each session
+  #
+  #   GET /admin/geoip-health
+  #     - Check GeoIP service health status
+  #     - Response: {"enabled":true,"status":"healthy","asn_enabled":true}
+  #
+  # Privacy & Security:
+  #   - No external API calls (all lookups are local)
+  #   - Admin-only access (not publicly accessible)
+  #   - Country-level data only (GDPR-friendly)
+  #   - No logging of lookups
+  #   - Internal use for session enrichment
+  #
+  # Performance:
+  #   - Lookup speed: <1ms per lookup
+  #   - Memory usage: ~10-20 MB
+  #   - Database size: ~6 MB compressed
+  #   - Thread-safe for concurrent use
+  #
+  # Automatic Updates:
+  #   MaxMind updates database weekly. Set up automatic updates:
+  #   - Install geoipupdate tool
+  #   - Configure with your license key
+  #   - Schedule weekly updates via cron or systemd timer
+  #   See GEOIP_SETUP.md for detailed instructions
+
+# ==============================================================================
+# Model Context Protocol (MCP) Configuration
+# ==============================================================================
+# Provides a standardized API for AI assistants to interact with UberSDR
+# Enables programmatic access to SDR data, space weather, and band conditions
+mcp:
+  # Enable MCP endpoint (default: false)
+  # When enabled, exposes /mcp endpoint for AI assistant integration
+  # Provides tools for querying space weather, noise floor, decoder spots, etc.
+  enabled: false
+  
+  # MCP Endpoint:
+  #   POST /api/mcp
+  #     - JSON-RPC style requests for tool execution
+  #     - Available tools:
+  #       * get_space_weather - Current propagation conditions
+  #       * get_noise_floor - Band noise levels and FFT data
+  #       * get_decoder_spots - Recent digital mode activity
+  #       * get_decoder_analytics - Aggregated analytics by country/continent
+  #       * get_decoder_analytics_hourly - Hourly aggregated analytics
+  #       * get_active_sessions - Current users and frequencies
+  #       * get_band_conditions - Combined propagation analysis
+  #       * list_tools - List all available tools
+  #
+  # Example usage with curl:
+  #   curl -X POST http://localhost:8080/mcp \
+  #     -H "Content-Type: application/json" \
+  #     -d '{"method":"get_space_weather","params":{}}'
+  #
+  # Security:
+  #   - No authentication required (read-only access)
+  #   - Rate limiting applies (same as other API endpoints)
+  #   - IP ban checking applies
+  #
+  # Use cases:
+  #   - AI-powered propagation analysis
+  #   - Automated band condition monitoring
+  #   - Integration with Claude, ChatGPT, or other AI assistants
+  #   - Programmatic SDR data access
+
+# ==============================================================================
+# Whisper Speech-to-Text Configuration
+# ==============================================================================
+# Real-time speech transcription using OpenAI Whisper via WhisperLive server
+# Provides live transcription of audio channels in the web interface
+#
+# Intel ARC:
+# RENDER_GID=$(stat -c "%g" /dev/dri/render* | head -n 1)
+# docker run -d --name whisperlive -p 9090:9090 --device=/dev/dri --group-add $RENDER_GID ghcr.io/collabora/whisperlive-openvino:latest python run_server.py --backend openvino --max_connection_time 86400
+#
+# CPU only:
+# docker run -d --name whisperlive -p 9090:9090 ghcr.io/collabora/whisperlive-cpu:latest python run_server.py --max_connection_time 86400
+#
+whisper:
+  # Enable Whisper speech-to-text extension (default: false)
+  # When enabled, users can transcribe audio from any channel
+  # Requires WhisperLive server to be running (see docker-compose.yml)
+  enabled: false
+
+  # WhisperLive server WebSocket URL
+  # Default: "ws://whisperlive:9090" (Docker container name)
+  # For external server: "ws://your-server:9090"
+  # The server must be accessible from the UberSDR container
+  server_url: "wss://whisper.ubersdr.org"
+
+  # Maximum concurrent users of the Whisper extension (default: 2)
+  # Limits how many users can use speech-to-text transcription simultaneously
+  # This helps manage server load and resource usage
+  # Set to 0 for unlimited users (not recommended for public instances)
+  # Recommended: 2-5 depending on server capacity
+  max_users: 2
+
+  # Whisper model to use
+  # Available models:
+  #   Multilingual: tiny, base, small, medium, large
+  #   English-only: tiny.en, base.en, small.en, medium.en
+  #   Intel GPU:    OpenVINO/whisper-medium-fp16-ov
+  #
+  # Model comparison:
+  #   tiny     - 39 MB  - Fastest, least accurate
+  #   base     - 74 MB  - Fast, basic accuracy
+  #   small    - 244 MB - Good balance (recommended for general use)
+  #   medium   - 769 MB - Better accuracy, slower (recommended for English)
+  #   large    - 2.9 GB - Best accuracy, slowest (GPU recommended)
+  #
+  # English-only models (.en) are optimized for English and typically
+  # perform better than multilingual models for English content
+  #
+  # Default: "small" (good balance of speed and accuracy)
+  # Recommended for English: "medium.en" or "small.en"
+  model: "OpenVINO/distil-whisper-large-v3-int8-ov"
+
+  # LibreTranslate API URL for translation (default: "https://whisper.ubersdr.org/translate")
+  # Used when translate is enabled to translate completed sentences from non-English to English
+  # The translation happens after Whisper transcribes in the original language
+  # This provides better accuracy than Whisper's built-in translation
+  # Set to your own LibreTranslate instance URL if you have one
+  # Default: "https://whisper.ubersdr.org/translate"
+  libretranslate_url: "https://whisper.ubersdr.org/translate"
+
+  # Initial prompt to guide transcription style and context
+  # This optional text helps Whisper understand the context and style of the audio
+  # Useful for:
+  #   - Setting the expected domain (e.g., "This is a radio transmission.")
+  #   - Improving accuracy for specific terminology or jargon
+  #   - Maintaining consistent spelling of names or technical terms
+  #   - Guiding the transcription style
+  # Examples:
+  #   - "This is a radio transmission."
+  #   - "Amateur radio communication on HF bands."
+  #   - "Maritime weather broadcast."
+  # Leave empty to disable (default)
+  # Default: ""
+  initial_prompt: "This is a radio transmission of either AM broadcast or amateur ham radio in various languages. Expect callsigns, grid locators, Q codes and technical language to be used as well as random topics. Operators exchange callsigns spelled in the NATO phonetic alphabet: alpha bravo charlie delta echo foxtrot golf hotel india juliett kilo lima mike november oscar papa quebec romeo sierra tango uniform victor whiskey xray yankee zulu, with digits zero one two three four five six seven eight nine."
+
+  # Summary API URL for text summarization (default: same host as server_url with /summarise endpoint)
+  # Used to generate summaries of completed transcriptions
+  # The API expects POST requests with JSON body: {"text": "Your text here..."}
+  # And returns: {"input_length":N,"output_length":M,"summary":"Summary text..."}
+  # Set to empty string to disable summarization feature
+  # Default: Derived from server_url (e.g., if server_url is "wss://whisper.ubersdr.org",
+  #          summary_url becomes "https://whisper.ubersdr.org/summarise")
+  # Example: "https://whisper.ubersdr.org/summarise"
+  summary_url: "https://whisper.ubersdr.org/summarise"
+
+  # GPU statistics URL (default: "http://localhost:8568/gpu")
+  # Polled while whisper.enabled is true, to record the state of the GPU doing
+  # the transcription (utilisation, temperature, memory, fan). The rate adapts:
+  # every 10 seconds while the endpoint answers, backing off to once a minute
+  # while it does not, so a host with no such endpoint is barely touched.
+  # The endpoint must return 200 with JSON of the form:
+  #   {"timestamp":"...","driver_version":"595.71.05","gpu_count":1,
+  #    "gpus":[{"index":0,"name":"NVIDIA GeForce GTX 1650","temperature.gpu":37,
+  #             "utilization.gpu":0,"memory.total":4096,"memory.used":9,
+  #             "power.draw":null,"fan.speed":50, ...}],
+  #    "processes":[],"memory_units":"MiB","power_units":"W",
+  #    "temperature_units":"C"}
+  # Anything else (non-200, unreachable host, unparseable body) is ignored
+  # silently — no logging — since the endpoint is optional and absent on
+  # CPU-only or OpenVINO hosts.
+  # Set to "" to disable polling entirely.
+  # Default: "http://localhost:8568/gpu"
+  gpu_stats: "http://localhost:8568/gpu"
+
+  # WhisperLive task (default: "translate")
+  #   translate  - always emit English, whatever the spoken language
+  #   transcribe - emit the spoken language verbatim
+  # "translate" is the historical behaviour and is right for a general-purpose
+  # multilingual receiver. Use "transcribe" with asr_language pinned when you
+  # care about verbatim accuracy in one known language (e.g. callsign spotting
+  # on English-language nets) — translate-mode is prone to inventing fluent
+  # prose out of noise on weak signals.
+  # Default: "" (= "translate")
+  task: ""
+
+  # Language Whisper decodes with, e.g. "en" (default: "" = auto-detect)
+  # This is the RECOGNITION language and is unrelated to the `language`
+  # parameter sent by the frontend, which selects the LibreTranslate output
+  # language. Auto-detect misfires frequently on noisy narrowband HF audio;
+  # pinning a language is a large accuracy win when you know what to expect.
+  # Default: "" (auto-detect)
+  asr_language: ""
+
+  # Voice activity detection threshold, 0.0-1.0 (default: 0 = VAD off)
+  # 0 disables VAD entirely: use_vad is not sent to WhisperLive and every audio
+  # chunk is decoded. Any non-zero value enables VAD and is used as the Silero
+  # speech-probability threshold.
+  # Silero VAD is trained on clean wideband speech and readily discards weak or
+  # noisy narrowband HF audio, so on an HF receiver it tends to gate out exactly
+  # the signals you want transcribed — hence off by default. Enable it (0.5 is
+  # the Silero default, and a sensible starting point) if you are transcribing
+  # strong, clean audio and want to save upstream decode time on silence; raise
+  # it towards 1.0 to require more confident speech before audio is passed on.
+  vad_threshold: 0
+
+  # Allow clients to override initial_prompt, task and asr_language per attach
+  # (default: false)
+  # When false, an attach carrying any of those parameters is rejected.
+  # SECURITY: these values are forwarded to the upstream WhisperLive server,
+  # which may be shared with other instances. Enabling this lets any listener
+  # steer the decoding prompt. Prompts are capped at 1024 bytes and stripped of
+  # control characters, but only enable this on instances where you trust the
+  # clients — e.g. a private instance running an automated scanner.
+  allow_client_params: false
+
+  # Server-side addon containers whose whisper attaches are trusted.
+  # A trusted attach may set initial_prompt, task and asr_language regardless of
+  # allow_client_params above, and is exempt from max_users (so an automated
+  # skimmer is never squeezed out by listeners, and never blocks one either).
+  # Intended for addons like the voiceskimmer addon that run their own
+  # long-lived transcription sessions.
+  #
+  # Each entry is the container's hostname on the internal Docker network; the
+  # container must connect directly (so its own container IP is the peer of the
+  # audio WebSocket), not via Caddy.
+  #
+  # These names are resolved automatically and do NOT need to be added to
+  # server.trusted_containers. IMPORTANT: this list ONLY relaxes the whisper
+  # attach rules — it does NOT confer trusted-proxy privileges, so these
+  # containers cannot spoof X-Real-IP / X-Forwarded-For headers.
+  #
+  # Default: ["voiceskimmer"]. Set to [] to disable.
+  trusted_containers:
+    - "voiceskimmer"
+
+  # Restrict whisper to the trusted_containers list above (default: false)
+  # When false (the default), enabling whisper makes transcription available to
+  # every listener on this instance, subject only to max_users.
+  # When true, only the containers listed in trusted_containers may attach the
+  # whisper extension — attaches from ordinary clients are rejected even though
+  # the extension is enabled. Use this to run whisper purely as a back-end
+  # service for a server-side addon (e.g. the voiceskimmer addon) without
+  # exposing your WhisperLive server to the public.
+  # NOTE: with trusted_containers set to [], this disables whisper entirely.
+  # Default: false
+  trusted_containers_only: false
+
+# ==============================================================================
+# EiBi Shortwave Broadcast Schedule
+# ==============================================================================
+# Downloads and caches the EiBi shortwave broadcast schedule in memory.
+# The schedule is fetched from www.eibispace.de on startup and refreshed
+# every 24 hours. The current season file is tried first; if unavailable
+# (e.g. during the season transition window) the previous season is used
+# as a fallback. The raw CSV is never written to disk — it is held in
+# memory only, with a hard 1 MB download limit.
+#
+# When enabled, other parts of the system can query active broadcasts for
+# any given frequency and UTC time via the EiBiSchedule API.
+#
+# EiBi is maintained by Eike Bierwirth and updated twice yearly:
+#   A-season: late March → late October
+#   B-season: late October → late March
+# Source: http://www.eibispace.de
+eibi:
+  # Enable EiBi schedule fetching (default: false)
+  enabled: false
+
+# ==============================================================================
+# FreeDV Extension Configuration
+# ==============================================================================
+# Controls the FreeDV RADE digital voice decoder extension.
+# Each user who activates the FreeDV extension spawns a dedicated
+# freedv-ka9q subprocess, so limiting concurrent users helps manage
+# CPU and memory usage on the server.
+freedv_extension:
+  # Maximum concurrent users of the FreeDV extension (default: 10)
+  # Limits how many users can run the FreeDV decoder simultaneously.
+  # Each active user spawns a freedv-ka9q subprocess, so this directly
+  # controls the number of subprocesses running at any one time.
+  # Set to 0 for unlimited users (not recommended for public instances).
+  # Recommended: 5-10 depending on server capacity.
+  max_users: 10
+
+# ==============================================================================
+# DRM Extension Configuration
+# ==============================================================================
+# Controls the DRM (Digital Radio Mondiale) shortwave broadcast decoder.
+# Each user who activates the DRM extension spawns a dedicated ubersdr-drm
+# subprocess, which runs a full OFDM demodulation plus an AAC decode — a good
+# deal heavier per user than the other decoders, hence the lower default.
+# Requires the binary at /opt/ubersdr-drm/ubersdr-drm.
+drm_extension:
+  # Maximum concurrent users of the DRM extension (default: 5)
+  # Set to 0 for unlimited users (not recommended for public instances).
+  max_users: 5
+
+  # Fetch the DRM broadcast schedule (default: true)
+  #
+  # Downloads the schedule from drmrx.org once on startup (after a 2 minute
+  # delay) and every 24 hours after that, holding it in memory only — it is
+  # never written to disk. Each fetch is retried up to 5 times with an
+  # exponential backoff, and if drmrx.org cannot be reached at all, KiwiSDR's
+  # digest of the same schedule is used instead.
+  #
+  # A refresh that fails entirely keeps the previous data rather than emptying
+  # the list, and the next attempt is an hour away rather than a day. Data more
+  # than two days old is flagged as stale to the panel, which still shows it —
+  # the DRM schedule changes twice a year, so an old copy is very probably
+  # still correct.
+  #
+  # The schedule is served at /api/drm/schedule and is shown only in the DRM
+  # decoder extension, where clicking an entry tunes to it. Entries outside
+  # this receiver's frequency range are not served.
+  #
+  # Sources: https://www.drmrx.org  ·  https://drm.kiwisdr.com
+  # fernbench: offline: downloads the DRM schedule (was: schedule_enabled: true)
+  schedule_enabled: false
+
+# ==============================================================================
+# Sound Modem Extension Configuration
+# ==============================================================================
+# Controls the Sound Modem AX.25 packet decoder extension.
+# Each user who activates the Sound Modem extension spawns a dedicated
+# QtSoundModem subprocess in nogui mode. Audio is fed via stdin (mono int16 LE
+# PCM) and decoded AX.25 frames are read back via a KISS TNC TCP connection.
+# Each instance uses a unique working directory in /dev/shm (RAM-backed tmpfs)
+# and a unique pair of TCP ports (KISS + AGW) from the range 18100–18199.
+soundmodem_extension:
+  # Enable or disable the Sound Modem extension (default: true)
+  # When false, the extension is not registered and clients cannot attach to it.
+  enabled: true
+
+  # Maximum concurrent users of the Sound Modem extension (default: 5)
+  # Each active user spawns a QtSoundModem subprocess, so this directly
+  # controls the number of subprocesses running at any one time.
+  # Set to 0 for unlimited users (not recommended for public instances).
+  # Recommended: 3-5 depending on server capacity.
+  max_users: 5
+
+# ==============================================================================
+# DSP Noise Reduction Insert (ubersdr-dsp gRPC container)
+# ==============================================================================
+# When enabled, clients can route their audio through the ubersdr-dsp container
+# for noise reduction before it is encoded and sent to them.  The insert sits
+# between the raw PCM received from radiod and the Opus/pcm-zstd encoder, so it
+# applies to both compressed and uncompressed audio streams.
+#
+# The container exposes a bidirectional gRPC stream (ProcessAudio).  ubersdr
+# sends PCM_INT16_BE (radiod's native big-endian int16 format) so no conversion
+# is needed on either side.
+#
+# IQ modes (iq, iq48, iq96, iq192, iq384) are NEVER routed through the DSP —
+# they carry raw RF samples, not demodulated audio.
+#
+# Available filters (depends on how the container was built):
+#   nr2  — SpectralNR (MMSE-LSA + OSMS spectral subtraction)
+#   rn2  — RNNoise (Mozilla/Xiph RNN-based suppressor, best on speech)
+#   nr4  — libspecbleach (SPP-MMSE adaptive denoiser) [default in container]
+#   dfnr — DeepFilterNet3 neural denoiser (opt-in, requires ONNX model)
+#
+# Docker quick-start:
+#   docker run --rm -p 50051:50051 madpsy/ubersdr-dsp:latest
+# Or with docker compose (recommended — uses the "ubersdr-dsp" service name):
+#   docker compose -f docker/docker-compose.yml up
+dsp:
+  # Enable or disable the DSP insert feature.
+  # When false, any set_dsp WebSocket message from a client is rejected.
+  enabled: true
+
+  # gRPC address of the ubersdr-dsp container.
+  # "ubersdr-dsp" is the Docker Compose service name; change to "localhost"
+  # if running the binary directly on the same host.
+  address: "ubersdr-dsp:50051"
+
+  # Maximum number of concurrent sessions that may have the DSP insert active
+  # at the same time.  When the limit is reached, new enable requests are
+  # rejected with a "CAPACITY" error until an existing user disables DSP or
+  # disconnects.  A filter *change* by a user who already has DSP active does
+  # not count against the limit.
+  # 0 = unlimited.
+  # Default: 25
+  max_users: 25
+
+  # Per-filter enable/disable.
+  # Only filters listed as true here can be requested by clients.
+  # The container must also have been built with the filter compiled in
+  # (dfnr and bnr are opt-in build options — see ubersdr-dsp README).
+  # If a filter is disabled here but compiled into the container, clients
+  # will receive an error if they request it.
+  #
+  # Default (when this section is omitted): nr2/rn2/nr4/dfnr enabled.
+  filters:
+    nr2: true    # SpectralNR — MMSE-LSA spectral subtraction
+    rn2: true    # RNNoise — Mozilla/Xiph RNN suppressor
+    nr4: true    # libspecbleach — SPP-MMSE adaptive denoiser
+    dfnr: false  # DeepFilterNet3 neural denoiser (x86 only  - not ARM - heavy on CPU)
+
+# ==============================================================================
+# Lookup Services
+# ==============================================================================
+# Callsign lookup services enrich decoded spots, DX cluster entries, and other
+# amateur radio data with operator information (name, QTH, grid, DXCC entity,
+# CQ/ITU zone, LoTW/eQSL status, etc.) fetched from an external database.
+#
+# Lookups are cached in memory for 24 hours so each unique callsign is only
+# queried once per day regardless of how many times it appears in spots.
+#
+# Callsign normalisation is applied automatically before lookup:
+#   - Portable/mobile suffixes are stripped: /P /M /MM /AM /QRP /A /B
+#   - Country prefix overlays are stripped: G/MM3NDH → MM3NDH
+#   - The result is uppercased before the cache key is checked
+#
+# Currently supported providers:
+#   qrz  — QRZ.com XML Data API (requires paid XML subscription)
+#
+# Public HTTP endpoint:
+#   GET /api/lookup?callsign=W1AW&uuid=<user_session_id>
+#   Returns JSON with operator data from the configured provider.
+#   Requires a valid active session UUID (same UUID used by audio/spectrum WebSockets).
+#   Bypassed users (trusted IPs or bypass password) are exempt from rate limiting.
+#
+lookup_services:
+  # Enable callsign lookup services (default: false)
+  # When false, no external lookup API is called and no credentials are used.
+  enabled: false
+
+  # Which lookup provider to use (default: "qrz")
+  # Currently available: "qrz"
+  # Future providers will be added here as additional sub-sections.
+  provider: "qrz"
+
+  # Maximum lookup requests per session UUID per minute (default: 10)
+  # Prevents a single user from hammering the lookup endpoint.
+  # Set to 0 to disable rate limiting (not recommended for public instances).
+  rate_limit_per_minute: 10
+
+  # Maximum number of callsign results to hold in memory (default: 2500)
+  # When the limit is reached, expired entries are evicted first; if still over
+  # the limit, entries closest to expiry are removed to make room.
+  # Set to 0 to disable the limit (not recommended for public instances).
+  cache_max_size: 2500
+
+  # Maximum number of proxied QRZ profile images to hold on disk (/dev/shm)
+  # and in memory at once (default: 100).
+  # This is independent of cache_max_size above (the callsign cache) — images
+  # are much larger than a callsign record, so a smaller limit here keeps
+  # /dev/shm usage bounded even when the callsign cache holds many more
+  # entries. When the limit is reached, expired entries are evicted first;
+  # if still over the limit, entries closest to expiry are removed to make room.
+  # Set to 0 to disable the limit (not recommended for public instances).
+  image_cache_max_size: 100
+
+  # Server-side addon containers permitted to call /api/lookup WITHOUT a
+  # session UUID. Intended for addons like the dxcluster addon that enrich DX
+  # spots with QRZ data. Each entry is the container's hostname on the internal
+  # Docker network; the container must connect directly (so its own container IP
+  # is the peer), not via Caddy.
+  #
+  # These names are resolved automatically and do NOT need to be added to
+  # server.trusted_containers. IMPORTANT: this list ONLY grants UUID-free
+  # lookups — it does NOT confer trusted-proxy privileges, so these containers
+  # cannot spoof X-Real-IP / X-Forwarded-For headers.
+  #
+  # Default: ["dxcluster"]. Set to [] to disable.
+  trusted_containers:
+    - "dxcluster"
+    - "voiceskimmer"
+
+  # Maximum lookups per minute for EACH trusted container above (keyed per
+  # container name). This is separate from rate_limit_per_minute (which applies
+  # to public per-UUID callers). Cached/in-flight callsigns still receive the
+  # usual 10x allowance. Set to 0 to disable rate limiting for trusted
+  # containers (not recommended). Default: 60.
+  trusted_container_rate_limit: 60
+
+  # QRZ.com XML Data API settings
+  # Requires a paid QRZ.com XML Data subscription
+  qrz:
+    # QRZ.com login callsign
+    username: "N0CALL"
+    # QRZ.com password
+    password: "your-qrz-password"
+
+# ==============================================================================
+# NTP Time Synchronization Check
+# ==============================================================================
+# The /api/time endpoint queries an NTP server and compares it to the local
+# system clock, returning the offset and a sync status flag.
+ntp:
+  # NTP server to query. Uses DNS-based load balancing so each query may
+  # reach a different physical server in the pool.
+  # Default: ntp.ubuntu.com
+  server: ntp.ubuntu.com
+  # Maximum acceptable clock offset in milliseconds before reporting out-of-sync.
+  # Default: 200 ms
+  sync_tolerance_ms: 200
+
+# ==============================================================================
+# Monitor Display
+# ==============================================================================
+# Drives a Pimoroni Unicorn LED matrix display (Galactic 53×11, Stellar 16×16,
+# or Cosmic 32×32) connected to a Raspberry Pi Pico W on the local network.
+# When enabled, other parts of the system (notification channels, frequency
+# display updaters, CW spot displayers, etc.) can send content to the display
+# via the gudriver package without duplicating the protocol.
+#
+# The display is addressed over HTTP using the Galactic Unicorn Display Protocol
+# (see clients/galactic_unicorn/DISPLAY_PROTOCOL.md).
+#
+# Supported drivers:
+#   galactic_unicorn  — Pimoroni Unicorn family via HTTP POST /display (default)
+#
+# Supported models (informational — firmware auto-detects display dimensions):
+#   galactic  — Galactic Unicorn 53×11 LED matrix (default)
+#   stellar   — Stellar Unicorn 16×16 LED matrix
+#   cosmic    — Cosmic Unicorn 32×32 LED matrix
+#
+monitor_display:
+  # Enable the monitor display (default: false)
+  # When false, no connection is made and all display features are silently skipped.
+  enabled: false
+
+  # Driver to use for the display (default: galactic_unicorn)
+  # Currently only "galactic_unicorn" is supported.
+  # Future drivers (e.g. MQTT-based, serial) will be added here.
+  driver: "galactic_unicorn"
+
+  # Display model variant (default: galactic)
+  # Informational only — the Pico W firmware auto-detects its own display size.
+  # Set this to match your hardware so UberSDR can log the correct model name
+  # and make sensible layout decisions (e.g. line count, font size defaults).
+  #   galactic  — Galactic Unicorn 53×11 (default)
+  #   stellar   — Stellar Unicorn 16×16
+  #   cosmic    — Cosmic Unicorn 32×32
+  model: "galactic"
+
+  # Base URL of the Pico W HTTP server (default: http://192.168.0.200)
+  # Must be http:// or https://. Do not include a trailing slash.
+  # The driver appends /display for display commands and /status for status queries.
+  # Example: "http://192.168.0.200"
+  url: "http://192.168.0.200"
+
+  # HTTP request timeout in seconds (default: 5)
+  # How long to wait for the display device to respond to each HTTP request.
+  # For a device on the local Wi-Fi network, 3–5 seconds is usually sufficient.
+  # Increase if your Pico W is on a slow or unreliable connection.
+  # Range: 1–30
+  timeout_seconds: 5
+
+  # Skip TLS certificate verification (default: false)
+  # Only enable this for self-signed certificates on private LANs.
+  # Has no effect when url uses http:// (plain HTTP).
+  insecure_skip_verify: false
+

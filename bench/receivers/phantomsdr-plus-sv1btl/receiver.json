@@ -1,0 +1,41 @@
+{
+  "id": "phantomsdr-plus-sv1btl",
+  "name": "PhantomSDR-Plus (sv1btl)",
+  "upstream": "https://github.com/sv1btl/PhantomSDR-Plus",
+  "version": {
+    "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+    "why": "README installs default branch"
+  },
+  "image": "fernbench/phantomsdr-plus-sv1btl:0fb2ee0",
+  "input": {
+    "transport": "fifo",
+    "format": "cu8"
+  },
+  "http_port": 9002,
+  "run": {
+    "volumes": [
+      "{FIFO}:/iq/in",
+      "{CONFIG}:/etc/phantomsdr-plus-sv1btl:ro"
+    ],
+    "writable": [
+      "/tmp",
+      "/var/lib/phantomsdr-plus-sv1btl"
+    ]
+  },
+  "ready": {
+    "http": "/"
+  },
+  "caps": {
+    "listeners": null,
+    "per_address": 3,
+    "compile_time": false
+  },
+  "modes": {
+    "usb": true,
+    "lsb": true,
+    "am": true,
+    "sam": true,
+    "fm": true,
+    "cw": true
+  }
+}

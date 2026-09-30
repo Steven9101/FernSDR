@@ -1,0 +1,31 @@
+{
+  "id": "openwebrx",
+  "name": "OpenWebRX",
+  "upstream": "https://github.com/jketterl/openwebrx",
+  "version": {
+    "ref": "1.2.2",
+    "commit": "e4f9a25e279bba81bb663fbe01e5e81dad63f67d",
+    "date": "2023-10-09",
+    "why": "latest release; the wiki's Docker page and the Docker Hub page both install jketterl/openwebrx:stable, which is 1.2.2 (develop head 640c5b0 is published only as latest-x86_64)",
+    "base_image": "jketterl/openwebrx@sha256:d0a7e2efbce3d8828c902bde2e31ee28aeff1ad9ef67842ab0ab889e06c0e3d9"
+  },
+  "image": "fernbench/openwebrx:1.2.2",
+  "input": {"transport": "rtltcp", "format": "cu8"},
+  "http_port": 8073,
+  "run": {
+    "volumes": ["{CONFIG}:/etc/fernbench:ro"],
+    "command": [],
+    "env": {"OPENWEBRX_ADMIN_USER": "fernbench"},
+    "writable": ["/run", "/tmp", "/etc/openwebrx", "/var/lib/openwebrx"],
+    "writable_exec": ["/run"]
+  },
+  "ready": {"http": "/"},
+  "caps": {
+    "listeners": 20,
+    "per_address": null,
+    "compile_time": false,
+    "notes": "max_clients 20 (matched: 2000); no per-address or session limit; a listener whose 100-message send queue fills is disconnected"
+  },
+  "modes": {"usb": true, "lsb": true, "am": true, "sam": false, "fm": true, "cw": true},
+  "cw_pitch_hz": 0
+}

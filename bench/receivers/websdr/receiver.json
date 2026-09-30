@@ -1,0 +1,29 @@
+{
+  "id": "websdr",
+  "name": "PA3FWM WebSDR",
+  "upstream": "https://github.com/py1tcm/websdr",
+  "version": {
+    "ref": "master",
+    "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+    "date": "2022-06-16",
+    "why": "PA3FWM no longer distributes the server and pointed the lab owner to this copy, which holds the dist11 binaries (server 20140718.1716-64); its head, unchanged since 2022 and re-checked on 2026-09-27"
+  },
+  "image": "fernbench/websdr:64dd6b9",
+  "input": {"transport": "rtltcp", "format": "cu8"},
+  "http_port": 8901,
+  "run": {
+    "volumes": ["{CONFIG}:/home/websdr/cfg:ro"],
+    "command": ["/usr/local/bin/wait-rtltcp", "./websdr64"],
+    "env": {},
+    "writable": ["/tmp", "/home/websdr/dist11/pub2/tmp", "/home/websdr/dist11/log"]
+  },
+  "ready": {"http": "/tmp/bandinfo.js"},
+  "caps": {
+    "listeners": 20,
+    "per_address": null,
+    "compile_time": false,
+    "notes": "maxusers 20 in the shipped example, 2000 in matched; config.txt lets localhost (unless donttrustlocalhost, set in both tiers) and, with dotrustlocalnet (set as shipped), 10.x and 192.168.x listeners pass maxusers; the lab's 198.18.0.0/15 is neither. No per-address limit is documented. Waterfalls slow above slowdownusers and slowdownusers2 (unset as shipped, 2000 in matched). Whether the binary has a compile-time cap is unknown (no source)"
+  },
+  "modes": {"usb": true, "lsb": true, "am": true, "sam": false, "fm": true, "cw": true},
+  "cw_pitch_hz": 750
+}

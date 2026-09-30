@@ -1,0 +1,792 @@
+{
+  "receiver": "vertexsdr",
+  "checked": "2026-09-27",
+  "repos": {
+    "Steven9101_VertexSDR": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd"
+  },
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 181,
+          "quote": "+    <td><input type=\"button\" value=\"USB\"     onclick=\"setmf('usb',  0.3,  2.7);\"></td>"
+        }
+      ],
+      "note": "Shipped patch supplies the listener control; fetched baseline frontend is not pinned by this repository."
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 180,
+          "quote": "+    <td><input type=\"button\" value=\"LSB\"     onclick=\"setmf('lsb', -2.7, -0.3);\"></td>"
+        }
+      ],
+      "note": "Shipped patch supplies the listener control; fetched baseline frontend is not pinned by this repository."
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 182,
+          "quote": "+    <td><input type=\"button\" value=\"AM\"      onclick=\"setmf ('am',  -4  ,  4  );\"></td>"
+        }
+      ],
+      "note": "Shipped patch supplies the listener control; fetched baseline frontend is not pinned by this repository."
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "AMSYNC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 183,
+          "quote": "+    <td><input type=\"button\" value=\"AMSYNC\"  onclick=\"setmf ('amsync', -4, 4);\"></td>"
+        }
+      ],
+      "note": "Shipped patch supplies the listener control; fetched baseline frontend is not pinned by this repository."
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 184,
+          "quote": "+    <td><input type=\"button\" value=\"FM\"      onclick=\"setmf ('fm',  -8  ,  8  );\"></td>"
+        }
+      ],
+      "note": "Shipped patch supplies the listener control; fetched baseline frontend is not pinned by this repository."
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CW",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 179,
+          "quote": "+    <td><input type=\"button\" value=\"CW-wide\" onclick=\"setmf ('cw', -0.95, -0.55);\"></td>"
+        }
+      ],
+      "note": "Shipped patch supplies the listener control; fetched baseline frontend is not pinned by this repository."
+    },
+    "sam_carrier_display": {
+      "value": "yes",
+      "cell": "Numerical carrier Hz and lock state",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/websdr-base.js.patch",
+          "line": 119,
+          "quote": "+         s.substr(0,s.length-9)+'&hairsp;'+s.substr(-9,3)+'&hairsp;'+s.substr(-6,6)+' Hz '+"
+        }
+      ],
+      "note": ""
+    },
+    "cw_pitch": {
+      "value": "partial",
+      "cell": "Passband can shift; default about750Hz",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 194,
+          "quote": "+  <span style=\"font-size:65%\">Or drag the passband edges on the frequency scale.</span>"
+        }
+      ],
+      "note": "No explicit BFO/pitch setting; CW uses sideband-filter positioning."
+    },
+    "modes_other": {
+      "value": "no",
+      "cell": "No additional listener modes",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 184,
+          "quote": "+    <td><input type=\"button\" value=\"FM\"      onclick=\"setmf ('fm',  -8  ,  8  );\"></td>"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "WFM|CQUAM|FreeDV|DRM|ISB",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 2,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Complete mode button group has USB/LSB/CW/AM/AMSYNC/FM."
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Draggable edges and width buttons",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 194,
+          "quote": "+  <span style=\"font-size:65%\">Or drag the passband edges on the frequency scale.</span>"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "unknown",
+      "cell": "Fetched frontend must be pinned/checked",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "scripts/fetch-frontend.sh",
+          "line": 37,
+          "quote": "PRIMARY_BASE=\"https://raw.githubusercontent.com/WeirdNewbie2/websdr/main/dist/pub2\""
+        }
+      ],
+      "note": "No NR control established in repository patches. Fetch uses mutable community branches; do not infer a feature from another WebSDR copy."
+    },
+    "noise_blanker": {
+      "value": "no",
+      "cell": "Parsed setting, unused processing routine",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/dsp.c",
+          "line": 1566,
+          "quote": "void dsp_noise_blanker(float *samples, int n, float threshold)"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "dsp_noise_blanker|noiseblanker",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 11,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "dsp_noise_blanker has no caller. noiseblanker is parsed and assigned but never read in processing at this pin."
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Server-side automatic notch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/dsp.c",
+          "line": 644,
+          "quote": "if (c && c->demod_autonotch && peak_bin > 0)"
+        }
+      ],
+      "note": "Listener toggle at patches/index.html.patch:272."
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Listener squelch, including FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/client.c",
+          "line": 843,
+          "quote": "if (c->demod_mode == DEMOD_FM)"
+        }
+      ],
+      "note": "Control at patches/index.html.patch:271; muting at859."
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "Server audio AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/client.c",
+          "line": 1256,
+          "quote": "if (c->demod_agc_mode) {"
+        }
+      ],
+      "note": "Manual mode branch indicates automatic path otherwise; precise timing needs measurement."
+    },
+    "agc_settings": {
+      "value": "partial",
+      "cell": "Backend manual-gain control; UI unproven",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/client.c",
+          "line": 558,
+          "quote": "if (gain >= 9999.0) { c->agc_mode = 0; c->demod_agc_mode = 0; }"
+        }
+      ],
+      "note": "Gain>=9999 selects automatic gain; fetched UI contains no pinned gain/speed control in repository patches."
+    },
+    "smeter": {
+      "value": "partial",
+      "cell": "Relative level and graphical WebSDR meter",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/client.c",
+          "line": 1248,
+          "quote": "int sv = (int)(lv * 1000.0 - 5400.0"
+        }
+      ],
+      "note": "Graphical scale asset is fetched separately and was not inspected. Backend level formula is established; do not claim absolute dBm merely from an inherited S-meter image."
+    },
+    "smeter_calibration": {
+      "value": "yes",
+      "cell": "Per-frequency equalize table",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/band.c",
+          "line": 603,
+          "quote": "freq_hz /= (float)(b->samplerate / 1000);"
+        },
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/client.c",
+          "line": 1234,
+          "quote": "carrier_power = b->spectrum_buf[mapped];"
+        }
+      ],
+      "note": "Loaded at main.c:183/379; interpolation follows table parsing."
+    },
+    "freq_offset_correction": {
+      "value": "partial",
+      "cell": "Corrected centerfreq, no active software mixer",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/band.c",
+          "line": 205,
+          "quote": "b->progfreq_rad_per_sample = (float)(progfreq_hz * (2.0 * M_PI / samplerate));"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "progfreq_rad_per_sample|progfreq_phase",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 4,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "progfreq_rad_per_sample is assigned but never consumed, so the nominal programmable DSP correction cannot be credited. centerfreq remains an indirect workaround."
+    },
+    "recording": {
+      "value": "unknown",
+      "cell": "Recording markup; fetched implementation unpinned",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 280,
+          "quote": "+  <div id=\"record_span\" style=\"display:none\">"
+        }
+      ],
+      "note": "record_span starts hidden; record button at283. Capability activation and recording implementation must be inspected in the actual fetched artifact."
+    },
+    "band_presets": {
+      "value": "partial",
+      "cell": "Operator-defined receiver band buttons",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 158,
+          "quote": "+  <script type=\"text/javascript\"> document_bandbuttons(); </script>"
+        }
+      ],
+      "note": ""
+    },
+    "bookmarks": {
+      "value": "unknown",
+      "cell": "Memory markup; fetched implementation unpinned",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 165,
+          "quote": "+  <div id=\"memories\" class=\"memories\"></div>"
+        }
+      ],
+      "note": "User memory persistence likely inherited, but do not cite PA3FWM py1tcm code as proof of a different fetched baseline."
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "Listener chat",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 338,
+          "quote": "+<form name=\"chatform\" onsubmit=\"return sendchat()\" action=\"#\">"
+        }
+      ],
+      "note": ""
+    },
+    "multi_band": {
+      "value": "yes",
+      "cell": "Multiple configured input bands",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/main.c",
+          "line": 182,
+          "quote": "if (config.bands[i].equalize[0])"
+        }
+      ],
+      "note": ""
+    },
+    "full_spectrum": {
+      "value": "partial",
+      "cell": "Real60Msps input; supported-rate table",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/band.c",
+          "line": 87,
+          "quote": "case 60000000: {"
+        }
+      ],
+      "note": "Fixed supported sample-rate families; real-input conversion in band.c:131. CPU and optional Vulkan backends."
+    },
+    "decoders": {
+      "value": "no",
+      "cell": "No built-in digital decoders",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 184,
+          "quote": "+    <td><input type=\"button\" value=\"FM\"      onclick=\"setmf ('fm',  -8  ,  8  );\"></td>"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "ft8|wspr|rtty|psk31|decoder",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 1,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Only FT8 hit is a station-label example."
+    },
+    "waterfall_history": {
+      "value": "no",
+      "cell": "Latest waterfall, no connect backlog",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/client.c",
+          "line": 1073,
+          "quote": "(b->wf_pyramid_seq % (unsigned int)c->wf_slow) != 0)"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "waterfall.?history|wf_history",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 0,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Dispatch uses current pyramid sequence and slow factor; no past-row buffer/protocol."
+    },
+    "waterfall_rate": {
+      "value": "yes",
+      "cell": "Listener speed and operator load slowdown",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "patches/index.html.patch",
+          "line": 220,
+          "quote": "+    <select id=\"wfspeed\" onchange=\"waterfallspeed(this.value)\">"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "yes",
+      "cell": "Configurable inactivity disconnect",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/client.c",
+          "line": 1296,
+          "quote": "if (now - c2->last_active > g_config.idletimeout) {"
+        }
+      ],
+      "note": ""
+    },
+    "per_address_limit": {
+      "value": "no",
+      "cell": "Compile-time per-IP limit disabled(0)",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/network.c",
+          "line": 79,
+          "quote": "#define HTTP_MAX_CONN_PER_IP       0"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "per.?ip|per.?address|ip.?limit",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 5,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Guard at2652 is disabled by the zero constant at this pin."
+    },
+    "admin_panel": {
+      "value": "partial",
+      "cell": "Fetched sysop page and reload controls",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "scripts/fetch-frontend.sh",
+          "line": 60,
+          "quote": "\"sysop.html\""
+        }
+      ],
+      "note": "The inherited sysop frontend is fetched separately; not a full structured configuration UI."
+    },
+    "https": {
+      "value": "partial",
+      "cell": "Documented external reverse proxy",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "docs/installation.md",
+          "line": 138,
+          "quote": "Port 80 requires root. Use `setcap cap_net_bind_service+ep ./vertexsdr` or run behind a reverse prox"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "SSL_accept|SSL_CTX_new|TLS_server_method",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 1,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "No TLS listener implementation found; SSL use in orgserver is outbound client TLS."
+    },
+    "signed_updates": {
+      "value": "no",
+      "cell": "Manual source build, no verified update path",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "README.md",
+          "line": 70,
+          "quote": "make                                    # CPU only"
+        },
+        {
+          "kind": "absence",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "searched": "signature|verify.*update|signed.*update",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 0,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Setup downloads frontend from mutable branches without signatures."
+    },
+    "installer": {
+      "value": "partial",
+      "cell": "Setup installs dependencies and builds",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "README.md",
+          "line": 48,
+          "quote": "`scripts/setup.sh` installs dependencies, builds VertexSDR, and fetches the"
+        }
+      ],
+      "note": ""
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "ALSA,rtl_tcp,TCP relay,stdin;optional Soapy",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "README.md",
+          "line": 59,
+          "quote": "- ALSA, RTL-SDR (via rtl_tcp), TCP SDR relay, and stdin input"
+        }
+      ],
+      "note": "Makefile:21 enables optional SoapySDR; real/IQ formats documented in configuration.md."
+    }
+  },
+  "security": {
+    "default_credentials": {
+      "summary": "Sysop authorization is based on trusted source addresses; raw IQ password is a separate optional setting. No default sysop password established.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/network.c",
+          "line": 620,
+          "quote": "if (config.donttrustlocalhost) {"
+        }
+      ],
+      "literal": null
+    },
+    "admin_reachability": {
+      "summary": "Localhost trust by default; configurable dotrust/dotrustlocalnet and donttrustlocalhost.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/network.c",
+          "line": 635,
+          "quote": "if (config.dotrust[0]) {"
+        }
+      ]
+    },
+    "version_exposed": {
+      "summary": "HTTP response includes VERSION_STRING. This build identifier is generated from build timestamp, not a semantic release or source commit.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "src/network.c",
+          "line": 892,
+          "quote": "status, VERSION_STRING, blen, content_type ? content_type : \"text/html\","
+        }
+      ]
+    },
+    "update_signing": {
+      "summary": "Manual build/setup; fetched frontend uses HTTPS URLs without signature verification in the download function.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "Steven9101_VertexSDR",
+          "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+          "path": "scripts/fetch-frontend.sh",
+          "line": 97,
+          "quote": "fi"
+        }
+      ]
+    },
+    "other": []
+  },
+  "limitations": [
+    "Static pinned-source audit, not runtime proof. Source lines and exact quotes machine-validated while emitting this file. All closed-binary limits and mutable frontend dependencies are explicit."
+  ],
+  "health": {
+    "scope": "Local history reachable from the pin, not live GitHub health; commit-author identities are not necessarily distinct humans. Community distribution history is not upstream development history.",
+    "shallow_repository": false,
+    "last_commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd 2026-05-01T17:12:11+02:00 Add GNU Affero General Public License v3",
+    "commits_per_month": {
+      "2026-04": 1,
+      "2026-05": 2
+    },
+    "commits_last12months": 3,
+    "authors_raw": [
+      "     2\tmagicint1337",
+      "     1\tSteven"
+    ],
+    "ci_files": [],
+    "test_files": [],
+    "issue_response_times": {
+      "value": "unknown",
+      "reason": "Requires dated issue API data; not inferable from local git."
+    },
+    "releases": {
+      "value": "unknown",
+      "reason": "Git tags alone do not establish published release artifacts."
+    },
+    "image_or_binary_size": {
+      "value": "unknown",
+      "reason": "Must be recorded for the actual lab build/image, not inferred from source."
+    }
+  },
+  "security_scope": "Static feature inventory only. No exploit/probe performed; empty private_candidates does not assert absence of vulnerabilities.",
+  "license": {
+    "summary": "Conflicting declarations: LICENSE and COPYING say AGPLv3; README and source headers still say LGPL3. Do not silently resolve this as LGPL. Proprietary PA3FWM frontend is separately fetched.",
+    "sources": [
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "LICENSE",
+        "line": 1,
+        "quote": "GNU AFFERO GENERAL PUBLIC LICENSE"
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "COPYING",
+        "line": 4,
+        "quote": "AGPL v3 LICENSE"
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "README.md",
+        "line": 198,
+        "quote": "LGPL 3.0. See COPYING."
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "src/dsp.c",
+        "line": 1,
+        "quote": "// Copyright 2024-2026 magicint1337. Licensed under LGPL 3.0 (see COPYING)."
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "scripts/fetch-frontend.sh",
+        "line": 7,
+        "quote": "# copyright Pieter-Tjerk de Boer (PA3FWM) - all rights reserved."
+      }
+    ]
+  },
+  "build_runtime": {
+    "summary": "C/GCC+make; FFTW,ALSA,OpenSSL,PNG16,pthreads. Optional Vulkan/VkFFT and optional SoapySDR build. Frontend fetched from mutable third-party branches, so pin and hash actual files separately.",
+    "sources": [
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "Makefile",
+        "line": 1,
+        "quote": "CC = gcc"
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "Makefile",
+        "line": 8,
+        "quote": "LDFLAGS = -lm -lpthread -lssl -lcrypto -lasound -lfftw3f -lpng16"
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "Makefile",
+        "line": 12,
+        "quote": "ifeq ($(USE_VULKAN),1)"
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "Makefile",
+        "line": 21,
+        "quote": "ifeq ($(USE_SOAPYSDR),1)"
+      },
+      {
+        "kind": "code",
+        "repo": "Steven9101_VertexSDR",
+        "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+        "path": "scripts/fetch-frontend.sh",
+        "line": 37,
+        "quote": "PRIMARY_BASE=\"https://raw.githubusercontent.com/WeirdNewbie2/websdr/main/dist/pub2\""
+      }
+    ]
+  }
+}

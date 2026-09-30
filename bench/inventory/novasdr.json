@@ -1,0 +1,1260 @@
+{
+  "receiver": "novasdr",
+  "checked": "2026-09-27",
+  "repos": {
+    "phasor-labs_NovaSDR": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+    "phasor-labs_NovaSDR/frontend": "db67b282ef933b0f0a923fd89f09a154f94d8517"
+  },
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 123,
+          "quote": "{(['USB', 'LSB', 'CW', 'AM', 'SAM', 'FM', 'FMC'] as const).map((m) => ("
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 123,
+          "quote": "{(['USB', 'LSB', 'CW', 'AM', 'SAM', 'FM', 'FMC'] as const).map((m) => ("
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 123,
+          "quote": "{(['USB', 'LSB', 'CW', 'AM', 'SAM', 'FM', 'FMC'] as const).map((m) => ("
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "Carrier-normalized SAM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 123,
+          "quote": "{(['USB', 'LSB', 'CW', 'AM', 'SAM', 'FM', 'FMC'] as const).map((m) => ("
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/dsp/demod.rs",
+          "line": 60,
+          "quote": "*dst = (*v * unit.conj()).re;"
+        }
+      ],
+      "note": "Uses a recovered carrier phasor; no upper/lower/stereo variant established."
+    },
+    "sam_carrier_display": {
+      "value": "unknown",
+      "cell": "Not established by pinned evidence",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 12,
+          "quote": "pub limits: Limits,"
+        }
+      ],
+      "note": "Not credited or treated as absence without sufficient evidence.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "sam.*(carrier|offset|freq|lock)|(carrier|offset|freq|lock).*sam",
+          "where": "all tracked files at commit",
+          "matching_lines": 16,
+          "matching_files": [
+            "crates/novasdr-core/src/dsp/demod.rs",
+            "crates/novasdr-core/src/dsp/vkfft.rs",
+            "crates/novasdr-server/src/input/soapysdr.rs",
+            "crates/novasdr-server/src/ws/audio.rs",
+            "docs/CONFIG.md",
+            "docs/DSP.md",
+            "docs/PROTOCOL.md"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "sam.*(carrier|offset|freq|lock)|(carrier|offset|freq|lock).*sam",
+          "where": "all tracked files at commit",
+          "matching_lines": 8,
+          "matching_files": [
+            "dist/assets/ft8Worker-CX3vRb7S.js",
+            "dist/assets/index-CaNgD1xf.css",
+            "dist/assets/index-D-QRw5Fd.js",
+            "src/decoders/ft8/ft8Worker.ts",
+            "src/lib/useDecoders.ts"
+          ]
+        }
+      ]
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 123,
+          "quote": "{(['USB', 'LSB', 'CW', 'AM', 'SAM', 'FM', 'FMC'] as const).map((m) => ("
+        }
+      ],
+      "note": ""
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CW, fixed 750 Hz BFO",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/WebSdrUi.tsx",
+          "line": 178,
+          "quote": "const cwBfoHz = 750;"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 123,
+          "quote": "{(['USB', 'LSB', 'CW', 'AM', 'SAM', 'FM', 'FMC'] as const).map((m) => ("
+        }
+      ],
+      "note": ""
+    },
+    "cw_pitch": {
+      "value": "no",
+      "cell": "Fixed pitch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/WebSdrUi.tsx",
+          "line": 178,
+          "quote": "const cwBfoHz = 750;"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "cw.?pitch|bfo|pitch",
+          "where": "all tracked files at commit",
+          "matching_lines": 2,
+          "matching_files": [
+            ".gitignore",
+            "crates/novasdr-core/build.rs"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "cw.?pitch|bfo|pitch",
+          "where": "all tracked files at commit",
+          "matching_lines": 11,
+          "matching_files": [
+            "package-lock.json",
+            "src/components/receiver/WebSdrUi.tsx",
+            "src/components/waterfall/WaterfallView.tsx"
+          ]
+        }
+      ]
+    },
+    "modes_other": {
+      "value": "yes",
+      "cell": "FMC; bandwidth-gated WBFM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 123,
+          "quote": "{(['USB', 'LSB', 'CW', 'AM', 'SAM', 'FM', 'FMC'] as const).map((m) => ("
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 129,
+          "quote": "<DropdownMenuItem key=\"WBFM\" onSelect={() => onModeChange('WBFM')}>"
+        }
+      ],
+      "note": "FMC maps to FM on the server. WBFM UI exists, but enabled range depends on available audio bandwidth."
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Listener width adjustment",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/DemodBandwidthPanel.tsx",
+          "line": 147,
+          "quote": "onClick={() => onBandwidthAdjustHz(step)}"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Browser WASM NR",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 817,
+          "quote": "decoderRef.current.set_nr(current.nr);"
+        }
+      ],
+      "note": "Listener control calls DSP implementation. Exact algorithm was not independently identified from binary WASM."
+    },
+    "noise_blanker": {
+      "value": "yes",
+      "cell": "Browser WASM NB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 818,
+          "quote": "decoderRef.current.set_nb(current.nb);"
+        }
+      ],
+      "note": "Listener control calls DSP implementation. Exact algorithm was not independently identified from binary WASM."
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Browser WASM auto notch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 819,
+          "quote": "decoderRef.current.set_an(current.an);"
+        }
+      ],
+      "note": "Listener control calls DSP implementation. Exact algorithm was not independently identified from binary WASM."
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Server squelch, listener switch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 1007,
+          "quote": "if (!send({ cmd: 'squelch', enabled })) return;"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/AudioPanel.tsx",
+          "line": 86,
+          "quote": "label=\"Squelch\""
+        }
+      ],
+      "note": "Per-mode restrictions not established."
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "Server AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 1015,
+          "quote": "const payload: Record<string, unknown> = { cmd: 'agc', speed: settings.agcSpeed };"
+        }
+      ],
+      "note": ""
+    },
+    "agc_settings": {
+      "value": "yes",
+      "cell": "Off and speed presets",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/app/SettingsDialog.tsx",
+          "line": 185,
+          "quote": "{(['off', 'fast', 'medium', 'slow'] as AgcSpeed[]).map((speed) => ("
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 1015,
+          "quote": "const payload: Record<string, unknown> = { cmd: 'agc', speed: settings.agcSpeed };"
+        }
+      ],
+      "note": "Custom attack/release protocol exists, but only off/fast/medium/slow selector was established in UI."
+    },
+    "smeter": {
+      "value": "partial",
+      "cell": "Relative dB display",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/AudioPanel.tsx",
+          "line": 149,
+          "quote": "<span>{audio.pwrDb == null ? '—' : `${audio.pwrDb.toFixed(1)} dB`}</span>"
+        }
+      ],
+      "note": ""
+    },
+    "smeter_calibration": {
+      "value": "partial",
+      "cell": "One offset per receiver",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 104,
+          "quote": "pub smeter_offset: i32,"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 852,
+          "quote": "setPwrDb(10 * Math.log10(Math.max(1e-20, normalized)) + smeterOffsetDb);"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "smeter|s_meter|calibrat",
+          "where": "all tracked files at commit",
+          "matching_lines": 11,
+          "matching_files": [
+            "crates/novasdr-core/src/config.rs",
+            "crates/novasdr-core/src/protocol.rs",
+            "crates/novasdr-core/tests/config.rs",
+            "crates/novasdr-core/tests/runtime.rs",
+            "crates/novasdr-core/tests/runtime_defaults.rs",
+            "crates/novasdr-server/src/setup.rs",
+            "crates/novasdr-server/src/state.rs",
+            "docs/CONFIG.md",
+            "docs/CONFIG_REFERENCE.md"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "smeter|s_meter|calibrat",
+          "where": "all tracked files at commit",
+          "matching_lines": 6,
+          "matching_files": [
+            "dist/assets/index-D-QRw5Fd.js",
+            "src/components/audio/protocol.ts",
+            "src/components/audio/useAudioClient.ts"
+          ]
+        }
+      ]
+    },
+    "freq_offset_correction": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 12,
+          "quote": "pub limits: Limits,"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "frequency.?correction|freq.?offset|ppm",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "frequency.?correction|freq.?offset|ppm",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Browser WebM audio",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/audio/useAudioClient.ts",
+          "line": 1055,
+          "quote": "a.download = 'recording.webm';"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/panels/AudioPanel.tsx",
+          "line": 138,
+          "quote": "onClick={audio.downloadRecording}"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "MediaRecorder|recording|downloadRecording",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "MediaRecorder|recording|downloadRecording",
+          "where": "all tracked files at commit",
+          "matching_lines": 36,
+          "matching_files": [
+            "dist/assets/index-D-QRw5Fd.js",
+            "src/components/audio/useAudioClient.ts",
+            "src/components/receiver/panels/AudioPanel.tsx"
+          ]
+        }
+      ]
+    },
+    "band_presets": {
+      "value": "yes",
+      "cell": "ITU-region amateur band jump menu",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/waterfall/WaterfallCard.tsx",
+          "line": 527,
+          "quote": "Jump to band (ITU Region {ituRegion})"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/waterfall/WaterfallCard.tsx",
+          "line": 537,
+          "quote": "jumpToBand(b);"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/waterfall/WaterfallCard.tsx",
+          "line": 1315,
+          "quote": "{ name: '160M HAM', startHz: 1_800_000, endHz: 2_000_000, color: hamColor },"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "band.?preset|160m|160 m|jumpToBand",
+          "where": "all tracked files at commit",
+          "matching_lines": 1,
+          "matching_files": [
+            "crates/novasdr-server/resources/default_bands.json"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "band.?preset|160m|160 m|jumpToBand",
+          "where": "all tracked files at commit",
+          "matching_lines": 15,
+          "matching_files": [
+            "dist/assets/index-D-QRw5Fd.js",
+            "src/components/waterfall/WaterfallCard.tsx",
+            "src/components/waterfall/bands.ts"
+          ]
+        }
+      ]
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Personal browser bookmarks, import/export",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/waterfall/WaterfallCard.tsx",
+          "line": 775,
+          "quote": "<Button type=\"button\" onClick={saveBookmark} disabled={centerHz == null || !bookmarkName.trim()}>"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/lib/bookmarks.ts",
+          "line": 12,
+          "quote": "const STORAGE_KEY = 'novasdr.bookmarks.v1';"
+        }
+      ],
+      "note": "Operator-defined markers are separately documented in docs/CONFIG_REFERENCE.md."
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "Listener chat",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/receiver/WebSdrUi.tsx",
+          "line": 793,
+          "quote": "<ChatPanel"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/app.rs",
+          "line": 16,
+          "quote": ".route(\"/chat\", get(ws::chat::upgrade))"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "chat",
+          "where": "all tracked files at commit",
+          "matching_lines": 65,
+          "matching_files": [
+            ".gitignore",
+            "config/config.json",
+            "crates/novasdr-core/src/config.rs",
+            "crates/novasdr-core/src/protocol.rs",
+            "crates/novasdr-server/src/app.rs",
+            "crates/novasdr-server/src/setup.rs",
+            "crates/novasdr-server/src/state.rs",
+            "crates/novasdr-server/src/ws/audio.rs",
+            "crates/novasdr-server/src/ws/chat.rs",
+            "crates/novasdr-server/src/ws/mod.rs",
+            "docs/ARCHITECTURE.md",
+            "docs/CHAT.md",
+            "docs/CONFIG.md",
+            "docs/CONFIG_REFERENCE.md",
+            "docs/FRONTEND.md",
+            "docs/PROTOCOL.md",
+            "docs/STATE.md",
+            "docs/index.md",
+            "docs/wiki/FRONTEND.md"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "chat",
+          "where": "all tracked files at commit",
+          "matching_lines": 65,
+          "matching_files": [
+            "dist/assets/index-D-QRw5Fd.js",
+            "src/components/app/BackendReconnectOverlay.tsx",
+            "src/components/receiver/WebSdrUi.tsx",
+            "src/components/receiver/panels/ChatPanel.tsx",
+            "src/lib/serverInfo.ts",
+            "src/lib/useChatClient.ts"
+          ]
+        }
+      ]
+    },
+    "multi_band": {
+      "value": "yes",
+      "cell": "Multiple receivers; UI selects receiver",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/App.tsx",
+          "line": 179,
+          "quote": "if (pickedReceiverId && pickedReceiverId !== receiverId) setReceiverId(pickedReceiverId);"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 442,
+          "quote": "receivers.receivers.iter().filter(|r| r.enabled).collect();"
+        }
+      ],
+      "note": "Only one enabled input may be stdin; FIFO and Soapy inputs permit multiple front ends.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "receivers|receiver_id|multi.band",
+          "where": "all tracked files at commit",
+          "matching_lines": 320,
+          "matching_files": [
+            "DOCKER.md",
+            "Dockerfile",
+            "README.md",
+            "config/receivers.json",
+            "crates/novasdr-core/src/config.rs",
+            "crates/novasdr-core/src/protocol.rs",
+            "crates/novasdr-core/tests/config.rs",
+            "crates/novasdr-core/tests/json_config.rs",
+            "crates/novasdr-core/tests/runtime.rs",
+            "crates/novasdr-core/tests/runtime_defaults.rs",
+            "crates/novasdr-server/src/app.rs",
+            "crates/novasdr-server/src/cli.rs",
+            "crates/novasdr-server/src/dsp_runner.rs",
+            "crates/novasdr-server/src/main.rs",
+            "crates/novasdr-server/src/registration.rs",
+            "crates/novasdr-server/src/setup.rs",
+            "crates/novasdr-server/src/state.rs",
+            "crates/novasdr-server/src/ws/audio.rs",
+            "crates/novasdr-server/src/ws/events.rs",
+            "crates/novasdr-server/src/ws/waterfall.rs",
+            "docs/BUILDING.md",
+            "docs/CONFIG.md",
+            "docs/CONFIG_REFERENCE.md",
+            "docs/FRONTEND.md",
+            "docs/PROTOCOL.md",
+            "docs/TROUBLESHOOTING.md",
+            "docs/index.md",
+            "tools/install.sh"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "receivers|receiver_id|multi.band",
+          "where": "all tracked files at commit",
+          "matching_lines": 94,
+          "matching_files": [
+            "dist/assets/index-D-QRw5Fd.js",
+            "src/App.tsx",
+            "src/components/app/WebSdrHeader.tsx",
+            "src/components/audio/protocol.ts",
+            "src/components/audio/useAudioClient.ts",
+            "src/components/receiver/WebSdrUi.tsx",
+            "src/components/receiver/panels/AudioPanel.tsx",
+            "src/components/waterfall/WaterfallView.tsx",
+            "src/components/waterfall/protocol.ts",
+            "src/lib/parseFrequency.ts",
+            "src/lib/receivers.ts"
+          ]
+        }
+      ]
+    },
+    "full_spectrum": {
+      "value": "yes",
+      "cell": "Real-sample input, half-rate spectrum",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 544,
+          "quote": "let is_real = input.signal == SignalType::Real;"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 545,
+          "quote": "let (fft_result_size, basefreq, total_bandwidth) = if is_real {"
+        }
+      ],
+      "note": "Capability from configurable rate and real-input FFT path; no hardware performance claim."
+    },
+    "decoders": {
+      "value": "yes",
+      "cell": "FT8 browser worker, off by default",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/lib/useDecoders.ts",
+          "line": 5,
+          "quote": "export type DecoderId = 'ft8';"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/lib/useDecoders.ts",
+          "line": 32,
+          "quote": "const [enabled, setEnabled] = useState<Record<DecoderId, boolean>>({ ft8: false });"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/waterfall/WaterfallCard.tsx",
+          "line": 616,
+          "quote": "decoders.toggle('ft8', !!checked);"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "FT8|RTTY|PSK31|decoder",
+          "where": "all tracked files at commit",
+          "matching_lines": 27,
+          "matching_files": [
+            "crates/interop/opus_wrapper.c",
+            "crates/interop/opus_wrapper.h",
+            "docs/CONFIG_REFERENCE.md",
+            "docs/FRONTEND.md",
+            "docs/LICENSING.md",
+            "docs/THIRD_PARTY.md",
+            "docs/TROUBLESHOOTING.md"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "FT8|RTTY|PSK31|decoder",
+          "where": "all tracked files at commit",
+          "matching_lines": 297,
+          "matching_files": [
+            "dist/assets/ft8Worker-CX3vRb7S.js",
+            "dist/assets/index-D-QRw5Fd.js",
+            "package-lock.json",
+            "package.json",
+            "src/components/app/TimeSyncOverlay.tsx",
+            "src/components/audio/useAudioClient.ts",
+            "src/components/receiver/WebSdrUi.tsx",
+            "src/components/waterfall/WaterfallCard.tsx",
+            "src/components/waterfall/WaterfallView.tsx",
+            "src/decoders/ft8/emscripten/decode_ft8.js",
+            "src/decoders/ft8/emscripten/decode_ft8.js.d.ts",
+            "src/decoders/ft8/ft8Worker.ts",
+            "src/lib/useDecoders.ts",
+            "src/modules/novasdrdsp.d.ts",
+            "src/modules/novasdrdsp_bg.js",
+            "src/modules/novasdrdsp_bg.wasm.d.ts"
+          ]
+        }
+      ]
+    },
+    "waterfall_history": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 12,
+          "quote": "pub limits: Limits,"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "waterfall.?history|waterfall.?buffer|history.?waterfall",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "waterfall.?history|waterfall.?buffer|history.?waterfall",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "waterfall_rate": {
+      "value": "no",
+      "cell": "Fixed maximum target of 10 updates/s",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/dsp_runner.rs",
+          "line": 160,
+          "quote": "let target_wf_rate = 10.0;"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "partial",
+      "cell": "Fixed 90 s WebSocket input-idle timeout",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/ws/audio.rs",
+          "line": 473,
+          "quote": "let idle_timeout = Duration::from_secs(90);"
+        }
+      ],
+      "note": "Socket liveness timeout, not configurable maximum listening duration. Other sockets use the same fixed timeout."
+    },
+    "per_address_limit": {
+      "value": "yes",
+      "cell": "Enforced socket cap per TCP peer address",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/state.rs",
+          "line": 199,
+          "quote": "let limit = self.cfg.limits.ws_per_ip.max(1);"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/state.rs",
+          "line": 201,
+          "quote": "if *entry >= limit {"
+        }
+      ],
+      "note": "Default 50 sockets, not 50 listeners. A listener opens several sockets.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "per_ip|per.address|ws_per_ip",
+          "where": "all tracked files at commit",
+          "matching_lines": 8,
+          "matching_files": [
+            "config/config.json",
+            "crates/novasdr-core/src/config.rs",
+            "crates/novasdr-server/src/state.rs",
+            "docs/CONFIG.md",
+            "docs/CONFIG_REFERENCE.md"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "per_ip|per.address|ws_per_ip",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "admin_panel": {
+      "value": "no",
+      "cell": "No operator web admin routes",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/app.rs",
+          "line": 11,
+          "quote": ".route(\"/server-info.json\", get(state::server_info))"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/app.rs",
+          "line": 16,
+          "quote": ".route(\"/chat\", get(ws::chat::upgrade))"
+        }
+      ],
+      "note": "Setup is an operator CLI, not a web admin UI."
+    },
+    "https": {
+      "value": "partial",
+      "cell": "Documented TLS-terminating reverse proxy",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "docs/CONFIG.md",
+          "line": 37,
+          "quote": "If NovaSDR is running behind a reverse proxy (for example terminating HTTPS on port 443), set `websd"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "asio_no_tls|reverse.proxy|nginx|caddy|https",
+          "where": "all tracked files at commit",
+          "matching_lines": 73,
+          "matching_files": [
+            ".github/workflows/ci.yml",
+            ".github/workflows/release.yml",
+            ".gitmodules",
+            "DOCKER.md",
+            "Dockerfile",
+            "NOTICE",
+            "README.md",
+            "config/config.json",
+            "config/overlays/header_panel.json",
+            "crates/interop/Cargo.toml",
+            "crates/novasdr-core/src/config.rs",
+            "crates/novasdr-core/tests/config.rs",
+            "crates/novasdr-server/src/overlays.rs",
+            "crates/novasdr-server/src/registration.rs",
+            "crates/novasdr-server/src/update_check.rs",
+            "docs/BUILDING.md",
+            "docs/CONFIG.md",
+            "docs/CONFIG_REFERENCE.md",
+            "docs/FRONTEND.md",
+            "docs/INSTALL.md",
+            "docs/LICENSING.md",
+            "docs/OPERATIONS.md",
+            "docs/THIRD_PARTY.md",
+            "docs/index.md",
+            "tools/install.sh",
+            "tools/publish_wiki.ps1",
+            "tools/publish_wiki.sh"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "asio_no_tls|reverse.proxy|nginx|caddy|https",
+          "where": "all tracked files at commit",
+          "matching_lines": 524,
+          "matching_files": [
+            "components.json",
+            "dist/assets/index-D-QRw5Fd.js",
+            "package-lock.json",
+            "src/components/app/TimeSyncOverlay.tsx",
+            "src/components/app/WebSdrHeader.tsx",
+            "src/components/audio/useAudioClient.ts",
+            "src/components/receiver/panels/ChatPanel.tsx",
+            "src/components/waterfall/WaterfallCard.tsx",
+            "src/components/waterfall/WaterfallView.tsx",
+            "src/lib/useChatClient.ts",
+            "src/lib/useServerEvents.ts"
+          ]
+        }
+      ]
+    },
+    "signed_updates": {
+      "value": "partial",
+      "cell": "Update notice; signature not established",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-server/src/update_check.rs",
+          "line": 27,
+          "quote": "let url = format!(\"https://api.github.com/repos/{repo}/releases/latest\");"
+        }
+      ],
+      "note": "Checks release metadata. Installer is referenced externally; authenticity verification of that external script was not independently established.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "searched": "update|signature|verify|sha256|checksum",
+          "where": "all tracked files at commit",
+          "matching_lines": 110,
+          "matching_files": [
+            ".github/workflows/ci.yml",
+            ".github/workflows/release.yml",
+            "DOCKER.md",
+            "Dockerfile",
+            "LICENSE",
+            "README.md",
+            "compile.sh",
+            "crates/novasdr-core/src/codec/flac_stream.rs",
+            "crates/novasdr-core/src/config.rs",
+            "crates/novasdr-core/src/dsp/clfft.rs",
+            "crates/novasdr-core/src/dsp/vkfft.rs",
+            "crates/novasdr-core/tests/config.rs",
+            "crates/novasdr-core/tests/runtime.rs",
+            "crates/novasdr-core/tests/runtime_defaults.rs",
+            "crates/novasdr-server/src/dsp_runner.rs",
+            "crates/novasdr-server/src/logging.rs",
+            "crates/novasdr-server/src/main.rs",
+            "crates/novasdr-server/src/registration.rs",
+            "crates/novasdr-server/src/update_check.rs",
+            "crates/novasdr-server/src/ws/audio.rs",
+            "docs/BUILDING.md",
+            "docs/CONFIG.md",
+            "docs/CONFIG_REFERENCE.md",
+            "docs/ENGINEERING_RULES.md",
+            "docs/FRONTEND.md",
+            "docs/INSTALL.md",
+            "docs/OPERATIONS.md",
+            "docs/PROTOCOL.md",
+            "docs/STATE.md",
+            "docs/TROUBLESHOOTING.md",
+            "tools/install.sh",
+            "tools/publish_wiki.ps1"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "searched": "update|signature|verify|sha256|checksum",
+          "where": "all tracked files at commit",
+          "matching_lines": 230,
+          "matching_files": [
+            "dist/assets/index-D-QRw5Fd.js",
+            "package-lock.json",
+            "src/components/audio/useAudioClient.ts",
+            "src/components/receiver/WebSdrUi.tsx",
+            "src/components/waterfall/WaterfallCard.tsx",
+            "src/decoders/ft8/emscripten/decode_ft8.js"
+          ]
+        }
+      ]
+    },
+    "installer": {
+      "value": "yes",
+      "cell": "Documented one-command install",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "README.md",
+          "line": 35,
+          "quote": "curl -fsSL https://novasdr.com/install.sh | sh"
+        }
+      ],
+      "note": ""
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "stdin, FIFO, optional SoapySDR drivers",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 149,
+          "quote": "Stdin { format: SampleFormat },"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 151,
+          "quote": "Fifo { format: SampleFormat, path: String },"
+        },
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR",
+          "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+          "path": "crates/novasdr-core/src/config.rs",
+          "line": 153,
+          "quote": "SoapySdr(SoapySdrDriver),"
+        }
+      ],
+      "note": ""
+    }
+  },
+  "security": {
+    "default_credentials": {
+      "summary": "No admin credentials established; listener service is anonymous. Do not interpret this as an authenticated admin surface.",
+      "literal": null
+    },
+    "admin_reachability": {
+      "summary": "No operator web admin established in pinned service."
+    },
+    "version_exposed": {
+      "summary": "Exact version shown in page header from server info",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "phasor-labs_NovaSDR/frontend",
+          "commit": "db67b282ef933b0f0a923fd89f09a154f94d8517",
+          "path": "src/components/app/WebSdrHeader.tsx",
+          "line": 95,
+          "quote": "const version = info.value.version ? `v${info.value.version}` : null;"
+        }
+      ]
+    },
+    "update_signing": {
+      "summary": "Checks release metadata. Installer is referenced externally; authenticity verification of that external script was not independently established."
+    },
+    "other": [
+      {
+        "summary": "Enforced per-peer WebSocket cap",
+        "sources": [
+          {
+            "kind": "code",
+            "repo": "phasor-labs_NovaSDR",
+            "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+            "path": "crates/novasdr-server/src/state.rs",
+            "line": 199,
+            "quote": "let limit = self.cfg.limits.ws_per_ip.max(1);"
+          }
+        ]
+      }
+    ]
+  },
+  "health": {
+    "pin": "83495e5519c473a3b492c645eb3d54fd04baffa4 2026-03-12 release: trigger on plain semver tags",
+    "observed_clone_head": "45b2951b5771ada2399deb3f6b3ed43c946840ba 2026-04-08",
+    "reachable_commits_at_pin": 83,
+    "ci_files": [
+      ".github/workflows/ci.yml",
+      ".github/workflows/release.yml"
+    ],
+    "test_paths": [
+      "crates/novasdr-core/tests/codec.rs",
+      "crates/novasdr-core/tests/config.rs",
+      "crates/novasdr-core/tests/json_config.rs",
+      "crates/novasdr-core/tests/runtime.rs",
+      "crates/novasdr-core/tests/runtime_defaults.rs",
+      "crates/novasdr-core/tests/sample_reader.rs"
+    ],
+    "license_evidence": [
+      {
+        "kind": "code",
+        "repo": "phasor-labs_NovaSDR",
+        "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+        "path": "LICENSE",
+        "line": 1,
+        "quote": "GNU GENERAL PUBLIC LICENSE"
+      },
+      {
+        "kind": "code",
+        "repo": "phasor-labs_NovaSDR",
+        "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+        "path": "LICENSE",
+        "line": 2,
+        "quote": "Version 3, 29 June 2007"
+      }
+    ],
+    "runtime_note": "Static capabilities only. No processes, RSS, latency or throughput measured by this audit.",
+    "build_evidence": [
+      {
+        "kind": "code",
+        "repo": "phasor-labs_NovaSDR",
+        "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+        "path": "Cargo.toml",
+        "line": 11,
+        "quote": "license = \"GPL-3.0-only\""
+      }
+    ]
+  },
+  "limitations": [
+    "Static source review, not execution. Unknown cells deliberately remain unknown where evidence does not establish listener behavior."
+  ]
+}

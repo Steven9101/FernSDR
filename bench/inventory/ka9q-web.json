@@ -1,0 +1,564 @@
+{
+  "receiver": "ka9q-web",
+  "checked": "2026-09-27",
+  "repos": {
+    "kw-wa2n": "4efea4b58356e2ca342980f33a8c6a5b3a16693f"
+  },
+  "scope": "Static pinned-source inventory; unknown means unresolved. No runtime capability claims. No private candidates or credential literals exported.",
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 113,
+          "quote": "<option value=\"usb\">USB</option>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 115,
+          "quote": "<option value=\"lsb\">LSB</option>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 117,
+          "quote": "<option value=\"am\">AM</option>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "SAM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 118,
+          "quote": "<option value=\"sam\">SAM</option>"
+        }
+      ],
+      "note": ""
+    },
+    "sam_carrier_display": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 119,
+          "quote": "<option value=\"fm\">FM</option>"
+        }
+      ],
+      "note": ""
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CWU/CWL",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 111,
+          "quote": "<option value=\"cwu\">CWU</option>"
+        }
+      ],
+      "note": ""
+    },
+    "cw_pitch": {
+      "value": "yes",
+      "cell": "Listener post-detection shift in Hz",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/optionsDialog.html",
+          "line": 92,
+          "quote": "<input type=\"number\" id=\"shiftInput\" step=\"10\" placeholder=\"0\" title=\"Enter CW shift value in Hz (e.g. -1000 or 1000)\" style=\"width:72px; font-size:12px;\" />"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.js",
+          "line": 1092,
+          "quote": "sendControl('shift', 't:' + v.toString());"
+        }
+      ],
+      "note": ""
+    },
+    "modes_other": {
+      "value": "yes",
+      "cell": "IQ, ISB and user presets",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 120,
+          "quote": "<option value=\"iq\">IQ</option>"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 121,
+          "quote": "<option value=\"isb\">ISB</option>"
+        }
+      ],
+      "note": ""
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Adjustable low/high edges",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 129,
+          "quote": "<input id=\"filterLowInput\" type=\"number\" step=\"100\" inputmode=\"numeric\" placeholder=\"Low\" title=\"Filter low edge (units sent-as-is); arrows change by 100\" style=\"width:8ch; margin-left:2px;\" />"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 130,
+          "quote": "<input id=\"filterHighInput\" type=\"number\" step=\"100\" inputmode=\"numeric\" placeholder=\"High\" title=\"Filter high edge (units sent-as-is); arrows change by 100\" style=\"width:8ch; margin-left:2px;\" />"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "no",
+      "cell": "No corresponding listener control found",
+      "sources": [
+        {
+          "kind": "absence",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "searched": "noise.?reduc",
+          "where": "tracked html and README.md"
+        }
+      ],
+      "note": "Does not deny DSP functionality in radiod headers or companion tools."
+    },
+    "noise_blanker": {
+      "value": "no",
+      "cell": "No corresponding listener control found",
+      "sources": [
+        {
+          "kind": "absence",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "searched": "noise.?blank",
+          "where": "tracked html and README.md"
+        }
+      ],
+      "note": "Does not deny DSP functionality in radiod headers or companion tools."
+    },
+    "notch": {
+      "value": "no",
+      "cell": "No corresponding listener control found",
+      "sources": [
+        {
+          "kind": "absence",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "searched": "notch",
+          "where": "tracked html and README.md"
+        }
+      ],
+      "note": "Does not deny DSP functionality in radiod headers or companion tools."
+    },
+    "squelch": {
+      "value": "partial",
+      "cell": "radiod squelch; no browser control established",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "decode_status.c",
+          "line": 173,
+          "quote": "case SNR_SQUELCH:"
+        }
+      ],
+      "note": ""
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "radiod preset AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "share/presets.conf",
+          "line": 136,
+          "quote": "agc = yes"
+        }
+      ],
+      "note": ""
+    },
+    "agc_settings": {
+      "value": "partial",
+      "cell": "Operator preset hang and recovery",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "share/presets.conf",
+          "line": 128,
+          "quote": "recovery-rate = 50"
+        },
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "share/presets.conf",
+          "line": 129,
+          "quote": "hang-time = 0"
+        }
+      ],
+      "note": ""
+    },
+    "smeter": {
+      "value": "yes",
+      "cell": "Signal-level meter",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 42,
+          "quote": "<canvas id=\"smeter\" width=\"100\" height=\"20\" title=\"Signal power, SNR, or Overrange rate\"></canvas>"
+        }
+      ],
+      "note": ""
+    },
+    "smeter_calibration": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "freq_offset_correction": {
+      "value": "partial",
+      "cell": "Hardware-specific calibration",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "src/airspy.c",
+          "line": 237,
+          "quote": "frontend->calibrate = config_getdouble(Dictionary,section,\"calibrate\",0);"
+        },
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "src/airspy.c",
+          "line": 504,
+          "quote": "int64_t const intfreq = lrint((freq + sdr->converter)/ (1 + frontend->calibrate));"
+        }
+      ],
+      "note": ""
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Browser recording",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 313,
+          "quote": "<button id=\"toggleRecording\" style=\"width:110px\" onclick=\"toggleAudioRecording()\" title=\"Start/Stop Audio Recording. Do not change frequency while recording.\" style=\"margin-right: 10px;\">Record</butto"
+        }
+      ],
+      "note": ""
+    },
+    "band_presets": {
+      "value": "yes",
+      "cell": "Amateur band shortcuts",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.js",
+          "line": 4453,
+          "quote": "{ label: \"160M\", freq: 1900000 },"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.js",
+          "line": 4454,
+          "quote": "{ label: \"80M\", freq: 3715000 },"
+        }
+      ],
+      "note": ""
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Listener frequency memories",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 74,
+          "quote": "<button id=\"save_memory\" title=\"Save current frequency to selected memory\">Save</button>"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/radio.html",
+          "line": 75,
+          "quote": "<button id=\"recall_memory\" title=\"Recall frequency from selected memory\">Recall</button>"
+        }
+      ],
+      "note": ""
+    },
+    "chat": {
+      "value": "no",
+      "cell": "No corresponding listener control found",
+      "sources": [
+        {
+          "kind": "absence",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "searched": "chat",
+          "where": "tracked html and README.md"
+        }
+      ],
+      "note": "Does not deny DSP functionality in radiod headers or companion tools."
+    },
+    "multi_band": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "full_spectrum": {
+      "value": "yes",
+      "cell": "RX888 real direct-sampling frontend",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "src/Makefile",
+          "line": 21,
+          "quote": "ENABLE_RX888=1"
+        }
+      ],
+      "note": ""
+    },
+    "decoders": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "No decoder UI was established; radiod CLI tools are not browser decoders. Left unknown rather than relying on incomplete name search."
+    },
+    "waterfall_history": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "waterfall_rate": {
+      "value": "yes",
+      "cell": "Listener interval from 30 to 2000 ms",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/optionsDialog.html",
+          "line": 60,
+          "quote": "<button type=\"button\" id=\"spectrumPollButton\" style=\"font-size:12px; padding:2px 4px; height:24px; margin-left:2px;\" onclick=\"sendSpectrumPoll()\" title=\"Send spectrum poll interval to server\">Poll</bu"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "html/optionsDialog.html",
+          "line": 61,
+          "quote": "<input type=\"number\" id=\"spectrumPollInput\" min=\"30\" max=\"2000\" step=\"10\" value=\"100\" style=\"width:50px; font-size:12px; margin-left:2px;\" title=\"Spectrum poll interval in milliseconds (30-2000 ms) WA"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "per_address_limit": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Global MAX_SESSIONS=5 is not a per-IP cap. Source ka9q-web.c:1776-1798 protects genuinely active same-IP sessions; only stale sessions reattach."
+    },
+    "admin_panel": {
+      "value": "partial",
+      "cell": "Status page; no configuration console established",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "ka9q-web.c",
+          "line": 1614,
+          "quote": "\"  <meta http-equiv=\\\"refresh\\\" content=\\\"30\\\" />\""
+        }
+      ],
+      "note": ""
+    },
+    "https": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Onion SSL support in README is a build prerequisite; no TLS listener/certificate setup established."
+    },
+    "signed_updates": {
+      "value": "no",
+      "cell": "Manual source build route",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "README.md",
+          "line": 81,
+          "quote": "### 4 - Build and install ka9q-web"
+        }
+      ],
+      "note": ""
+    },
+    "installer": {
+      "value": "no",
+      "cell": "Manual radiod, Onion and frontend build",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "README.md",
+          "line": 8,
+          "quote": "### 1 - Build and install ka9q-radio"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "README.md",
+          "line": 35,
+          "quote": "### 3 - Build and install the Onion framework"
+        },
+        {
+          "kind": "code",
+          "repo": "kw-wa2n",
+          "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+          "path": "README.md",
+          "line": 81,
+          "quote": "### 4 - Build and install ka9q-web"
+        }
+      ],
+      "note": ""
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "radiod hardware drivers; UI expects real zero-centered span",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "src/Makefile",
+          "line": 13,
+          "quote": "ENABLE_AIRSPY=1"
+        },
+        {
+          "kind": "code",
+          "repo": "ka9q-radio",
+          "commit": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+          "path": "src/Makefile",
+          "line": 23,
+          "quote": "ENABLE_SOAPY=1"
+        }
+      ],
+      "note": ""
+    }
+  },
+  "health": {
+    "last_commit_date": "2026-09-19",
+    "commits_12months": 261,
+    "author_identities_12months": 5,
+    "shallow": false,
+    "tracked_files": 35,
+    "project_github_workflows": [],
+    "note": "Counts include merges and use distinct author name/email identities, not deduplicated humans. Release pin history, not current project HEAD."
+  },
+  "license": {
+    "kind": "code",
+    "repo": "kw-wa2n",
+    "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+    "path": "LICENSE",
+    "line": 1,
+    "quote": "GNU GENERAL PUBLIC LICENSE"
+  }
+}

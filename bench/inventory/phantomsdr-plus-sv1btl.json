@@ -1,0 +1,648 @@
+{
+  "receiver": "phantomsdr-plus-sv1btl",
+  "checked": "2026-09-27",
+  "repos": {
+    "sv1btl_PhantomSDR-Plus": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5"
+  },
+  "scope": "Static pinned-source inventory; unknown means unresolved. No runtime capability claims. No private candidates or credential literals exported.",
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10521,
+          "quote": "{#each [\"USB\", \"LSB\", \"CW\", \"AM\", \"QUAM\", \"FM\"] as mode}"
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10521,
+          "quote": "{#each [\"USB\", \"LSB\", \"CW\", \"AM\", \"QUAM\", \"FM\"] as mode}"
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10521,
+          "quote": "{#each [\"USB\", \"LSB\", \"CW\", \"AM\", \"QUAM\", \"FM\"] as mode}"
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "AM/SAM toggle",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10536,
+          "quote": "? \"SAM\""
+        }
+      ],
+      "note": ""
+    },
+    "sam_carrier_display": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10521,
+          "quote": "{#each [\"USB\", \"LSB\", \"CW\", \"AM\", \"QUAM\", \"FM\"] as mode}"
+        }
+      ],
+      "note": ""
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CW",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10521,
+          "quote": "{#each [\"USB\", \"LSB\", \"CW\", \"AM\", \"QUAM\", \"FM\"] as mode}"
+        }
+      ],
+      "note": ""
+    },
+    "cw_pitch": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "modes_other": {
+      "value": "yes",
+      "cell": "C-QUAM stereo",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10521,
+          "quote": "{#each [\"USB\", \"LSB\", \"CW\", \"AM\", \"QUAM\", \"FM\"] as mode}"
+        }
+      ],
+      "note": ""
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Adjustable passband",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 14699,
+          "quote": "title=\"Adjust bandwidth from centre toward the active sideband\""
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Browser RNNoise",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 9457,
+          "quote": "title=\"AI noise reduction (RNNoise)"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/lib/rnnoise.js",
+          "line": 58,
+          "quote": "const vad = mod._rnnoise_process_frame(st, ptr, ptr)"
+        }
+      ],
+      "note": ""
+    },
+    "noise_blanker": {
+      "value": "yes",
+      "cell": "Browser noise blanker",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 5725,
+          "quote": "function applyNoiseBlanker(enabled) {"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 5773,
+          "quote": "applyNoiseBlanker(NBEnabled);"
+        }
+      ],
+      "note": ""
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Browser automatic notch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 5788,
+          "quote": "function applyAutoNotch(enabled) {"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 6211,
+          "quote": "applyAutoNotch(ANEnabled);"
+        }
+      ],
+      "note": ""
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Listener squelch threshold",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 5641,
+          "quote": "audio.setSquelch(squelchEnable);"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 5643,
+          "quote": "audio.setSquelchThreshold(squelch);"
+        }
+      ],
+      "note": ""
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "Browser AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 856,
+          "quote": "function handleAGCChange(newAGC) {"
+        }
+      ],
+      "note": ""
+    },
+    "agc_settings": {
+      "value": "yes",
+      "cell": "Off and three AGC selections",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 860,
+          "quote": "audio.setAGC(0);"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 869,
+          "quote": "audio.setAGC(3);"
+        }
+      ],
+      "note": ""
+    },
+    "smeter": {
+      "value": "yes",
+      "cell": "Calibrated dBm and analog S-meter",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 5243,
+          "quote": "// Calibrated power in dBm, handed to the round desktop <SMeterAnalog/>."
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 10167,
+          "quote": "<SMeterAnalog dbm={smeterDbm} />"
+        }
+      ],
+      "note": ""
+    },
+    "smeter_calibration": {
+      "value": "partial",
+      "cell": "Separate constant analog/digital offsets",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "config.example.rtlsdr.toml",
+          "line": 70,
+          "quote": "smeter_offset=0 # digital-only S-meter offset"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "config.example.rtlsdr.toml",
+          "line": 71,
+          "quote": "analog_smeter_offset=0 # analog-only S-meter offset"
+        }
+      ],
+      "note": ""
+    },
+    "freq_offset_correction": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Browser audio and video recording",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 1216,
+          "quote": "audio.startRecording();"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 1254,
+          "quote": "const started = audio.startVideoRecording({"
+        }
+      ],
+      "note": ""
+    },
+    "band_presets": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Listener bookmarks",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 17450,
+          "quote": "on:click={() => goToBookmark(bookmark)}"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 17487,
+          "quote": "on:click={() => deleteBookmark(index)}"
+        }
+      ],
+      "note": ""
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "Listener chat send control",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 7035,
+          "quote": "function sendMessage() {"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 13705,
+          "quote": "on:click={sendMessage}"
+        }
+      ],
+      "note": ""
+    },
+    "multi_band": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "full_spectrum": {
+      "value": "yes",
+      "cell": "Real RX888 input documented for 0-30 MHz",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "README.md",
+          "line": 347,
+          "quote": "sps=1536000 # RTL Input Sample Rate. For RX888 sps will be 60000000 for 0-30 MHz receiving<br />"
+        }
+      ],
+      "note": ""
+    },
+    "decoders": {
+      "value": "yes",
+      "cell": "FT8/FT4/FT2, CW, WEFAX and others",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 15591,
+          "quote": "{ft2Enabled ? \"FT2\" : ft4Enabled ? \"FT4\" : \"FT8\"} Messages"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 15569,
+          "quote": "<option value=\"cw\">CW</option>"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "frontend/src/App.svelte",
+          "line": 15571,
+          "quote": "<option value=\"hffax\">HF FAX / WEFAX</option>"
+        }
+      ],
+      "note": ""
+    },
+    "waterfall_history": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "waterfall_rate": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "listener_time_limit": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "per_address_limit": {
+      "value": "yes",
+      "cell": "Enforced listener and socket limits",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "src/websocket.cpp",
+          "line": 418,
+          "quote": "if (listener && limit_per_ip > 0 && e.active >= limit_per_ip) {"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "src/websocket.cpp",
+          "line": 423,
+          "quote": "if (limit_per_ip_sockets > 0 && e.sockets >= limit_per_ip_sockets) {"
+        }
+      ],
+      "note": ""
+    },
+    "admin_panel": {
+      "value": "yes",
+      "cell": "Operator administration panel documented",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "docs/ADMIN_PANEL_SETUP.md",
+          "line": 1,
+          "quote": "# PhantomSDR-Plus Admin Panel — Setup Guide"
+        }
+      ],
+      "note": ""
+    },
+    "https": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "signed_updates": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "installer": {
+      "value": "partial",
+      "cell": "Interactive dependency installation and source build",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "README.md",
+          "line": 22,
+          "quote": "* A new `install.sh` installation procedure that simplifies the initial server setup."
+        }
+      ],
+      "note": ""
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "Stdin real/IQ samples; hardware via driver scripts",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "config.example.rtlsdr.toml",
+          "line": 67,
+          "quote": "signal=\"iq\" # real or iq"
+        },
+        {
+          "kind": "code",
+          "repo": "sv1btl_PhantomSDR-Plus",
+          "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+          "path": "config.example.rtlsdr.toml",
+          "line": 75,
+          "quote": "format=\"u8\" # Sample format: u8, s8, u16, s16, u32, s32, f32, f64"
+        }
+      ],
+      "note": ""
+    }
+  },
+  "health": {
+    "last_commit_date": "2026-09-27",
+    "commits_12months": 7,
+    "author_identities_12months": 1,
+    "shallow": false,
+    "tracked_files": 707,
+    "project_github_workflows": [],
+    "note": "Counts include merges and use distinct author name/email identities, not deduplicated humans. Release pin history, not current project HEAD."
+  },
+  "license": {
+    "kind": "code",
+    "repo": "sv1btl_PhantomSDR-Plus",
+    "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+    "path": "LICENSE",
+    "line": 1,
+    "quote": "GNU GENERAL PUBLIC LICENSE"
+  },
+  "runtime_dependencies": [
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 54,
+      "quote": "fftw3f_dep = dependency('fftw3f')"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 63,
+      "quote": "boost_dep = dependency('boost', modules : ['system', 'iostreams'])"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 90,
+      "quote": "zstd_dep   = dependency('libzstd')"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 91,
+      "quote": "flacpp_dep = dependency('flac++')"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 104,
+      "quote": "opus_dep = dependency('opus', required : _opus_req)"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 122,
+      "quote": "liquid_dep = cpp.find_library('liquid', required : _liq_req)"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 134,
+      "quote": "zlib_dep          = dependency('zlib')"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 136,
+      "quote": "tomlplusplus_dep  = dependency('tomlplusplus')"
+    },
+    {
+      "kind": "code",
+      "repo": "sv1btl_PhantomSDR-Plus",
+      "commit": "0fb2ee03fade61b71a4e93554cb28ccb32e8e7f5",
+      "path": "meson.build",
+      "line": 141,
+      "quote": "curl_dep          = dependency('libcurl')"
+    }
+  ]
+}

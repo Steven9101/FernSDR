@@ -1,0 +1,109 @@
+{
+ "receiver": "novasdr",
+ "repeat": 1,
+ "environment": {
+  "mem_available_mb": 6316,
+  "disk_free_gb": 24.0
+ },
+ "steps": [
+  {
+   "listeners": 1,
+   "cpu_percent": 5.387496706821308,
+   "mem_mb": 283.2734375,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.0000499999999999,
+   "audio_kbit_median": 51.187733333333334,
+   "closed_early": 0,
+   "spread_share": 0.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 10,
+   "cpu_percent": 8.537705359854256,
+   "mem_mb": 295.99609375,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.008597435897436,
+   "audio_kbit_median": 51.187733333333334,
+   "closed_early": 0,
+   "spread_share": 0.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 50,
+   "cpu_percent": 21.09970305610859,
+   "mem_mb": 343.234375,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.0000499999999999,
+   "audio_kbit_median": 51.20426666666666,
+   "closed_early": 0,
+   "spread_share": 0.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 100,
+   "cpu_percent": 37.136806500695606,
+   "mem_mb": 406.375,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.0000499999999999,
+   "audio_kbit_median": 51.181866666666664,
+   "closed_early": 0,
+   "spread_share": 0.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 200,
+   "cpu_percent": 67.57095496403366,
+   "mem_mb": 543.140625,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00058336,
+   "waterfall_ratio_median": 1.008597435897436,
+   "audio_kbit_median": 51.19786666666666,
+   "closed_early": 0,
+   "spread_share": 0.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 400,
+   "cpu_percent": 69.63927291112628,
+   "mem_mb": 578.140625,
+   "audio_ok_share": 0.505,
+   "audio_ratio_median": 0.9984499200000001,
+   "waterfall_ratio_median": 1.0000499999999999,
+   "audio_kbit_median": 51.0576,
+   "closed_early": 0,
+   "spread_share": 0.0,
+   "errors": 988,
+   "first_errors": [
+    "WebSocket was closed before the connection was established"
+   ],
+   "passed": false
+  }
+ ],
+ "browser_rates": {
+  "control": 1.99990000499975,
+  "control_bytes": 327.983600819959,
+  "waterfall": 7.799610019499025,
+  "waterfall_bytes": 3320.5839708014596,
+  "audio": 31.24843757812109,
+  "audio_bytes": 6397.530123493825,
+  "other": 0.0,
+  "other_bytes": 0.0
+ },
+ "browser_exit": 0,
+ "knee": 200,
+ "state": "done"
+}

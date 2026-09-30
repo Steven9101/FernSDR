@@ -1,0 +1,88 @@
+{
+  "evidence_report": "matched-defaults.md",
+  "classification": "source UI defaults and captured requests; not uniformly server-confirmed",
+  "receiver_rows": [
+    {
+      "id": "fernsdr",
+      "usb_request_width_hz": 2400,
+      "usb_low_hz": 300,
+      "usb_high_hz": 2700,
+      "audio_stream_rate_hz": null
+    },
+    {
+      "id": "novasdr",
+      "usb_request_width_hz": 2718.75,
+      "usb_low_hz": 93.75,
+      "usb_high_hz": 2812.5,
+      "audio_stream_rate_hz": 12000
+    },
+    {
+      "id": "phantomsdr",
+      "usb_request_width_hz": 3000,
+      "usb_low_hz": 0,
+      "usb_high_hz": 3000,
+      "audio_stream_rate_hz": 12000
+    },
+    {
+      "id": "phantomsdr-plus",
+      "usb_request_width_hz": 2718.75,
+      "usb_low_hz": 93.75,
+      "usb_high_hz": 2812.5,
+      "audio_stream_rate_hz": 12000
+    },
+    {
+      "id": "phantomsdr-plus-sv1btl",
+      "usb_request_width_hz": 2703.125,
+      "usb_low_hz": 0,
+      "usb_high_hz": 2703.125,
+      "audio_stream_rate_hz": 12000
+    },
+    {
+      "id": "openwebrx",
+      "usb_request_width_hz": 2700,
+      "usb_low_hz": 300,
+      "usb_high_hz": 3000,
+      "audio_stream_rate_hz": 11025
+    },
+    {
+      "id": "openwebrx-plus",
+      "usb_request_width_hz": 2600,
+      "usb_low_hz": 150,
+      "usb_high_hz": 2750,
+      "audio_stream_rate_hz": 11025
+    },
+    {
+      "id": "vertexsdr",
+      "usb_request_width_hz": 2400,
+      "usb_low_hz": 300,
+      "usb_high_hz": 2700,
+      "audio_stream_rate_hz": null
+    },
+    {
+      "id": "websdr",
+      "usb_request_width_hz": 2700,
+      "usb_low_hz": 300,
+      "usb_high_hz": 3000,
+      "audio_stream_rate_hz": null
+    },
+    {
+      "id": "ka9q-web",
+      "usb_request_width_hz": 2950,
+      "usb_low_hz": 50,
+      "usb_high_hz": 3000,
+      "audio_stream_rate_hz": 12000
+    },
+    {
+      "id": "ubersdr",
+      "usb_request_width_hz": 2650,
+      "usb_low_hz": 50,
+      "usb_high_hz": 2700,
+      "audio_stream_rate_hz": 12000
+    }
+  ],
+  "usb_width_median_hz": 2700,
+  "audio_stream_rate_known_subset_median_hz": 12000.0,
+  "audio_rate_caveat": "OWRX rates inferred from44100browser and integer resampling algorithm; OWRX+ algorithm pin still needs separate verification. Browser rendering rate is a separate quantity.",
+  "waterfall_median": null,
+  "waterfall_reason": "Transform length, minimum row length, transmitted bins and rendered width are not interchangeable; actual rows/s missing."
+}

@@ -1,0 +1,36 @@
+# Derived from config.example.rtlsdr.toml at 0fb2ee0.
+# Input, station identity, default tuning and writable UI path changed for the lab.
+[server]
+port=9002
+html_root="/var/lib/phantomsdr-plus-sv1btl/www"
+otherusers=1
+[websdr]
+register_online=false
+name="Benchmark laboratory"
+antenna="Generated samples"
+grid_locator="AA00aa"
+hostname=""
+[limits]
+per_ip=0
+per_ip_rate=0
+[input]
+sps=2048000
+fft_size=131072
+brightness_offset=0
+frequency=7100000
+signal="iq"
+accelerator="none"
+audio_sps=12000
+smeter_offset=0
+analog_smeter_offset=0
+[input.driver]
+name="stdin"
+format="u8"
+[input.defaults]
+frequency=7159000
+modulation="USB"
+[kiwi_emulation]
+enabled=true
+audio_gain=70.0
+wf_cal=0.0
+wf_fps_max=23

@@ -1,0 +1,52 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Runs radiod and ka9q-web in one container, as a normal install runs them
+# from two systemd units (radiod@.service and ka9q-web.service):
+#
+#   lab-start RADIOD_CONF [ka9q-web options...]
+#
+# First, multicast on the loopback interface, which ka9q-radio's
+# set_lo_multicast.service turns on at boot on a normal install. radiod and
+# ka9q-web both exit without it, and setting it needs CAP_NET_ADMIN in this
+# container's network namespace: either the container gets that capability
+# (receiver.json asks for it), or the harness sets the flag from outside
+# (nsenter -t PID -n ip link set dev lo multicast on) and this waits for it.
+#
+# Then both programs run with CAP_NET_ADMIN gone from every capability set,
+# so that nothing but this step can change the network namespace. They stay
+# root in the container, as the lab's other receivers do: the lab's FIFO is
+# root's, mode 0600. If either exits, the other is stopped and the container
+# ends with the first one's status.
+set -euo pipefail
+
+lo_multicast() { ip -o link show dev lo | grep -q '[<,]MULTICAST[,>]'; }
+
+if [ "${LAB_START_STAGE:-1}" = 1 ]; then
+    if ! lo_multicast; then
+        ip link set dev lo multicast on 2>/dev/null || true
+        for _ in $(seq 1 60); do
+            lo_multicast && break
+            echo "lab-start: waiting for multicast on lo (needs CAP_NET_ADMIN, or the harness to set it)" >&2
+            sleep 0.5
+        done
+        lo_multicast || { echo "lab-start: lo has no multicast; radiod cannot run" >&2; exit 1; }
+    fi
+    export LAB_START_STAGE=2
+    exec setpriv --bounding-set=-net_admin --inh-caps=-net_admin --ambient-caps=-net_admin \
+        --no-new-privs -- "$0" "$@"
+fi
+
+conf=$1
+shift
+radiod "$conf" &
+radiod_pid=$!
+ka9q-web "$@" &
+web_pid=$!
+trap 'kill -TERM "$radiod_pid" "$web_pid" 2>/dev/null || true' TERM INT
+status=0
+wait -n "$radiod_pid" "$web_pid" || status=$?
+kill -TERM "$radiod_pid" "$web_pid" 2>/dev/null || true
+wait || true
+echo "lab-start: a program exited (status $status); stopping" >&2
+exit "$status"

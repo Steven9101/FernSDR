@@ -1,0 +1,1042 @@
+{
+  "receiver": "phantomsdr",
+  "checked": "2026-09-27",
+  "repos": {
+    "PhantomSDR_PhantomSDR": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+    "PhantomSDR_PhantomSDR/html-svelte": "fb595bd3027404e0edfc8fc38703d7760a76ad7c"
+  },
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 106,
+          "quote": "'USB', 'LSB', 'CW-U', 'CW-L', 'AM', 'FM'"
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 106,
+          "quote": "'USB', 'LSB', 'CW-U', 'CW-L', 'AM', 'FM'"
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 106,
+          "quote": "'USB', 'LSB', 'CW-U', 'CW-L', 'AM', 'FM'"
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "no",
+      "cell": "No SAM mode",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/signal.cpp",
+          "line": 318,
+          "quote": "if (demodulation == \"USB\") {"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 106,
+          "quote": "'USB', 'LSB', 'CW-U', 'CW-L', 'AM', 'FM'"
+        }
+      ],
+      "note": ""
+    },
+    "sam_carrier_display": {
+      "value": "no",
+      "cell": "No SAM detector",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 106,
+          "quote": "'USB', 'LSB', 'CW-U', 'CW-L', 'AM', 'FM'"
+        }
+      ],
+      "note": ""
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 106,
+          "quote": "'USB', 'LSB', 'CW-U', 'CW-L', 'AM', 'FM'"
+        }
+      ],
+      "note": ""
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CW-U/CW-L, fixed 700 Hz",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 111,
+          "quote": "'CW-U': { type: 'USB', offsets: [-500, 1000], bfo: -700 },"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 112,
+          "quote": "'CW-L': { type: 'LSB', offsets: [1000, -500], bfo: 700 },"
+        }
+      ],
+      "note": ""
+    },
+    "cw_pitch": {
+      "value": "no",
+      "cell": "Fixed pitch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 111,
+          "quote": "'CW-U': { type: 'USB', offsets: [-500, 1000], bfo: -700 },"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "cw.?pitch|bfo|pitch",
+          "where": "all tracked files at commit",
+          "matching_lines": 7,
+          "matching_files": [
+            ".gitignore",
+            "jsdsp/compilejs.sh",
+            "jsdsp/include/avif/avif.h"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "cw.?pitch|bfo|pitch",
+          "where": "all tracked files at commit",
+          "matching_lines": 27,
+          "matching_files": [
+            "dist/assets/index-D4exed7n.js",
+            "dist/assets/index-legacy-b3c_2DZV.js",
+            "package-lock.json",
+            "pnpm-lock.yaml",
+            "src/App.svelte",
+            "src/lib/FrequencyInput.svelte"
+          ]
+        }
+      ]
+    },
+    "modes_other": {
+      "value": "yes",
+      "cell": "Bandwidth-gated WBFM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 416,
+          "quote": "demodulators.push('WBFM')"
+        }
+      ],
+      "note": ""
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Listener width adjustment",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 268,
+          "quote": "audio.setAudioRange(...audioParameters)"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 571,
+          "quote": "<button class=\"click-button w-1/4\" on:click={(e) => handleBandwidthOffsetClick(e, value)}"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Browser WASM NR",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 310,
+          "quote": "audio.decoder.set_nr(NREnabled)"
+        }
+      ],
+      "note": "Listener control calls DSP implementation. Exact algorithm was not independently identified from binary WASM."
+    },
+    "noise_blanker": {
+      "value": "yes",
+      "cell": "Browser WASM NB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 313,
+          "quote": "audio.decoder.set_nb(NBEnabled)"
+        }
+      ],
+      "note": "Listener control calls DSP implementation. Exact algorithm was not independently identified from binary WASM."
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Browser WASM auto notch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 316,
+          "quote": "audio.decoder.set_an(ANEnabled)"
+        }
+      ],
+      "note": "Listener control calls DSP implementation. Exact algorithm was not independently identified from binary WASM."
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Browser level-threshold squelch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/audio.js",
+          "line": 189,
+          "quote": "if (this.squelch && dBpower < this.squelchThreshold) {"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 610,
+          "quote": "<input type=\"range\" bind:value={squelch} on:mousemove={handleSquelchMove} min=\"-150\" max=\"0\" step=\"0"
+        }
+      ],
+      "note": ""
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "Server AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/signal.cpp",
+          "line": 281,
+          "quote": "agc.process(audio_real.data(), audio_fft_size / 2);"
+        }
+      ],
+      "note": ""
+    },
+    "agc_settings": {
+      "value": "no",
+      "cell": "Fixed server AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/signal.cpp",
+          "line": 55,
+          "quote": "agc = AGC(0.2f, 50.0f, 300.0f, 200.0f, audio_max_sps);"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/client.cpp",
+          "line": 77,
+          "quote": "using msg_variant = std::variant<window_cmd, demodulation_cmd, userid_cmd, mute_cmd>;"
+        }
+      ],
+      "note": ""
+    },
+    "smeter": {
+      "value": "partial",
+      "cell": "Relative dB display",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 625,
+          "quote": "<span class=\"w-1/6 text-white text-xs text-center m-auto\">{power.toFixed(1)}db</span>"
+        }
+      ],
+      "note": ""
+    },
+    "smeter_calibration": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "smeter|s_meter|calibrat",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "smeter|s_meter|calibrat",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "freq_offset_correction": {
+      "value": "unknown",
+      "cell": "Not established by pinned evidence",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Not credited or treated as absence without sufficient evidence.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "frequency.?correction|freq.?offset|ppm",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "frequency.?correction|freq.?offset|ppm",
+          "where": "all tracked files at commit",
+          "matching_lines": 8,
+          "matching_files": [
+            "package-lock.json",
+            "pnpm-lock.yaml"
+          ]
+        }
+      ]
+    },
+    "recording": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "MediaRecorder|recording|downloadRecording",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "MediaRecorder|recording|downloadRecording",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "band_presets": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "band.?preset|160m|160 m|jumpToBand",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "band.?preset|160m|160 m|jumpToBand",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "bookmarks": {
+      "value": "no",
+      "cell": "Only copyable tuning link",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 714,
+          "quote": "<button on:click={handleLinkCopyClick}>📋 Link:</button>"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 717,
+          "quote": "<input type=\"text\" class=\"flex-grow bg-transparent text-white border border-l-0 border-blue-500 text"
+        }
+      ],
+      "note": "Panel title says Bookmarks, but pinned panel only copies a URL, no saved personal or operator list established."
+    },
+    "chat": {
+      "value": "no",
+      "cell": "No chat socket or UI",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/client.cpp",
+          "line": 77,
+          "quote": "using msg_variant = std::variant<window_cmd, demodulation_cmd, userid_cmd, mute_cmd>;"
+        }
+      ],
+      "note": "Only window, demodulation, userid and mute client commands exist. Frontend source has no chat implementation."
+    },
+    "multi_band": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "receivers|receiver_id|multi.band",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "receivers|receiver_id|multi.band",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "full_spectrum": {
+      "value": "yes",
+      "cell": "Real input including wideband RX888",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "README.md",
+          "line": 10,
+          "quote": "- Can handle high sample rate SDRs (70MSPS real, 35MSPS IQ)"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/spectrumserver.cpp",
+          "line": 52,
+          "quote": "is_real = signal_type_str == \"real\";"
+        }
+      ],
+      "note": "Capability only; this review does not establish capacity or required acceleration on a given host."
+    },
+    "decoders": {
+      "value": "no",
+      "cell": "Only none; FT8/RDS code inactive",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 375,
+          "quote": "const decoders = ['none']//, 'rds', 'ft8']"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "path": "src/App.svelte",
+          "line": 377,
+          "quote": "/*if (audio.getSignalDecoder()) {"
+        }
+      ],
+      "note": "",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "FT8|RTTY|PSK31|decoder",
+          "where": "all tracked files at commit",
+          "matching_lines": 112,
+          "matching_files": [
+            "jsdsp/.gitignore",
+            "jsdsp/include/avif/avif.h",
+            "jsdsp/include/avif/internal.h",
+            "jsdsp/include/liquid/liquid.h",
+            "jsdsp/lib/dav1d.cpp",
+            "jsdsp/redsea.js",
+            "jsdsp/src/index.js"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "FT8|RTTY|PSK31|decoder",
+          "where": "all tracked files at commit",
+          "matching_lines": 201,
+          "matching_files": [
+            "dist/assets/index-D4exed7n.js",
+            "dist/assets/index-legacy-b3c_2DZV.js",
+            "dist/assets/phantomsdrdsp_bg-CMRKvl1o.js",
+            "dist/assets/phantomsdrdsp_bg-legacy-Bp7RaaZB.js",
+            "dist/assets/phantomsdrdsp_bg_fallback-B36FGtYa.js",
+            "dist/assets/phantomsdrdsp_bg_fallback-legacy-BKCJ2Yan.js",
+            "dist/assets/polyfills-legacy-D-1rdFBv.js",
+            "function(){return tW(this)}});var rW=_,eW=po,nW=/\"/g,oW=E(\"\".replace),iW=function(t,r,e,n){var o=eW(rW(t)),i=\"<\"+r;return\"\"!==e&&(i+=\" \"+e+'=\"'+oW(eW(n),nW,\"&quot;\")+'\"'),i+\">\"+o+\"</\"+r+\">\"},aW=o,uW=function(t){return aW((function(){var r=\"\"[t]('\"');return r!==r.toLowerCase()||r.split('\"').length>3}))},cW=iW;ro({target",
+            "pnpm-lock.yaml",
+            "src/App.svelte",
+            "src/audio.js",
+            "src/lib/wrappers.js",
+            "src/modules/phantomsdrdsp.d.ts",
+            "src/modules/phantomsdrdsp_bg.js",
+            "src/modules/phantomsdrdsp_bg.wasm.d.ts",
+            "src/modules/phantomsdrdsp_bg_fallback.js",
+            "src/unused/decoder.js",
+            "src/unused/decoding.js",
+            "src/unused/modules-emscripten/FoxenFlac.js",
+            "src/unused/modules-emscripten/dav1d.js",
+            "src/unused/modules-emscripten/dav1dnoWasm.js",
+            "src/unused/modules-emscripten/decode_ft8.js",
+            "src/unused/modules-emscripten/jsDSP.js",
+            "src/unused/modules-emscripten/jsDSPnoWasm.js",
+            "src/unused/modules-emscripten/opus.js",
+            "src/unused/modules-emscripten/opusnoWasm.js",
+            "src/unused/modules-emscripten/redsea.js",
+            "src/unused/unused.js",
+            "src/unused/wrappers.js",
+            "src/waterfall.js"
+          ]
+        }
+      ]
+    },
+    "waterfall_history": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "waterfall.?history|waterfall.?buffer|history.?waterfall",
+          "where": "all tracked files at commit",
+          "matching_lines": 2,
+          "matching_files": [
+            "src/fft_impl.cpp",
+            "src/fft_mkl.cpp"
+          ]
+        },
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "waterfall.?history|waterfall.?buffer|history.?waterfall",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "waterfall_rate": {
+      "value": "no",
+      "cell": "Fixed target near 10 fps",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/fft.cpp",
+          "line": 33,
+          "quote": "int skip_num = std::max(1, (int)floor(((float)sps / fft_size) / 10.) * 2);"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "session.?timeout|session.?limit|idle.?timeout|inactivity|max.?session",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "session.?timeout|session.?limit|idle.?timeout|inactivity|max.?session",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "per_address_limit": {
+      "value": "no",
+      "cell": "Not implemented in pinned service",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Relevant pinned configuration, UI and broad tracked-file searches do not establish an implementation. Searches are retained; unrelated FFT working buffers are not waterfall history.",
+      "search_evidence": [
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "per_ip|per.address|ws_per_ip",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        },
+        {
+          "kind": "absence-search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "per_ip|per.address|ws_per_ip",
+          "where": "all tracked files at commit",
+          "matching_lines": 0,
+          "matching_files": []
+        }
+      ]
+    },
+    "admin_panel": {
+      "value": "no",
+      "cell": "No operator web admin",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 16,
+          "quote": "[limits]"
+        }
+      ],
+      "note": "Tracked admin/sysop hits are absent (Phantom) or a reserved chat username (Plus), not administrative routes.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "admin|sysop|password|authentication",
+          "where": "all tracked files at commit",
+          "matching_lines": 7,
+          "matching_files": [
+            "LICENSE",
+            "config.toml",
+            "src/spectrumserver.cpp",
+            "src/spectrumserver.h"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "admin|sysop|password|authentication",
+          "where": "all tracked files at commit",
+          "matching_lines": 4,
+          "matching_files": [
+            "LICENSE",
+            "dist/assets/polyfills-legacy-D-1rdFBv.js",
+            "function(){return tW(this)}});var rW=_,eW=po,nW=/\"/g,oW=E(\"\".replace),iW=function(t,r,e,n){var o=eW(rW(t)),i=\"<\"+r;return\"\"!==e&&(i+=\" \"+e+'=\"'+oW(eW(n),nW,\"&quot;\")+'\"'),i+\">\"+o+\"</\"+r+\">\"},aW=o,uW=function(t){return aW((function(){var r=\"\"[t]('\"');return r!==r.toLowerCase()||r.split('\"').length>3}))},cW=iW;ro({target"
+          ]
+        }
+      ]
+    },
+    "https": {
+      "value": "unknown",
+      "cell": "Not established by pinned evidence",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/websocket.h",
+          "line": 4,
+          "quote": "#include <websocketpp/config/asio_no_tls.hpp>"
+        }
+      ],
+      "note": "Backend explicitly uses asio_no_tls. This audit did not establish pinned external wiki reverse-proxy instructions, so overall rubric HTTPS remains unknown rather than no.",
+      "search_evidence": [
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "searched": "asio_no_tls|reverse.proxy|nginx|caddy|https",
+          "where": "all tracked files at commit",
+          "matching_lines": 49,
+          "matching_files": [
+            ".gitmodules",
+            "README.md",
+            "jsdsp/extract_EXPORTED_FUNCTIONS.js",
+            "jsdsp/include/avif/avif.h",
+            "jsdsp/lib/CMSIS_DSP/BUILDING.txt",
+            "jsdsp/lib/NR_spectral.c",
+            "jsdsp/redsea.js",
+            "src/spectrumserver.cpp",
+            "src/spectrumserver.h",
+            "src/websocket.h",
+            "subprojects/flac.wrap",
+            "subprojects/glaze.wrap",
+            "subprojects/libcds.wrap",
+            "subprojects/libflac.wrap",
+            "subprojects/libvolk.wrap",
+            "subprojects/nlohmann_json.wrap",
+            "subprojects/ogg.wrap",
+            "subprojects/openssl.wrap",
+            "subprojects/opus.wrap",
+            "subprojects/tomlplusplus.wrap",
+            "subprojects/websocketpp.wrap",
+            "subprojects/zlib.wrap",
+            "subprojects/zstd.wrap"
+          ]
+        },
+        {
+          "kind": "search",
+          "repo": "PhantomSDR_PhantomSDR/html-svelte",
+          "commit": "fb595bd3027404e0edfc8fc38703d7760a76ad7c",
+          "searched": "asio_no_tls|reverse.proxy|nginx|caddy|https",
+          "where": "all tracked files at commit",
+          "matching_lines": 702,
+          "matching_files": [
+            ".gitignore",
+            "dist/assets/index-BytbtoQm.css",
+            "dist/assets/index-D4exed7n.js",
+            "dist/assets/index-legacy-b3c_2DZV.js",
+            "dist/assets/phantomsdrdsp_bg-legacy-Bp7RaaZB.js",
+            "dist/assets/polyfills-legacy-D-1rdFBv.js",
+            "function(){return tW(this)}});var rW=_,eW=po,nW=/\"/g,oW=E(\"\".replace),iW=function(t,r,e,n){var o=eW(rW(t)),i=\"<\"+r;return\"\"!==e&&(i+=\" \"+e+'=\"'+oW(eW(n),nW,\"&quot;\")+'\"'),i+\">\"+o+\"</\"+r+\">\"},aW=o,uW=function(t){return aW((function(){var r=\"\"[t]('\"');return r!==r.toLowerCase()||r.split('\"').length>3}))},cW=iW;ro({target",
+            "package-lock.json",
+            "src/audio.js",
+            "src/lib/colormaps.js",
+            "src/lib/wrappers.js",
+            "src/modules/README.md",
+            "src/modules/phantomsdrdsp_router.js",
+            "src/unused/wrappers.js",
+            "src/waterfall.js",
+            "vite.config.js"
+          ]
+        }
+      ]
+    },
+    "signed_updates": {
+      "value": "no",
+      "cell": "Manual rebuild, no signed updater",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "README.md",
+          "line": 35,
+          "quote": "meson build --prefer-static"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "README.md",
+          "line": 36,
+          "quote": "meson compile -C build"
+        }
+      ],
+      "note": ""
+    },
+    "installer": {
+      "value": "no",
+      "cell": "Manual source build for this Linux pin",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "README.md",
+          "line": 33,
+          "quote": "git clone --recursive https://github.com/PhantomSDR/PhantomSDR.git"
+        }
+      ],
+      "note": "A separate older Windows release exists; not a prebuilt artifact for this pinned Linux version."
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "stdin; external RX888/RTL-SDR/HackRF capture",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "src/spectrumserver.cpp",
+          "line": 346,
+          "quote": "std::make_unique<FileSampleReader>(stdin);"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "config.toml",
+          "line": 35,
+          "quote": "name=\"stdin\" # Driver name"
+        }
+      ],
+      "note": ""
+    }
+  },
+  "security": {
+    "default_credentials": {
+      "summary": "No admin credentials established; listener service is anonymous. Do not interpret this as an authenticated admin surface.",
+      "literal": null
+    },
+    "admin_reachability": {
+      "summary": "No operator web admin established in pinned service."
+    },
+    "version_exposed": {
+      "summary": "Unknown"
+    },
+    "update_signing": {
+      "summary": "Manual rebuild, no signed updater",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "README.md",
+          "line": 35,
+          "quote": "meson build --prefer-static"
+        },
+        {
+          "kind": "code",
+          "repo": "PhantomSDR_PhantomSDR",
+          "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+          "path": "README.md",
+          "line": 36,
+          "quote": "meson compile -C build"
+        }
+      ]
+    },
+    "other": []
+  },
+  "health": {
+    "pin": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5 2024-04-06 Sync frontend",
+    "observed_clone_head": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5 2024-04-06",
+    "reachable_commits_at_pin": 67,
+    "ci_files": [],
+    "test_paths": [],
+    "license_evidence": [
+      {
+        "kind": "code",
+        "repo": "PhantomSDR_PhantomSDR",
+        "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+        "path": "LICENSE",
+        "line": 1,
+        "quote": "GNU GENERAL PUBLIC LICENSE"
+      },
+      {
+        "kind": "code",
+        "repo": "PhantomSDR_PhantomSDR",
+        "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+        "path": "LICENSE",
+        "line": 2,
+        "quote": "Version 3, 29 June 2007"
+      }
+    ],
+    "runtime_note": "Static capabilities only. No processes, RSS, latency or throughput measured by this audit.",
+    "build_evidence": [
+      {
+        "kind": "code",
+        "repo": "PhantomSDR_PhantomSDR",
+        "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+        "path": "meson.build",
+        "line": 7,
+        "quote": "'cpp_std=c++20',"
+      },
+      {
+        "kind": "code",
+        "repo": "PhantomSDR_PhantomSDR",
+        "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+        "path": "meson.build",
+        "line": 14,
+        "quote": "add_project_arguments(['-march=native', '-ggdb3', '-std=c++23'], language: 'cpp')"
+      }
+    ]
+  },
+  "limitations": [
+    "Static source review, not execution. Unknown cells deliberately remain unknown where evidence does not establish listener behavior."
+  ]
+}

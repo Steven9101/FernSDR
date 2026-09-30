@@ -1,0 +1,57 @@
+{
+  "fernsdr": {
+    "original_sha256": "bae1dcb2639374f3ce794cb16fb4715abda94fdbc0fcc935c1a61187cfc603d9",
+    "source": "/tmp/fernbench-analysis/fernsdr-features.json",
+    "rows": 35
+  },
+  "vertexsdr": {
+    "original_sha256": "0619fca55896a3274473332159066ccc77f568df9b7c54cd83a47c96e5a763c4",
+    "source": "/tmp/fernbench-analysis/vertexsdr-features.json",
+    "rows": 35
+  },
+  "websdr": {
+    "original_sha256": "67714f9fea9c6326a48c3ab49a7d54a553d0b3c8954ecc48b1ca622cb6a54cbb",
+    "source": "/tmp/fernbench-analysis/websdr-features.json",
+    "rows": 35
+  },
+  "novasdr": {
+    "original_sha256": "f1589462f763c63439e714d80ff303fe2e1219f21230dce6401cf4d0745faf09",
+    "source": "/tmp/fernbench-analysis/novasdr-features.json",
+    "rows": 35
+  },
+  "phantomsdr": {
+    "original_sha256": "33bb5fe056ff4d6fa3215ce10f8c23335f5882831d205173d5c397c9c8b2d54a",
+    "source": "/tmp/fernbench-analysis/phantomsdr-features.json",
+    "rows": 35
+  },
+  "phantomsdr-plus": {
+    "original_sha256": "2c7d02d6411550abb05835b57594e5ae920930190081491d785fcfc073639cc6",
+    "source": "/tmp/fernbench-analysis/phantomsdr-plus-features.json",
+    "rows": 35
+  },
+  "phantomsdr-plus-sv1btl": {
+    "original_sha256": "06267ec1ad1d40e72d08225402683e85175f9b777da2e1e9a1f2d9dd1f921d4a",
+    "source": "/tmp/fernbench-analysis/phantomsdr-plus-sv1btl.json",
+    "rows": 35
+  },
+  "openwebrx": {
+    "original_sha256": "2a62edb7fdebf1008b9438fe91d4ce7d1d991771c8adb3048e79183762de8dd7",
+    "source": "/tmp/fernbench-analysis/openwebrx.json",
+    "rows": 35
+  },
+  "openwebrx-plus": {
+    "original_sha256": "83ac3e9c7737c630b4bfc56fec1f16f20e18b7b49ae16a1cc8bbd0cb9b3f94ff",
+    "source": "/tmp/fernbench-analysis/openwebrx-plus.json",
+    "rows": 35
+  },
+  "ka9q-web": {
+    "original_sha256": "ec75e7df999e23cd40d3a72cbd86346f5b55949fb1c66b53b603c378b7c182f6",
+    "source": "/tmp/fernbench-analysis/ka9q-web.json",
+    "rows": 35
+  },
+  "ubersdr": {
+    "original_sha256": "035864ea399f3099570aaf00598cc39a7287f341ad5ae7a4d3918277f901bfe9",
+    "source": "/tmp/fernbench-analysis/ubersdr.json",
+    "rows": 35
+  }
+}

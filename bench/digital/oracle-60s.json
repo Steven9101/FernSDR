@@ -1,0 +1,150 @@
+{
+ "ft8": [
+  {
+   "snr": -24,
+   "decoded": 0,
+   "periods": 8,
+   "reported_snr": null,
+   "dt": null
+  },
+  {
+   "snr": -22,
+   "decoded": 0,
+   "periods": 8,
+   "reported_snr": null,
+   "dt": null
+  },
+  {
+   "snr": -20,
+   "decoded": 5,
+   "periods": 8,
+   "reported_snr": -16.0,
+   "dt": 0.0
+  },
+  {
+   "snr": -18,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -15.0,
+   "dt": 0.0
+  },
+  {
+   "snr": -16,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -13.0,
+   "dt": 0.0
+  },
+  {
+   "snr": -14,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -12.0,
+   "dt": 0.0
+  },
+  {
+   "snr": -12,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -10.0,
+   "dt": 0.0
+  },
+  {
+   "snr": -10,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -9.0,
+   "dt": 0.0
+  },
+  {
+   "snr": -8,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -8.0,
+   "dt": 0.0
+  },
+  {
+   "snr": -6,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -6.5,
+   "dt": 0.0
+  },
+  {
+   "snr": -4,
+   "decoded": 8,
+   "periods": 8,
+   "reported_snr": -5.0,
+   "dt": 0.0
+  }
+ ],
+ "wspr": [
+  {
+   "snr": -36,
+   "decoded": 0,
+   "periods": 1
+  },
+  {
+   "snr": -34,
+   "decoded": 0,
+   "periods": 1
+  },
+  {
+   "snr": -32,
+   "decoded": 0,
+   "periods": 1
+  },
+  {
+   "snr": -30,
+   "decoded": 1,
+   "periods": 1
+  },
+  {
+   "snr": -28,
+   "decoded": 1,
+   "periods": 1
+  },
+  {
+   "snr": -26,
+   "decoded": 1,
+   "periods": 1
+  },
+  {
+   "snr": -24,
+   "decoded": 1,
+   "periods": 1
+  },
+  {
+   "snr": -22,
+   "decoded": 1,
+   "periods": 1
+  },
+  {
+   "snr": -20,
+   "decoded": 1,
+   "periods": 1
+  }
+ ],
+ "rtty": [
+  {
+   "snr": -6,
+   "score": 0.5472727272727274,
+   "chars": 657
+  },
+  {
+   "snr": 4,
+   "score": 1.0,
+   "chars": 770
+  }
+ ],
+ "cw": [
+  {
+   "snr": 10,
+   "score": 1.0
+  },
+  {
+   "snr": 20,
+   "score": 1.0
+  }
+ ]
+}

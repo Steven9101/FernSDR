@@ -1,0 +1,31 @@
+; Latency, drift and dropouts: a 40 m band at 2.048 Msps with a labelled
+; latency marker and a channel of known noise audio on the same dial.
+; Listen at 7.1592 MHz USB: the marker sounds at 800 Hz, the noise audio
+; fills 1200 to 2600 Hz, and the reference carrier is elsewhere for the
+; tuning gate (7.1492 MHz USB gives it at 800 Hz).
+[scene]
+rate   = 2048000
+center = 7.1M
+noise  = -97 dB/Hz
+
+[signal marker]
+kind   = marker
+freq   = 7.160M
+level  = -30
+period = 0.5s
+start  = 0.1s
+identity = pairs-v1
+
+[signal known-audio]
+kind     = ssb
+sideband = usb
+freq     = 7.1592M
+audio    = noise:1200-2600
+low      = 1100
+high     = 2700
+level    = -40
+
+[signal reference]
+kind  = carrier
+freq  = 7.150M
+level = -40

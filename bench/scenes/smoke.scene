@@ -1,0 +1,24 @@
+; A quick check that a receiver takes the lab's input: a 40 m band with a
+; latency marker, a steady reference carrier and a steady USB tone.
+[scene]
+rate   = 2048000
+center = 7.1M
+noise  = -97 dB/Hz
+
+[signal marker]
+kind   = marker
+freq   = 7.160M
+level  = -30
+period = 0.5s
+
+[signal reference]
+kind  = carrier
+freq  = 7.150M
+level = -40
+
+[signal tone]
+kind     = ssb
+sideband = usb
+freq     = 7.074M
+audio    = tone:1000
+level    = -35

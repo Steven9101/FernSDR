@@ -1,0 +1,34 @@
+{
+  "//": "The documented tier's config.json with the listener caps raised by the lab's rule (keys named // are comments; the server ignores unknown keys).",
+  "server": {
+    "port": 9002,
+    "host": "[::]",
+    "html_root": "frontend/dist/",
+    "otherusers": 1,
+    "threads": 0
+  },
+  "websdr": {
+    "//": "public_port added: when it is missing, the server rewrites config.json at startup to add it (config.rs migrate_global_config_json), and this directory is mounted read-only.",
+    "register_online": false,
+    "public_port": null,
+    "name": "NovaSDR",
+    "antenna": "",
+    "grid_locator": "-",
+    "hostname": "",
+    "operator": "",
+    "email": "",
+    "callsign_lookup_url": "https://www.qrz.com/db/",
+    "chat_enabled": true
+  },
+  "limits": {
+    "//": "audio, waterfall, events: 2000 (were 100, 200, 200). ws_per_ip counts sockets per TCP peer address (a listener uses up to four) and has no off value; 100000 turns it off in effect (was 50).",
+    "audio": 2000,
+    "waterfall": 2000,
+    "events": 2000,
+    "ws_per_ip": 100000
+  },
+  "updates": {
+    "//": "added: the default (true) asks api.github.com for a newer release at startup.",
+    "check_on_startup": false
+  }
+}

@@ -1,0 +1,33 @@
+{
+  "id": "openwebrx-plus",
+  "name": "OpenWebRX+",
+  "upstream": "https://github.com/luarvique/openwebrx",
+  "version": {
+    "ref": "1.2.125",
+    "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+    "date": "2026-09-24",
+    "why": "latest release and newest image tag on 2026-09-27 (the Docker Hub page installs slechev/openwebrxplus); head fbe83426 has security fixes from 2026-09-26 that are in no image or package yet",
+    "base_image": "slechev/openwebrxplus@sha256:896c69d6da35b0ecc7d82efa8ed5663f9f69000ad83fbecf0b038468a163c01d"
+  },
+  "image": "fernbench/openwebrx-plus:1.2.125",
+  "input": {"transport": "rtltcp", "format": "cu8"},
+  "http_port": 8073,
+  "run": {
+    "volumes": ["{CONFIG}:/etc/fernbench:ro"],
+    "command": [],
+    "env": {"OPENWEBRX_ADMIN_USER": "fernbench"},
+    "writable": ["/run", "/tmp", "/etc/openwebrx", "/var/lib/openwebrx"],
+    "writable_exec": ["/run"]
+  },
+  "ready": {"http": "/"},
+  "caps": {
+    "listeners": 20,
+    "per_address": 20,
+    "compile_time": false,
+    "notes": "max_clients 20, max_clients_per_ip 20 (matched: 2000 and 2000, bot_ban_enabled false); in both tiers the 5th receiver socket an address opens within about 10 s gets no service (upstream bug, NOTES.md), so load clients pace new sockets per address"
+  },
+  "modes": {"usb": true, "lsb": true, "am": true, "sam": true, "fm": true, "cw": true},
+  "cw_pitch_hz": 800,
+  "small_viewport": [1280, 800],
+  "small_viewport_why": "at 800x600 the receiver panel is taller than the room under the frequency scale, whose canvas then covers the dial"
+}

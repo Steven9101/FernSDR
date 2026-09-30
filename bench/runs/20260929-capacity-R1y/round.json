@@ -1,0 +1,12 @@
+{
+ "suite": "capacity",
+ "order": [
+  [
+   "fernsdr",
+   1
+  ]
+ ],
+ "steps": [
+  1600
+ ]
+}

@@ -1,0 +1,838 @@
+{
+ "fernsdr/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 28.53093333333333,
+   "min": 28.456,
+   "max": 28.585066666666666,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 21.02426666666667,
+   "min": 20.97893333333333,
+   "max": 21.06586666666667,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 51.592000000000006,
+   "min": 51.56560000000001,
+   "max": 51.60080000000001,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 58.288,
+   "min": 58.2468,
+   "max": 59.00479999999999,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 127.325,
+   "min": 127.325,
+   "max": 127.325,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 14.0,
+   "min": 14.0,
+   "max": 14.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 202.89999985694885,
+   "min": 155.59999990463257,
+   "max": 234.29999995231628,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 226.53913497924805,
+   "min": 218.59371662139893,
+   "max": 234.81929302215576,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 229.00657653808594,
+   "min": 220.89340686798096,
+   "max": 238.16848993301392,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": -13.390008978450666,
+   "min": -14.544767759690194,
+   "max": -11.924607762956894,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "ka9q-web/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 19.523733333333332,
+   "min": 19.49946666666667,
+   "max": 19.539733333333334,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 88.72853333333329,
+   "min": 88.26879999999997,
+   "max": 89.18826666666664,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 114.4696,
+   "min": 114.01946666666669,
+   "max": 115.08133333333332,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 123.28800000000001,
+   "min": 123.27680000000001,
+   "max": 123.3172,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 593.334,
+   "min": 593.334,
+   "max": 593.334,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 12.0,
+   "min": 12.0,
+   "max": 12.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 259.09999990463257,
+   "min": 247.5,
+   "max": 342.10000014305115,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 2052.7219772338867,
+   "min": 1086.1639976501465,
+   "max": 2205.8749198913574,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 2057.0178508758545,
+   "min": 1089.1847133636475,
+   "max": 2208.51229429245,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": -13.141770169398999,
+   "min": -19.656638111976747,
+   "max": -12.655538752199163,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "novasdr/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 51.17013333333333,
+   "min": 51.15946666666666,
+   "max": 51.19519999999999,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 26.819466666666674,
+   "min": 26.779466666666668,
+   "max": 26.828799999999998,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 83.24159999999999,
+   "min": 83.20346666666667,
+   "max": 83.26746666666668,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 86.07119999999999,
+   "min": 85.4324,
+   "max": 86.628,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 548.919,
+   "min": 547.891,
+   "max": 549.685,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 14.0,
+   "min": 14.0,
+   "max": 14.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 202.79999995231628,
+   "min": 193.5,
+   "max": 227.89999985694885,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 494.9197769165039,
+   "min": 487.49232292175293,
+   "max": 1399.3208408355713,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 500.3953456878662,
+   "min": 493.39160919189453,
+   "max": 1537.0072603225708,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": -17.587092338276115,
+   "min": -618.8087997307232,
+   "max": -10.621761759965374,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "openwebrx/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 44.538399999999996,
+   "min": 44.53839999999999,
+   "max": 44.54053333333333,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 147.88799999999998,
+   "min": 147.34026666666665,
+   "max": 147.88799999999998,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 194.02746666666664,
+   "min": 193.47599999999997,
+   "max": 194.03760000000003,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 195.424,
+   "min": 195.4204,
+   "max": 195.424,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 289.271,
+   "min": 289.271,
+   "max": 289.271,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 15.0,
+   "min": 15.0,
+   "max": 15.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 350.89999985694885,
+   "min": 333.59999990463257,
+   "max": 580.2999999523163,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 670.635461807251,
+   "min": 448.70102405548096,
+   "max": 671.7188358306885,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 672.340738773346,
+   "min": 450.15002489089966,
+   "max": 673.7361192703247,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": -7.228148274532871,
+   "min": -8.677541982182655,
+   "max": -6.636787152464249,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "openwebrx-plus/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 44.668000000000006,
+   "min": 44.57600000000001,
+   "max": 44.6704,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 147.34026666666665,
+   "min": 147.34026666666665,
+   "max": 147.888,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 193.87146666666666,
+   "min": 193.78346666666667,
+   "max": 194.41760000000002,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 212.70759999999999,
+   "min": 194.8,
+   "max": 213.304,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 423.181,
+   "min": 423.181,
+   "max": 423.181,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 22.0,
+   "min": 22.0,
+   "max": 22.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 1154.3999998569489,
+   "min": 632.2999999523163,
+   "max": 1190.0,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 404.6740531921387,
+   "min": 399.99210834503174,
+   "max": 407.84358978271484,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 416.52727127075195,
+   "min": 402.630615234375,
+   "max": 422.3677396774292,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": 32.690703955754735,
+   "min": -7.541832273813837,
+   "max": 42.20594962866646,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 0.9833333333333333,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "phantomsdr/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 81.93893333333334,
+   "min": 80.9216,
+   "max": 82.13973333333335,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 53.323200000000014,
+   "min": 53.28159999999999,
+   "max": 53.401066666666665,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 135.34,
+   "min": 134.2448,
+   "max": 135.4213333333333,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 139.6316,
+   "min": 139.3544,
+   "max": 140.0016,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 247.675,
+   "min": 247.675,
+   "max": 247.675,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 5.0,
+   "min": 5.0,
+   "max": 5.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 246.19999980926514,
+   "min": 242.69999980926514,
+   "max": 373.69999980926514,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 1712.992787361145,
+   "min": 1492.0746088027954,
+   "max": 1807.572841644287,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 1718.2870507240295,
+   "min": 1498.1894254684448,
+   "max": 1813.5364294052124,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": -11.702420974618665,
+   "min": -12.798286143316233,
+   "max": -11.641222537646824,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "phantomsdr-plus/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 38.041599999999995,
+   "min": 37.63546666666666,
+   "max": 38.104800000000004,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 116.70159999999997,
+   "min": 116.67946666666667,
+   "max": 116.79119999999999,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 154.8312,
+   "min": 154.51493333333335,
+   "max": 154.87173333333334,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 159.2484,
+   "min": 159.10920000000002,
+   "max": 159.4708,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 410.031,
+   "min": 410.031,
+   "max": 410.031,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 14.0,
+   "min": 14.0,
+   "max": 14.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 176.60000014305115,
+   "min": 167.79999995231628,
+   "max": 204.79999995231628,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 732.9882383346558,
+   "min": 704.4143676757812,
+   "max": 1021.8876600265503,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 741.7426109313965,
+   "min": 711.7783069610596,
+   "max": 1027.561616897583,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": 16.361611662787436,
+   "min": -14.408834338491664,
+   "max": 16.60508233493872,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 0.9661016949152542,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "phantomsdr-plus-sv1btl/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 65.7632,
+   "min": 65.66186666666665,
+   "max": 65.86053333333334,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 53.42133333333333,
+   "min": 53.349333333333334,
+   "max": 53.497066666666655,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 119.27199999999998,
+   "min": 119.09866666666667,
+   "max": 119.44506666666668,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 125.95159999999998,
+   "min": 122.68560000000001,
+   "max": 129.7036,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 3997.892,
+   "min": 3997.892,
+   "max": 3997.892,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 42.0,
+   "min": 42.0,
+   "max": 42.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 592.2000000476837,
+   "min": 581.7999999523163,
+   "max": 634.5999999046326,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 547.6045608520508,
+   "min": 537.6665592193604,
+   "max": 554.1068315505981,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 553.59046459198,
+   "min": 544.3538427352905,
+   "max": 559.6839547157288,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": -11.621522245809977,
+   "min": -12.060939012844543,
+   "max": 47.925876526817454,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 0.9833333333333333,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "ubersdr/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 44.13466666666667,
+   "min": 44.1336,
+   "max": 44.13866666666666,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 13.612266666666665,
+   "min": 13.58906666666667,
+   "max": 13.622400000000003,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 57.75893333333333,
+   "min": 57.73066666666667,
+   "max": 57.76506666666668,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 64.392,
+   "min": 64.03479999999999,
+   "max": 67.3856,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 2112.141,
+   "min": 2111.962,
+   "max": 2112.651,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 42.0,
+   "min": 42.0,
+   "max": 42.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 705.1999998092651,
+   "min": 604.3000001907349,
+   "max": 798.3999998569489,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 261.013388633728,
+   "min": 259.1109275817871,
+   "max": 261.89398765563965,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 266.6384816169739,
+   "min": 265.90590476989746,
+   "max": 269.35737133026123,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": -10.202113334262545,
+   "min": -17.963398904378135,
+   "max": 14.138087852177467,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 0.9827586206896551,
+   "min": 0.9310344827586207,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "vertexsdr/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 27.120533333333334,
+   "min": 27.093066666666672,
+   "max": 27.133333333333336,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 7.579200000000001,
+   "min": 7.537066666666667,
+   "max": 7.609866666666666,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 34.69973333333333,
+   "min": 34.6704,
+   "max": 34.702933333333334,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 35.9056,
+   "min": 35.8244,
+   "max": 36.275200000000005,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 130.115,
+   "min": 130.115,
+   "max": 130.542,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 52.0,
+   "min": 52.0,
+   "max": 53.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 214.70000004768372,
+   "min": 183.10000014305115,
+   "max": 223.19999980926514,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 377.8069019317627,
+   "min": 352.3983955383301,
+   "max": 414.59107398986816,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 378.93028259277344,
+   "min": 370.0794458389282,
+   "max": 443.36209297180176,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": 13.643557680629169,
+   "min": -124.44087346205838,
+   "max": 97.35875556445161,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ },
+ "websdr/documented": {
+  "runs": 3,
+  "valid": 3,
+  "invalid": [],
+  "audio_kbit": {
+   "median": 49.47973333333333,
+   "min": 49.46373333333333,
+   "max": 49.480533333333334,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 22.828533333333333,
+   "min": 22.797866666666668,
+   "max": 22.848000000000006,
+   "n": 3
+  },
+  "total_payload_kbit": {
+   "median": 72.30906666666667,
+   "min": 72.26160000000002,
+   "max": 72.32773333333333,
+   "n": 3
+  },
+  "total_payload_kbit_p95": {
+   "median": 73.4444,
+   "min": 73.3784,
+   "max": 73.4812,
+   "n": 3
+  },
+  "wire_down_kbit": null,
+  "wire_up_kbit": null,
+  "cpu_percent_one_listener": null,
+  "mem_mb": null,
+  "page_kbytes": {
+   "median": 158.473,
+   "min": 158.473,
+   "max": 158.474,
+   "n": 3
+  },
+  "page_requests": {
+   "median": 61.0,
+   "min": 61.0,
+   "max": 61.0,
+   "n": 3
+  },
+  "page_load_ms": {
+   "median": 211.90000009536743,
+   "min": 203.09999990463257,
+   "max": 220.70000004768372,
+   "n": 3
+  },
+  "latency_median_ms": {
+   "median": 386.3334655761719,
+   "min": 366.98293685913086,
+   "max": 412.9369258880615,
+   "n": 3
+  },
+  "latency_p95_ms": {
+   "median": 407.6887607574463,
+   "min": 390.3097152709961,
+   "max": 413.75192403793335,
+   "n": 3
+  },
+  "latency_drift_ms_per_min": {
+   "median": 103.66688814584221,
+   "min": 13.070917508998493,
+   "max": 106.65303175114084,
+   "n": 3
+  },
+  "markers_found_share": {
+   "median": 1.0,
+   "min": 1.0,
+   "max": 1.0,
+   "n": 3
+  },
+  "foreign_cpu_percent": null
+ }
+}

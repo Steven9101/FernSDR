@@ -1,0 +1,752 @@
+{
+  "receiver": "websdr",
+  "checked": "2026-09-27",
+  "repos": {
+    "pa3fwm": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840"
+  },
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 529,
+          "quote": "case \"USB\": setmf(\"usb\", 0.3,  2.7); break;"
+        }
+      ],
+      "note": "Pinned community distribution frontend; backend is closed dist11 binary."
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 530,
+          "quote": "case \"LSB\": setmf(\"lsb\", -2.7, -0.3); break;"
+        }
+      ],
+      "note": "Pinned community distribution frontend; backend is closed dist11 binary."
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 531,
+          "quote": "case \"AM\":  setmf(\"am\", -4,  4); break;"
+        }
+      ],
+      "note": "Pinned community distribution frontend; backend is closed dist11 binary."
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 533,
+          "quote": "case \"FM\":  setmf(\"fm\", -6,  6); break;"
+        }
+      ],
+      "note": "Pinned community distribution frontend; backend is closed dist11 binary."
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CW",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 532,
+          "quote": "case \"CW\":  setmf(\"cw\", -0.95,  -0.55); break;"
+        }
+      ],
+      "note": "Pinned community distribution frontend; backend is closed dist11 binary."
+    },
+    "mode_sam": {
+      "value": "no",
+      "cell": "Not selectable in this shipped UI",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 525,
+          "quote": "function set_mode(m)      // ...with appropriate filter"
+        },
+        {
+          "kind": "absence",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "searched": "amsync|amcostas|synchronous",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 2,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "A tuning-report name array mentions AMSYNC/AMCOSTAS at1149, but does not expose a functioning selectable mode."
+    },
+    "sam_carrier_display": {
+      "value": "no",
+      "cell": "No selectable SAM or carrier readout",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 525,
+          "quote": "function set_mode(m)      // ...with appropriate filter"
+        },
+        {
+          "kind": "absence",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "searched": "samcarrier|truefreq|carrier.offset",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 2,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Do not infer newer Northern Utah customizations for this dist11 copy."
+    },
+    "cw_pitch": {
+      "value": "partial",
+      "cell": "Passband shift; no explicit pitch control",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 196,
+          "quote": "<td><input type=\"button\" title=\"Bandwidth preset : 700 Hz - 800 Hz (CW)\" value=\"100 Hz\" onclick=\"set"
+        }
+      ],
+      "note": "CW presets and draggable passband allow indirect changes."
+    },
+    "modes_other": {
+      "value": "no",
+      "cell": "No additional listener modes",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 533,
+          "quote": "case \"FM\":  setmf(\"fm\", -6,  6); break;"
+        },
+        {
+          "kind": "absence",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "searched": "WFM|CQUAM|FreeDV|DRM|ISB",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 14,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Mode list is USB/LSB/AM/FM/CW; unused mode-name strings do not establish supported UI."
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Presets and draggable filter edges",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 196,
+          "quote": "<td><input type=\"button\" title=\"Bandwidth preset : 700 Hz - 800 Hz (CW)\" value=\"100 Hz\" onclick=\"set"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Browser DSP, selectable intensity",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 258,
+          "quote": "soundapplet.setnoise(a);"
+        },
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-sound.js",
+          "line": 5,
+          "quote": "var dtemp=0;!function(){var e=null,t=window.AudioContext||window.webkitAudioContext;if(t){var n;docu"
+        }
+      ],
+      "note": "UI calls soundapplet.setnoise; control options off/low/medium/high/strong at controls_eng.html:342. Algorithm not established from minified code."
+    },
+    "noise_blanker": {
+      "value": "partial",
+      "cell": "Operator-only threshold blanker",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 288,
+          "quote": "noiseblanker x"
+        }
+      ],
+      "note": "Doc only; binary implementation not inspectable."
+    },
+    "notch": {
+      "value": "yes",
+      "cell": "Automatic notch and deep notch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 329,
+          "quote": "<input id=\"autonotchcheckbox\" title=\"automatically filter out interfering carrier\" type=\"checkbox\" v"
+        }
+      ],
+      "note": "Additional deep-notch control at330; precise browser/server split needs protocol review."
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Listener squelch",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 328,
+          "quote": "<input id=\"squelchcheckbox\" title=\"block noise if no signal\" type=\"checkbox\" value=\"\" onclick=\"setsq"
+        }
+      ],
+      "note": ""
+    },
+    "agc": {
+      "value": "unknown",
+      "cell": "Closed backend; no conclusive AGC evidence",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 318,
+          "quote": "<span id=\"volumecontrol\" style=\"white-space:nowrap; width:50%\">"
+        }
+      ],
+      "note": "Volume control is not evidence for AGC. Do not guess fixed AGC from receiver convention."
+    },
+    "agc_settings": {
+      "value": "no",
+      "cell": "No listener AGC control in shipped panel",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 318,
+          "quote": "<span id=\"volumecontrol\" style=\"white-space:nowrap; width:50%\">"
+        },
+        {
+          "kind": "absence",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "searched": "setagc|setgain|autogain|agc",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 5,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Volume is output gain. No AGC/manual receiver gain control established."
+    },
+    "smeter": {
+      "value": "partial",
+      "cell": "Relative dB numerical readout",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 314,
+          "quote": "<span style=\"font-size:80%; color:yellow\" id=\"numericalsmeter\">?</span><span style=\"font-size:80%; c"
+        }
+      ],
+      "note": "The customized scale images may encode S-units; images were not inspected, so explicit numeric dB readout only is established."
+    },
+    "smeter_calibration": {
+      "value": "yes",
+      "cell": "Frequency-dependent equalize table",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 269,
+          "quote": "equalize z"
+        }
+      ],
+      "note": "Doc only; table interpolation and S-meter/gain relationship explicitly described."
+    },
+    "freq_offset_correction": {
+      "value": "partial",
+      "cell": "RTL-TCP ppm; corrected centerfreq otherwise",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 197,
+          "quote": "the rtl_tcp driver running at host x on port y, with ppm correction z."
+        }
+      ],
+      "note": "Hardware-driver ppm is not a general software correction."
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Browser recording and download",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 2153,
+          "quote": "record_start();"
+        }
+      ],
+      "note": "Recording button and browser download warning in controls_eng.html:354/357."
+    },
+    "band_presets": {
+      "value": "partial",
+      "cell": "Operator-configured band buttons",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 2056,
+          "quote": "function document_bandbuttons() {"
+        }
+      ],
+      "note": ""
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Own localStorage memories",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 602,
+          "quote": "try { localStorage.setItem('memories',JSON.stringify(memories)); } catch (e) {};"
+        }
+      ],
+      "note": "This proves listener-owned persistence; stationinfo supplies operator labels separately."
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "Listener chat",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 2170,
+          "quote": "var url=\"/~~chat\";"
+        }
+      ],
+      "note": ""
+    },
+    "multi_band": {
+      "value": "yes",
+      "cell": "Multiple configured receiver bands",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-base.js",
+          "line": 785,
+          "quote": "function setband(b)"
+        }
+      ],
+      "note": ""
+    },
+    "full_spectrum": {
+      "value": "unknown",
+      "cell": "No60Msps/RX888 support established for dist11",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 198,
+          "quote": "Supported samplerates for use with the RTL-SDR are 256000, 512000,"
+        },
+        {
+          "kind": "absence",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "searched": "60000000|64000000|rx888",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 0,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "Do not transfer full-HF claims about another PA3FWM installation to this binary."
+    },
+    "decoders": {
+      "value": "no",
+      "cell": "External WSPR hook, not built-in decoder",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/upgrade-dist10.txt",
+          "line": 78,
+          "quote": "* There's an experimental feature to invoke an external program to decode"
+        }
+      ],
+      "note": "The documented experimental feature invokes an external decoder. It does not satisfy the rubric for a built-in decoder, and is not enabled by default."
+    },
+    "waterfall_history": {
+      "value": "unknown",
+      "cell": "Closed server; no documented backlog",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 237,
+          "quote": "<select id=\"wfspeed\" onchange=\"waterfallspeed(this.value)\">"
+        },
+        {
+          "kind": "absence",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "searched": "waterfall.?history|wf_history",
+          "where": "all tracked text files; binary internals excluded",
+          "hit_count": 0,
+          "interpretation": "Any hits were reviewed for relevance; this is not a claim of zero literal matches."
+        }
+      ],
+      "note": "No past-row buffer implementation inspectable in binary."
+    },
+    "waterfall_rate": {
+      "value": "yes",
+      "cell": "Listener speed selector; operator slowdown",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/pub2/websdr-controls_eng.html",
+          "line": 237,
+          "quote": "<select id=\"wfspeed\" onchange=\"waterfallspeed(this.value)\">"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "yes",
+      "cell": "Configurable tuning-inactivity timeout",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 143,
+          "quote": "idletimeout x"
+        }
+      ],
+      "note": "Doc only server behavior."
+    },
+    "per_address_limit": {
+      "value": "unknown",
+      "cell": "Closed backend; no documented per-IP cap",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 90,
+          "quote": "maxusers x"
+        }
+      ],
+      "note": "Global maxusers is documented, not per-address policy."
+    },
+    "admin_panel": {
+      "value": "partial",
+      "cell": "sysop.html trust-based operations page",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 47,
+          "quote": "- using the administrator interface in sysop.html;"
+        }
+      ],
+      "note": "Doc describes admin interface and privileged access, not a full modern config panel."
+    },
+    "https": {
+      "value": "unknown",
+      "cell": "No native TLS or HTTPS proxy recipe established",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/install.txt",
+          "line": 56,
+          "quote": "* If you want to run the server on port 80, so that the port number can"
+        }
+      ],
+      "note": "HTTP documented; general ability to deploy a proxy is not itself documented HTTPS support."
+    },
+    "signed_updates": {
+      "value": "partial",
+      "cell": "Author-supplied distributions; no signature shown",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 171,
+          "quote": "there is a problem, and whom to send software updates to."
+        }
+      ],
+      "note": "Docs say the author sends software updates; no verification mechanism established in this copy."
+    },
+    "installer": {
+      "value": "yes",
+      "cell": "Prebuilt Linux binaries, manual install",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/install.txt",
+          "line": 49,
+          "quote": "7. Go to /home/websdr/dist11 and start the websdr by typing ./websdr"
+        }
+      ],
+      "note": "Official distribution binary layout documented; audit input is a community copy with user permission."
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "Soundcard OSS/ALSA and rtl_tcp;real/IQ",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 184,
+          "quote": "device x"
+        }
+      ],
+      "note": "Raspberry Pi binary documented install.txt:50; no general stdin/file support established."
+    }
+  },
+  "security": {
+    "default_credentials": {
+      "summary": "Sysop access uses source-address trust; raw data stream has no password by default.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 38,
+          "quote": "Set a password to restrict access to the raw data stream."
+        }
+      ],
+      "literal": null
+    },
+    "admin_reachability": {
+      "summary": "Localhost sysop trust by default; optional local-network/explicit-address trust.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 41,
+          "quote": "donttrustlocalhost"
+        }
+      ]
+    },
+    "version_exposed": {
+      "summary": "Unknown for exact backend version. The copied distribution exposes versioned static asset names, which do not prove backend binary identity.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/install.txt",
+          "line": 21,
+          "quote": "/home/websdr/dist11    - non site-specific files for this version."
+        }
+      ]
+    },
+    "update_signing": {
+      "summary": "Documentation describes author-sent software updates, without a documented signature-verification path.",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "pa3fwm",
+          "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+          "path": "dist11/doc/config.txt",
+          "line": 171,
+          "quote": "there is a problem, and whom to send software updates to."
+        }
+      ]
+    },
+    "other": [
+      {
+        "summary": "Documentation recommends dedicated account and explains privilege dropping for low ports; doc-only binary claims.",
+        "sources": [
+          {
+            "kind": "code",
+            "repo": "pa3fwm",
+            "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+            "path": "dist11/doc/install.txt",
+            "line": 4,
+            "quote": "1. Preferably, create a new user account for the WebSDR. This is not"
+          },
+          {
+            "kind": "code",
+            "repo": "pa3fwm",
+            "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+            "path": "dist11/doc/install.txt",
+            "line": 63,
+            "quote": "The websdr server is written such that it only uses the root privileges"
+          }
+        ]
+      }
+    ]
+  },
+  "limitations": [
+    "Static pinned-source audit, not runtime proof. Source lines and exact quotes machine-validated while emitting this file. All closed-binary limits and mutable frontend dependencies are explicit."
+  ],
+  "health": {
+    "scope": "Local history reachable from the pin, not live GitHub health; commit-author identities are not necessarily distinct humans. Community distribution history is not upstream development history.",
+    "shallow_repository": false,
+    "last_commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840 2022-06-16T21:59:05-03:00 Create README.md",
+    "commits_per_month": {},
+    "commits_last12months": 0,
+    "authors_raw": [
+      "     3\tpy1tcm"
+    ],
+    "ci_files": [],
+    "test_files": [],
+    "issue_response_times": {
+      "value": "unknown",
+      "reason": "Requires dated issue API data; not inferable from local git."
+    },
+    "releases": {
+      "value": "unknown",
+      "reason": "Git tags alone do not establish published release artifacts."
+    },
+    "image_or_binary_size": {
+      "value": "unknown",
+      "reason": "Must be recorded for the actual lab build/image, not inferred from source."
+    }
+  },
+  "security_scope": "Static feature inventory only. No exploit/probe performed; empty private_candidates does not assert absence of vulnerabilities.",
+  "license": {
+    "summary": "Closed/proprietary PA3FWM distribution; supplied gratis for publicly accessible WebSDR sites, other use/distribution requires prior permission. User reports explicit permission for this benchmark.",
+    "sources": [
+      {
+        "kind": "code",
+        "repo": "pa3fwm",
+        "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+        "path": "dist11/doc/install.txt",
+        "line": 81,
+        "quote": "A final remark: this software is copyrighted material."
+      },
+      {
+        "kind": "code",
+        "repo": "pa3fwm",
+        "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+        "path": "dist11/doc/install.txt",
+        "line": 84,
+        "quote": "further distribution, reverse engineering, and/or reusing (parts of) the code"
+      }
+    ]
+  },
+  "build_runtime": {
+    "summary": "Prebuilt Linux32/64bit and Raspberry Pi executables; no server build source. Runtime FFTW3f and libpng12 documented; lab compatibility libraries/config are a separate deviation.",
+    "sources": [
+      {
+        "kind": "code",
+        "repo": "pa3fwm",
+        "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+        "path": "dist11/doc/install.txt",
+        "line": 49,
+        "quote": "7. Go to /home/websdr/dist11 and start the websdr by typing ./websdr"
+      },
+      {
+        "kind": "code",
+        "repo": "pa3fwm",
+        "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+        "path": "dist11/doc/install.txt",
+        "line": 69,
+        "quote": "libfftw3f (i.e., version 3 of the FFTW library, compiled for float)"
+      },
+      {
+        "kind": "code",
+        "repo": "pa3fwm",
+        "commit": "64dd6b9c3d6c2cf102999a53bb8b4e1b32528840",
+        "path": "dist11/doc/install.txt",
+        "line": 71,
+        "quote": "libpng12  (i.e., version 1.2 of the PNG library)."
+      }
+    ]
+  }
+}

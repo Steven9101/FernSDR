@@ -1,0 +1,10 @@
+{
+  "name": "fernbench-load",
+  "private": true,
+  "type": "module",
+  "description": "The lab's light load clients. undici is the library behind Node's own WebSocket, pinned to the version this Node ships, for what the global one cannot do: a source address per listener and the Origin a page sends.",
+  "dependencies": {
+    "undici": "7.29.0",
+    "ws": "8.22.0"
+  }
+}

@@ -1,0 +1,112 @@
+{
+ "fernsdr": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ },
+ "ka9q-web": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 48.58800005912781,
+   "discarded": 0.0
+  }
+ },
+ "novasdr": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ },
+ "openwebrx": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 3.6640000343322754,
+   "discarded": 0.0
+  }
+ },
+ "openwebrx-plus": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 3.9880001544952393,
+   "discarded": 0.0
+  }
+ },
+ "phantomsdr": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ },
+ "phantomsdr-plus": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.003999948501586914,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ },
+ "phantomsdr-plus-sv1btl": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ },
+ "ubersdr": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ },
+ "vertexsdr": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ },
+ "websdr": {
+  "jobs": 36,
+  "invalid": {},
+  "no_audio_on_link": [],
+  "input_dropped_session_s": {
+   "full": 0.0,
+   "absent": 0.0,
+   "discarded": 0.0
+  }
+ }
+}

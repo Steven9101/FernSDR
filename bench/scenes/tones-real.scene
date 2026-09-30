@@ -1,0 +1,57 @@
+; Audio quality: ten steady carriers that sound, at 7.080 MHz USB, as tones
+; from 200 to 3200 Hz. Their levels give the passband; what else is in the
+; audio (noise, distortion, codec) against them gives SINAD.
+[scene]
+rate   = 20.48M
+real   = yes
+noise  = -97 dB/Hz
+
+[signal tone-200]
+kind  = carrier
+freq  = 7080200
+level = -50
+
+[signal tone-300]
+kind  = carrier
+freq  = 7080300
+level = -50
+
+[signal tone-500]
+kind  = carrier
+freq  = 7080500
+level = -50
+
+[signal tone-1000]
+kind  = carrier
+freq  = 7081000
+level = -50
+
+[signal tone-1500]
+kind  = carrier
+freq  = 7081500
+level = -50
+
+[signal tone-2000]
+kind  = carrier
+freq  = 7082000
+level = -50
+
+[signal tone-2500]
+kind  = carrier
+freq  = 7082500
+level = -50
+
+[signal tone-2700]
+kind  = carrier
+freq  = 7082700
+level = -50
+
+[signal tone-2900]
+kind  = carrier
+freq  = 7082900
+level = -50
+
+[signal tone-3200]
+kind  = carrier
+freq  = 7083200
+level = -50

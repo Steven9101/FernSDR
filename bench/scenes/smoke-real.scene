@@ -1,0 +1,25 @@
+; The smoke scene's signals as a real (direct-sampled) band from 0 Hz, for
+; receivers that assume an RX888-like front end (ka9q-web). 20.48 Msps
+; covers 0 to 10.24 MHz; the signals are the smoke scene's.
+[scene]
+rate   = 20.48M
+real   = yes
+noise  = -97 dB/Hz
+
+[signal marker]
+kind   = marker
+freq   = 7.160M
+level  = -30
+period = 0.5s
+
+[signal reference]
+kind  = carrier
+freq  = 7.150M
+level = -40
+
+[signal tone]
+kind     = ssb
+sideband = usb
+freq     = 7.074M
+audio    = tone:1000
+level    = -35

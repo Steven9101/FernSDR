@@ -1,0 +1,29 @@
+{
+  "id": "vertexsdr",
+  "name": "VertexSDR",
+  "upstream": "https://github.com/Steven9101/VertexSDR",
+  "version": {
+    "ref": "main",
+    "commit": "a78a943229b59d16348ffcaa4a8e29158ea2c4fd",
+    "date": "2026-05-01",
+    "why": "head of the default branch, re-checked on 2026-09-27; the README installs from source with scripts/setup.sh, and the one release (v1.0.0, 50912fd) sits on a separate root commit that main does not contain"
+  },
+  "image": "fernbench/vertexsdr:a78a943",
+  "input": {"transport": "rtltcp", "format": "cu8"},
+  "http_port": 8901,
+  "run": {
+    "volumes": ["{CONFIG}:/etc/vertexsdr:ro"],
+    "command": ["/opt/vertexsdr/wait-rtltcp", "/opt/vertexsdr/vertexsdr", "/etc/vertexsdr/websdr.cfg"],
+    "env": {},
+    "writable": ["/tmp", "/opt/vertexsdr/pub2/tmp"]
+  },
+  "ready": {"http": "/tmp/bandinfo.js"},
+  "caps": {
+    "listeners": 512,
+    "per_address": null,
+    "compile_time": true,
+    "notes": "512 client slots fixed at compile time (include/client.h MAX_CLIENTS); an audio and a waterfall socket take one each, so about 256 browser listeners. maxusers (100 in the shipped config, 2000 in matched) is reported but never enforced. No per-address limit (HTTP_MAX_CONN_PER_IP 0). The waterfall runs at 1/4 rate above slowdownusers sockets and 1/8 above slowdownusers2 (20 and 30 as shipped, 2000 in matched), counting audio and waterfall sockets alike, so about 10 and 15 browser listeners"
+  },
+  "modes": {"usb": true, "lsb": true, "am": true, "sam": true, "fm": true, "cw": true},
+  "cw_pitch_hz": 750
+}

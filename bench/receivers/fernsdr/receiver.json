@@ -1,0 +1,52 @@
+{
+  "id": "fernsdr",
+  "name": "FernSDR",
+  "upstream": "https://github.com/Steven9101/websdr",
+  "version": {
+    "ref": "main",
+    "commit": "cea7c5909f04648e44edcffd8ee79ed1009ed182",
+    "date": "2026-09-29",
+    "why": "the release candidate: main's head after the web fixes of 2026-09-29 (phone width, font subset, review fixes); the server is unchanged since 37e432b, whose capacity and session figures stand"
+  },
+  "image": "fernbench/fernsdr:cea7c59",
+  "input": {
+    "transport": "fifo",
+    "format": "cu8",
+    "fifo_reader_uid": 10001
+  },
+  "http_port": 8073,
+  "run": {
+    "volumes": [
+      "{FIFO}:/iq/in",
+      "{CONFIG}:/etc/fernsdr:ro"
+    ],
+    "command": [
+      "/opt/fernsdr/current/fernsdr",
+      "/etc/fernsdr/fernsdr.conf",
+      "--root",
+      "/opt/fernsdr/current/web"
+    ],
+    "env": {},
+    "writable": [
+      "/tmp"
+    ]
+  },
+  "ready": {
+    "http": "/"
+  },
+  "caps": {
+    "listeners": 200,
+    "per_address": 16,
+    "compile_time": false,
+    "notes": "documented tier: max_users 200, max_users_per_address 16, max_connections 400, max_connections_per_address 32 (default, not in the example); matched tier: 2000, off, 4000, off. One WebSocket per listener. The program keeps the soft RLIMIT_NOFILE it is started with (1024 under Docker and systemd), so about 1000 connections are its practical ceiling unless the harness raises it"
+  },
+  "modes": {
+    "usb": true,
+    "lsb": true,
+    "am": true,
+    "sam": true,
+    "fm": true,
+    "cw": true
+  },
+  "cw_pitch_hz": 700
+}

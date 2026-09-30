@@ -1,0 +1,554 @@
+{
+  "receiver": "openwebrx-plus",
+  "checked": "2026-09-27",
+  "repos": {
+    "owrxplus": "c6214ba8231e42367212fbb11b6e9f01d0ae2729"
+  },
+  "scope": "Static pinned-source inventory; unknown means unresolved. No runtime capability claims. No private candidates or credential literals exported.",
+  "features": {
+    "mode_usb": {
+      "value": "yes",
+      "cell": "USB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 142,
+          "quote": "AnalogMode(\"usb\", \"USB\", bandpass=Bandpass(150, 2750)),"
+        }
+      ],
+      "note": ""
+    },
+    "mode_lsb": {
+      "value": "yes",
+      "cell": "LSB",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 141,
+          "quote": "AnalogMode(\"lsb\", \"LSB\", bandpass=Bandpass(-2750, -150)),"
+        }
+      ],
+      "note": ""
+    },
+    "mode_am": {
+      "value": "yes",
+      "cell": "AM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 140,
+          "quote": "AnalogMode(\"am\", \"AM\", bandpass=Bandpass(-4000, 4000)),"
+        }
+      ],
+      "note": ""
+    },
+    "mode_sam": {
+      "value": "yes",
+      "cell": "SAM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 144,
+          "quote": "AnalogMode(\"sam\", \"SAM\", bandpass=Bandpass(-4000, 4000)),"
+        }
+      ],
+      "note": ""
+    },
+    "sam_carrier_display": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "mode_fm": {
+      "value": "yes",
+      "cell": "FM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 138,
+          "quote": "AnalogMode(\"nfm\", \"FM\", bandpass=Bandpass(-4000, 4000)),"
+        }
+      ],
+      "note": ""
+    },
+    "mode_cw": {
+      "value": "yes",
+      "cell": "CW",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 143,
+          "quote": "AnalogMode(\"cw\", \"CW\", bandpass=Bandpass(700, 900)),"
+        }
+      ],
+      "note": ""
+    },
+    "cw_pitch": {
+      "value": "partial",
+      "cell": "CW offset follows configured/passband midpoint",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/lib/UI.js",
+          "line": 148,
+          "quote": "this.cwOffset = bp? Math.round((bp.low_cut + bp.high_cut) / 2) : 800;"
+        }
+      ],
+      "note": ""
+    },
+    "modes_other": {
+      "value": "yes",
+      "cell": "WFM, digital voice, DRM and FreeDV (dependencies required)",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 139,
+          "quote": "AnalogMode(\"wfm\", \"WFM\", bandpass=Bandpass(-75000, 75000)),"
+        },
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "README.md",
+          "line": 50,
+          "quote": "- [DRM](https://github.com/jketterl/openwebrx/wiki/DRM-demodulator-notes) support"
+        }
+      ],
+      "note": ""
+    },
+    "filter_bw": {
+      "value": "yes",
+      "cell": "Listener can drag filter edges",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/lib/Demodulator.js",
+          "line": 196,
+          "quote": "this.drag_origin.low_cut + minus * freq_change,"
+        }
+      ],
+      "note": ""
+    },
+    "noise_reduction": {
+      "value": "yes",
+      "cell": "Server NR with listener on/off and level",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/index.html",
+          "line": 292,
+          "quote": "<div title=\"Noise reduction on/off\" class=\"openwebrx-nr-toggle openwebrx-button openwebrx-slider-button\" onclick=\"UI.toggleNR();\">"
+        },
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/lib/UI.js",
+          "line": 338,
+          "quote": "// Send changed noise reduction parameters to the server."
+        }
+      ],
+      "note": ""
+    },
+    "noise_blanker": {
+      "value": "no",
+      "cell": "No corresponding listener UI found",
+      "sources": [
+        {
+          "kind": "absence",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "searched": "noise.?blank",
+          "where": "all tracked htdocs files"
+        }
+      ],
+      "note": "Does not classify hardware-side controls as browser audio features."
+    },
+    "notch": {
+      "value": "no",
+      "cell": "No corresponding listener UI found",
+      "sources": [
+        {
+          "kind": "absence",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "searched": "notch",
+          "where": "all tracked htdocs files"
+        }
+      ],
+      "note": "Does not classify hardware-side controls as browser audio features."
+    },
+    "squelch": {
+      "value": "yes",
+      "cell": "Listener threshold; mode-dependent",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/lib/DemodulatorPanel.js",
+          "line": 46,
+          "quote": "el.on('change', '.openwebrx-squelch-slider', function() {"
+        }
+      ],
+      "note": ""
+    },
+    "agc": {
+      "value": "yes",
+      "cell": "Server AGC",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "csdr/chain/analog.py",
+          "line": 13,
+          "quote": "agc = Agc(Format.FLOAT)"
+        }
+      ],
+      "note": ""
+    },
+    "agc_settings": {
+      "value": "partial",
+      "cell": "Operator profiles for SSB, AM and NFM",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/config/defaults.py",
+          "line": 454,
+          "quote": "ssb_agc_profile=\"Fast\","
+        }
+      ],
+      "note": ""
+    },
+    "smeter": {
+      "value": "partial",
+      "cell": "Relative dB display; absolute calibration not established",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/index.html",
+          "line": 379,
+          "quote": "<div id=\"openwebrx-smeter-db\">0 dB</div>"
+        }
+      ],
+      "note": ""
+    },
+    "smeter_calibration": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "freq_offset_correction": {
+      "value": "partial",
+      "cell": "PPM passed to supported hardware drivers",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/source/connector.py",
+          "line": 31,
+          "quote": "\"ppm\": Option(\"-P\"),"
+        }
+      ],
+      "note": ""
+    },
+    "recording": {
+      "value": "yes",
+      "cell": "Listener browser recording",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/index.html",
+          "line": 372,
+          "quote": "<div class=\"openwebrx-button openwebrx-square-button openwebrx-record-button\" onclick=\"UI.toggleRecording();\" title=\"Record audio\">REC</div>"
+        }
+      ],
+      "note": ""
+    },
+    "band_presets": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "bookmarks": {
+      "value": "yes",
+      "cell": "Listener local bookmarks and operator bookmarks",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/lib/BookmarkLocalStorage.js",
+          "line": 5,
+          "quote": "return JSON.parse(window.localStorage.getItem(\"bookmarks\")) || [];"
+        }
+      ],
+      "note": ""
+    },
+    "chat": {
+      "value": "yes",
+      "cell": "Listener chat",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/index.html",
+          "line": 211,
+          "quote": "<div class=\"openwebrx-button\" onclick=\"Chat.send();\">Send</div>"
+        }
+      ],
+      "note": ""
+    },
+    "multi_band": {
+      "value": "yes",
+      "cell": "Listener switches configured SDR profiles",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "htdocs/index.html",
+          "line": 239,
+          "quote": "<select id=\"openwebrx-sdr-profiles-listbox\" onchange=\"sdr_profile_changed();\">"
+        }
+      ],
+      "note": ""
+    },
+    "full_spectrum": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "decoders": {
+      "value": "yes",
+      "cell": "PSK31/63, FT8/FT4/WSPR and others; dependencies required",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/modes.py",
+          "line": 158,
+          "quote": "AnalogMode(\"drm\", \"DRM\", bandpass=Bandpass(-5000, 5000), requirements=[\"drm\"], squelch=False),"
+        },
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "README.md",
+          "line": 46,
+          "quote": "- [wsjt-x](https://wsjt.sourceforge.io/) based demodulators (FT8, FT4, WSPR, JT65, JT9, FST4,"
+        }
+      ],
+      "note": ""
+    },
+    "waterfall_history": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "waterfall_rate": {
+      "value": "partial",
+      "cell": "Operator FFT frame-rate setting",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/config/defaults.py",
+          "line": 17,
+          "quote": "fft_fps=9,"
+        }
+      ],
+      "note": ""
+    },
+    "listener_time_limit": {
+      "value": "yes",
+      "cell": "Configurable session timeout, default disabled",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/config/defaults.py",
+          "line": 381,
+          "quote": "session_timeout=0,"
+        }
+      ],
+      "note": ""
+    },
+    "per_address_limit": {
+      "value": "yes",
+      "cell": "Enforced max_clients_per_ip",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/client.py",
+          "line": 54,
+          "quote": "elif self.ipCount(client) >= pm[\"max_clients_per_ip\"]:"
+        }
+      ],
+      "note": ""
+    },
+    "admin_panel": {
+      "value": "yes",
+      "cell": "Web receiver and general settings",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/controllers/settings/general.py",
+          "line": 40,
+          "quote": "return SettingsBreadcrumb().append(BreadcrumbItem(\"General Settings\", \"settings/general\"))"
+        }
+      ],
+      "note": ""
+    },
+    "https": {
+      "value": "yes",
+      "cell": "Built-in TLS with certificate files",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/__main__.py",
+          "line": 176,
+          "quote": "ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)"
+        },
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/__main__.py",
+          "line": 177,
+          "quote": "ctx.load_cert_chain(certFile, keyFile)"
+        }
+      ],
+      "note": ""
+    },
+    "signed_updates": {
+      "value": "unknown",
+      "cell": "Not established from inspected sources",
+      "sources": [],
+      "note": "Unknown is not an absence claim."
+    },
+    "installer": {
+      "value": "yes",
+      "cell": "Debian packages and Docker images documented",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "README.md",
+          "line": 59,
+          "quote": "- Debian repository"
+        },
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "README.md",
+          "line": 60,
+          "quote": "- Docker images"
+        }
+      ],
+      "note": ""
+    },
+    "hardware": {
+      "value": "info",
+      "cell": "Soapy devices, RTL-TCP, HPSDR and direct hardware connectors",
+      "sources": [
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/source/airspy.py",
+          "line": 8,
+          "quote": "class AirspySource(SoapyConnectorSource):"
+        },
+        {
+          "kind": "code",
+          "repo": "owrxplus",
+          "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+          "path": "owrx/source/hpsdr.py",
+          "line": 31,
+          "quote": "class HpsdrSource(ConnectorSource):"
+        }
+      ],
+      "note": ""
+    }
+  },
+  "health": {
+    "last_commit_date": "2026-09-24",
+    "commits_12months": 411,
+    "author_identities_12months": 25,
+    "shallow": false,
+    "tracked_files": 477,
+    "project_github_workflows": [],
+    "note": "Counts include merges and use distinct author name/email identities, not deduplicated humans. Release pin history, not current project HEAD."
+  },
+  "license": {
+    "kind": "code",
+    "repo": "owrxplus",
+    "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+    "path": "LICENSE.txt",
+    "line": 1,
+    "quote": "GNU AFFERO GENERAL PUBLIC LICENSE"
+  },
+  "runtime_dependencies": [
+    {
+      "kind": "code",
+      "repo": "owrxplus",
+      "commit": "c6214ba8231e42367212fbb11b6e9f01d0ae2729",
+      "path": "debian/control",
+      "line": 22,
+      "quote": "python3-csdr (>= 0.18.40),"
+    }
+  ]
+}

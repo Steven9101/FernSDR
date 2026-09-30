@@ -1,0 +1,226 @@
+; Written by bench/digital/digital.py assets. Listen at 7074000 Hz USB.
+[scene]
+rate   = 20.48M
+real   = yes
+noise  = -97 dB/Hz
+
+[signal ft8-00]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-00.wav
+low = 200
+high = 3000
+snr = -24
+
+[signal ft8-01]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-01.wav
+low = 200
+high = 3000
+snr = -22
+
+[signal ft8-02]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-02.wav
+low = 200
+high = 3000
+snr = -20
+
+[signal ft8-03]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-03.wav
+low = 200
+high = 3000
+snr = -18
+
+[signal ft8-04]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-04.wav
+low = 200
+high = 3000
+snr = -16
+
+[signal ft8-05]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-05.wav
+low = 200
+high = 3000
+snr = -14
+
+[signal ft8-06]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-06.wav
+low = 200
+high = 3000
+snr = -12
+
+[signal ft8-07]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-07.wav
+low = 200
+high = 3000
+snr = -10
+
+[signal ft8-08]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-08.wav
+low = 200
+high = 3000
+snr = -8
+
+[signal ft8-09]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-09.wav
+low = 200
+high = 3000
+snr = -6
+
+[signal ft8-10]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/ft8-10.wav
+low = 200
+high = 3000
+snr = -4
+
+[signal wspr-00]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-00.wav
+low = 200
+high = 3000
+snr = -36
+
+[signal wspr-01]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-01.wav
+low = 200
+high = 3000
+snr = -34
+
+[signal wspr-02]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-02.wav
+low = 200
+high = 3000
+snr = -32
+
+[signal wspr-03]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-03.wav
+low = 200
+high = 3000
+snr = -30
+
+[signal wspr-04]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-04.wav
+low = 200
+high = 3000
+snr = -28
+
+[signal wspr-05]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-05.wav
+low = 200
+high = 3000
+snr = -26
+
+[signal wspr-06]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-06.wav
+low = 200
+high = 3000
+snr = -24
+
+[signal wspr-07]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-07.wav
+low = 200
+high = 3000
+snr = -22
+
+[signal wspr-08]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/wspr-08.wav
+low = 200
+high = 3000
+snr = -20
+
+[signal rtty-0]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/rtty-0.wav
+low = 200
+high = 3000
+snr = -6
+
+[signal rtty-1]
+kind = ssb
+sideband = usb
+freq = 7074000
+audio = wav:/root/develop/websdr/bench/digital/assets/rtty-1.wav
+low = 200
+high = 3000
+snr = 4
+
+[signal reference]
+kind = carrier
+freq = 7074350
+level = -60
+
+[signal cw-0]
+kind = cw
+freq = 7076400
+text = CQ CQ TEST DE K1FRN K1FRN K
+wpm = 20
+edge = 5ms
+gap = 3s
+snr = 10
+
+[signal cw-1]
+kind = cw
+freq = 7076550
+text = CQ CQ TEST DE K1FRN K1FRN K
+wpm = 20
+edge = 5ms
+gap = 3s
+snr = 20

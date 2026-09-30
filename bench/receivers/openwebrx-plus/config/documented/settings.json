@@ -1,0 +1,20 @@
+{
+    "version": 8,
+    "sdrs": {
+        "bench": {
+            "name": "Lab rtl_tcp",
+            "type": "rtl_tcp",
+            "remote": "127.0.0.1:1234",
+            "enabled": true,
+            "profiles": {
+                "40m": {
+                    "name": "40 m",
+                    "center_freq": 7100000,
+                    "samp_rate": 2048000,
+                    "start_freq": 7159000,
+                    "start_mod": "usb"
+                }
+            }
+        }
+    }
+}

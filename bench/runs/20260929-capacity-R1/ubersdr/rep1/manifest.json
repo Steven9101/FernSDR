@@ -1,0 +1,108 @@
+{
+ "receiver": "ubersdr",
+ "repeat": 1,
+ "environment": {
+  "mem_available_mb": 5952,
+  "disk_free_gb": 24.2
+ },
+ "steps": [
+  {
+   "listeners": 1,
+   "cpu_percent": 20.623781631170214,
+   "mem_mb": 294.05078125,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00005,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 49.5424,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 10,
+   "cpu_percent": 30.05423436456372,
+   "mem_mb": 283.66796875,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00005,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 46.03573333333333,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 50,
+   "cpu_percent": 62.36908248430516,
+   "mem_mb": 347.08984375,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00005,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 45.873066666666666,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 100,
+   "cpu_percent": 105.1189903969604,
+   "mem_mb": 450.578125,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00005,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 45.68266666666667,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 200,
+   "cpu_percent": 176.76564222005834,
+   "mem_mb": 555.40625,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 0.9987166,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 45.28,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 400,
+   "cpu_percent": 198.7039508135559,
+   "mem_mb": 641.96875,
+   "audio_ok_share": 0.0,
+   "audio_ratio_median": 0.2626798,
+   "waterfall_ratio_median": 0.44668900000000006,
+   "audio_kbit_median": 11.831999999999999,
+   "closed_early": 400,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [
+    "1006"
+   ],
+   "receiver_lost": "cannot sample /sys/fs/cgroup/fernbench.slice/docker-9b09cadfd956fce9042a449d83fb9643f027022e46e152340b293702cdbb8889.scope/cpu.stat",
+   "passed": false
+  }
+ ],
+ "browser_rates": {
+  "audio": 49.99750012499375,
+  "audio_bytes": 5461.526923653817,
+  "control": 0.049997500124993745,
+  "control_bytes": 0.7499625018749062,
+  "waterfall": 9.99950002499875,
+  "waterfall_bytes": 1658.7170641467926
+ },
+ "browser_exit": 0,
+ "knee": 200,
+ "state": "done"
+}

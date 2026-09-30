@@ -1,0 +1,29 @@
+{
+  "id": "novasdr",
+  "name": "NovaSDR",
+  "upstream": "https://github.com/phasor-labs/NovaSDR",
+  "version": {
+    "ref": "0.3.7",
+    "commit": "83495e5519c473a3b492c645eb3d54fd04baffa4",
+    "date": "2026-03-12",
+    "why": "latest release, which the README's installer and release tarballs install; main (45b2951, 2026-04-08) differs from the tag only by four lines of README"
+  },
+  "image": "fernbench/novasdr:83495e5",
+  "input": {"transport": "fifo", "format": "cu8"},
+  "http_port": 9002,
+  "run": {
+    "volumes": ["{FIFO}:/iq/in", "{CONFIG}:/etc/novasdr:ro"],
+    "command": ["novasdr-server", "-c", "/etc/novasdr/config.json", "-r", "/etc/novasdr/receivers.json"],
+    "env": {},
+    "writable": ["/var/lib/novasdr", "/tmp"]
+  },
+  "ready": {"http": "/"},
+  "caps": {
+    "listeners": 100,
+    "per_address": 12,
+    "compile_time": false,
+    "notes": "documented tier: limits.audio 100 audio sockets, waterfall 200, events 200, and ws_per_ip 50 sockets per TCP peer address counted over every endpoint; the page opens four sockets per listener (audio, waterfall, events, chat), so 12 listeners per address. Matched tier: 2000 each and ws_per_ip 100000."
+  },
+  "modes": {"usb": true, "lsb": true, "am": true, "sam": true, "fm": true, "cw": true},
+  "cw_pitch_hz": null
+}

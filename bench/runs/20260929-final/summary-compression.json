@@ -1,0 +1,500 @@
+{
+ "fernsdr": {
+  "audio_codec": "NAC3, FernSDR's own MDCT transform codec",
+  "audio_lossy": true,
+  "waterfall_codec": "WFC5: dB levels rounded to 1 dB (at most 0.5 dB error) or, as the page asks in Low and Balanced, 2 dB (at most 1 dB), range -200 to +100 dB; each residual against the bin to the left coded as binary decisions with adaptive probabilities, in contexts from the row above, through LZMA's range coder; a key row every 24 rows",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": 1536,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 28.529031397906806,
+   "min": 28.453154684531544,
+   "max": 28.584113862871238,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 31.264582361175922,
+   "min": 31.263540312635403,
+   "max": 31.265624479184027,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 114.06289978678038,
+   "min": 113.7633262260128,
+   "max": 114.27931769722815,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 21.022865142323845,
+   "min": 20.978234058864704,
+   "max": 21.063760290637603,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 11.999600013332888,
+   "min": 11.999200053329778,
+   "max": 12.032130120321302,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 218.82825484764544,
+   "min": 218.53055555555557,
+   "max": 219.00277777777777,
+   "n": 3
+  },
+  "waterfall_bits_per_bin": 1.1397304939981534,
+  "waterfall_factor_vs_8bit": 7.019203260883325
+ },
+ "ka9q-web": {
+  "audio_codec": "Opus (default) over RTP; 16-bit PCM at 12 kHz optional",
+  "audio_lossy": true,
+  "waterfall_codec": "one byte a bin, uncompressed, after a float header",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": 1620,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 19.521781155217813,
+   "min": 19.498816706109796,
+   "max": 19.539733333333334,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 49.99833338888703,
+   "min": 49.99500049995,
+   "max": 50.0,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 48.809333333333335,
+   "min": 48.748666666666665,
+   "max": 48.849333333333334,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 88.71966136719662,
+   "min": 88.26585780473984,
+   "max": 89.18826666666668,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 6.4326900643269,
+   "min": 6.39978667377754,
+   "max": 6.466666666666667,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 1724.0,
+   "min": 1724.0,
+   "max": 1724.0,
+   "n": 3
+  },
+  "waterfall_bits_per_bin": 8.51358024691358,
+  "waterfall_factor_vs_8bit": 0.9396751740139211
+ },
+ "novasdr": {
+  "audio_codec": "IMA ADPCM (default), Opus 40 kbit/s optional",
+  "audio_lossy": true,
+  "waterfall_codec": "8-bit dB rows in CBOR, zstd stream",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": null,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 51.16672221851877,
+   "min": 51.15776140795307,
+   "max": 51.19349355021499,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 31.23229225692477,
+   "min": 31.231251249916674,
+   "max": 31.23229225692477,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 204.7897545357524,
+   "min": 204.74706510138742,
+   "max": 204.89007470651015,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 26.818572714242855,
+   "min": 26.777681487900807,
+   "max": 26.82790573647545,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 7.8330722309256355,
+   "min": 7.799480034664356,
+   "max": 7.8330722309256355,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 428.11914893617023,
+   "min": 427.97021276595746,
+   "max": 429.15811965811963,
+   "n": 3
+  }
+ },
+ "openwebrx": {
+  "audio_codec": "IMA ADPCM, 4 bits a sample at 12 kHz",
+  "audio_lossy": true,
+  "waterfall_codec": "ADPCM-coded FFT rows",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": 4096,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 44.53691543615213,
+   "min": 44.53691543615213,
+   "max": 44.53904869837672,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 10.766307789740342,
+   "min": 10.766307789740342,
+   "max": 10.766307789740342,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 517.0866873065015,
+   "min": 517.0866873065015,
+   "max": 517.1114551083591,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 147.88307056431452,
+   "min": 147.33535548815038,
+   "max": 148.43078564047866,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 8.999700009999666,
+   "min": 8.966367787740408,
+   "max": 9.033032232258924,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 2054.0,
+   "min": 2054.0,
+   "max": 2054.0,
+   "n": 3
+  },
+  "waterfall_bits_per_bin": 4.01171875,
+  "waterfall_factor_vs_8bit": 1.994157740993184
+ },
+ "openwebrx-plus": {
+  "audio_codec": "IMA ADPCM, 4 bits a sample at 12 kHz",
+  "audio_lossy": true,
+  "waterfall_codec": "ADPCM-coded FFT rows",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": 4096,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 44.668,
+   "min": 44.57302846476902,
+   "max": 44.66891103629879,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 16.03279890670311,
+   "min": 15.998933404439704,
+   "max": 16.033333333333335,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 348.25,
+   "min": 348.2432432432432,
+   "max": 348.26195426195426,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 147.34026666666665,
+   "min": 147.3304446370242,
+   "max": 147.88307056431452,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 8.966666666666667,
+   "min": 8.966068928738084,
+   "max": 8.999700009999666,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 2054.0,
+   "min": 2054.0,
+   "max": 2054.0,
+   "n": 3
+  },
+  "waterfall_bits_per_bin": 4.01171875,
+  "waterfall_factor_vs_8bit": 1.994157740993184
+ },
+ "phantomsdr": {
+  "audio_codec": "FLAC of 16-bit samples in CBOR",
+  "audio_lossy": false,
+  "waterfall_codec": "int8 dB rows, zstd stream",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": null,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 81.93620212659579,
+   "min": 81.84627691487235,
+   "max": 82.13699543348555,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 2.933235558814706,
+   "min": 2.9331377908139458,
+   "max": 2.933235558814706,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 3491.715909090909,
+   "min": 3488.0,
+   "max": 3500.2727272727275,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 53.399286690443645,
+   "min": 53.27982400586647,
+   "max": 53.43457102859809,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 15.632291180587961,
+   "min": 15.599480017332755,
+   "max": 15.632812239592013,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 426.9808102345416,
+   "min": 426.93589743589746,
+   "max": 427.27718550106607,
+   "n": 3
+  }
+ },
+ "phantomsdr-plus": {
+  "audio_codec": "FLAC at 8 bits a sample in CBOR",
+  "audio_lossy": true,
+  "waterfall_codec": "int8 dB rows, zstd stream",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": null,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 38.0403319889337,
+   "min": 37.6342121929269,
+   "max": 38.103529882337256,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 2.933235558814706,
+   "min": 2.899903336555448,
+   "max": 2.933235558814706,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 1622.2183908045977,
+   "min": 1621.090909090909,
+   "max": 1623.784090909091,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 116.69771007633078,
+   "min": 116.67557748075063,
+   "max": 116.78730708976367,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 15.632812239592013,
+   "min": 15.632812239592013,
+   "max": 15.632812239592013,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 933.1151385927506,
+   "min": 932.9381663113006,
+   "max": 933.8315565031983,
+   "n": 3
+  }
+ },
+ "phantomsdr-plus-sv1btl": {
+  "audio_codec": "FLAC of 16-bit samples (default); Opus for C-QUAM",
+  "audio_lossy": false,
+  "waterfall_codec": "int8 dB rows, zstd stream",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": null,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 65.7632,
+   "min": 65.63779947352637,
+   "max": 65.85614292380508,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 31.266666666666666,
+   "min": 31.221885308720136,
+   "max": 31.297913472435173,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 262.91257995735606,
+   "min": 262.7876200640342,
+   "max": 263.02129925452607,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 53.42133333333334,
+   "min": 53.329779081003636,
+   "max": 53.49350043330445,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 15.633333333333333,
+   "min": 15.627603212155543,
+   "max": 15.66562229184721,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 426.83829787234043,
+   "min": 426.56716417910445,
+   "max": 427.14285714285717,
+   "n": 3
+  }
+ },
+ "ubersdr": {
+  "audio_codec": "Opus 48 kbit/s (default)",
+  "audio_lossy": true,
+  "waterfall_codec": "binary8 spectrum frames (\"SPEC\")",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": 1024,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 44.137195426819105,
+   "min": 44.13319556014799,
+   "max": 44.155445940541256,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 49.96500116662778,
+   "min": 49.960005332622316,
+   "max": 50.06499783340555,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 110.41027351567712,
+   "min": 110.19973368841545,
+   "max": 110.47698465643762,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 13.621945935135496,
+   "min": 13.611812939568681,
+   "max": 13.627782962271695,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 9.999666677777407,
+   "min": 9.998666844420743,
+   "max": 9.999666677777407,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 170.28,
+   "min": 170.15333333333334,
+   "max": 170.37,
+   "n": 3
+  },
+  "waterfall_bits_per_bin": 1.3303125,
+  "waterfall_factor_vs_8bit": 6.013624618275781
+ },
+ "vertexsdr": {
+  "audio_codec": "the PA3FWM WebSDR audio format (tag-byte frames)",
+  "audio_lossy": true,
+  "waterfall_codec": "PA3FWM waterfall format 9, variable-length coded",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": 1024,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 27.119629345688477,
+   "min": 27.092163594546847,
+   "max": 27.133333333333333,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 62.49791673610879,
+   "min": 62.49791673610879,
+   "max": 62.5,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 54.24106666666667,
+   "min": 54.18613333333333,
+   "max": 54.266666666666666,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 7.578947368421052,
+   "min": 7.537066666666666,
+   "max": 7.60961301289957,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 5.2,
+   "min": 5.199826672444251,
+   "max": 5.23315889470351,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 181.76433121019107,
+   "min": 181.17948717948718,
+   "max": 182.19230769230768,
+   "n": 3
+  },
+  "waterfall_bits_per_bin": 1.4200338375796178,
+  "waterfall_factor_vs_8bit": 5.633668570627607
+ },
+ "websdr": {
+  "audio_codec": "PA3FWM's own 8 kHz compression",
+  "audio_lossy": true,
+  "waterfall_codec": "PA3FWM waterfall format 9/10, 1.5 to 2.3 bits a pixel",
+  "waterfall_lossy": true,
+  "waterfall_bins_per_row": 1024,
+  "runs": 3,
+  "audio_kbit": {
+   "median": 49.478084063864536,
+   "min": 49.46373333333334,
+   "max": 49.47888403719875,
+   "n": 3
+  },
+  "audio_frames_per_s": {
+   "median": 20.832638912036266,
+   "min": 20.832638912036266,
+   "max": 20.833333333333332,
+   "n": 3
+  },
+  "audio_bytes_per_frame": {
+   "median": 296.8784,
+   "min": 296.7824,
+   "max": 296.8832,
+   "n": 3
+  },
+  "waterfall_kbit": {
+   "median": 22.827772407586412,
+   "min": 22.797866666666668,
+   "max": 22.84723842538582,
+   "n": 3
+  },
+  "waterfall_frames_per_s": {
+   "median": 15.632812239592013,
+   "min": 15.6,
+   "max": 15.632812239592013,
+   "n": 3
+  },
+  "waterfall_bytes_per_frame": {
+   "median": 182.67521367521368,
+   "min": 182.5309168443497,
+   "max": 182.6865671641791,
+   "n": 3
+  },
+  "waterfall_bits_per_bin": 1.427150106837607,
+  "waterfall_factor_vs_8bit": 5.605577130023861
+ }
+}

@@ -1,0 +1,29 @@
+{
+  "id": "phantomsdr",
+  "name": "PhantomSDR",
+  "upstream": "https://github.com/PhantomSDR/PhantomSDR",
+  "version": {
+    "ref": "main",
+    "commit": "b9951cbc3f5ff20854a3616a9edb7117b5ecd3f5",
+    "date": "2024-04-06",
+    "why": "head of the default branch, which the README builds from source; its only release (v0.1.0, 4c543ca) is a Windows zip"
+  },
+  "image": "fernbench/phantomsdr:b9951cb",
+  "input": {"transport": "fifo", "format": "cu8"},
+  "http_port": 9002,
+  "run": {
+    "volumes": ["{FIFO}:/iq/in", "{CONFIG}:/etc/phantomsdr:ro"],
+    "command": ["sh", "-c", "exec spectrumserver --config /etc/phantomsdr/config.toml < /iq/in"],
+    "env": {},
+    "writable": ["/tmp"]
+  },
+  "ready": {"http": "/"},
+  "caps": {
+    "listeners": null,
+    "per_address": null,
+    "compile_time": false,
+    "notes": "none enforced: [limits] audio/waterfall/events are parsed (default 1000, matched 2000) but never checked; no per-address limit, no session time limit"
+  },
+  "modes": {"usb": true, "lsb": true, "am": true, "sam": false, "fm": true, "cw": true},
+  "cw_pitch_hz": null
+}

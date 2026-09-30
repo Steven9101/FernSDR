@@ -1,0 +1,43 @@
+{
+  "id": "ka9q-web",
+  "name": "ka9q-radio + ka9q-web",
+  "upstream": "https://github.com/wa2n-code/ka9q-web",
+  "version": {
+    "commit": "4efea4b58356e2ca342980f33a8c6a5b3a16693f",
+    "radiod": "bb5ce03d089eeb74c19656844ccc8a6ab0e29a6b",
+    "why": "pinned default branches from the inherited research"
+  },
+  "image": "fernbench/ka9q-web:bb5ce03-4efea4b",
+  "input": {
+    "transport": "fifo",
+    "format": "s16"
+  },
+  "smoke_scene": "smoke-real",
+  "http_port": 8081,
+  "run": {
+    "volumes": [
+      "{FIFO}:/iq/in",
+      "{CONFIG}:/etc/fernbench:ro"
+    ],
+    "writable": [
+      "/tmp",
+      "/var/lib/ka9q-radio"
+    ]
+  },
+  "ready": {
+    "http": "/"
+  },
+  "caps": {
+    "listeners": 5,
+    "compile_time": true,
+    "notes": "global compiled limit; multiple active sessions may share an address"
+  },
+  "modes": {
+    "usb": true,
+    "lsb": true,
+    "am": true,
+    "sam": true,
+    "fm": true,
+    "cw": true
+  }
+}

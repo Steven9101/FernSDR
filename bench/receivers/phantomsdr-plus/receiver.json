@@ -1,0 +1,29 @@
+{
+  "id": "phantomsdr-plus",
+  "name": "PhantomSDR-Plus (phasor-labs)",
+  "upstream": "https://github.com/phasor-labs/PhantomSDR-Plus",
+  "version": {
+    "ref": "2.0.0",
+    "commit": "b5d6eccd811b47227dbb07a6d3e5674f16ee0e4c",
+    "date": "2025-07-18",
+    "why": "latest release, which the README's Quick Start installs; main (bc50038, 2025-12-31) has no buildable frontend, and the release's frontend exists only in its tarball (sha256 f8a0d34f44812c494775c8cad727205daaec65646350cd039be04f3683f53773)"
+  },
+  "image": "fernbench/phantomsdr-plus:b5d6ecc",
+  "input": {"transport": "fifo", "format": "cu8"},
+  "http_port": 9002,
+  "run": {
+    "volumes": ["{FIFO}:/iq/in", "{CONFIG}:/etc/phantomsdr-plus:ro"],
+    "command": ["sh", "-c", "exec spectrumserver --config /etc/phantomsdr-plus/config.toml < /iq/in"],
+    "env": {},
+    "writable": ["/var/lib/phantomsdr-plus", "/tmp"]
+  },
+  "ready": {"http": "/"},
+  "caps": {
+    "listeners": null,
+    "per_address": null,
+    "compile_time": false,
+    "notes": "none enforced: [limits] audio/waterfall/events are parsed (1000 each documented, 2000 matched) but never checked; no per-address limit, no session time limit"
+  },
+  "modes": {"usb": true, "lsb": true, "am": true, "sam": true, "fm": true, "cw": true},
+  "cw_pitch_hz": null
+}

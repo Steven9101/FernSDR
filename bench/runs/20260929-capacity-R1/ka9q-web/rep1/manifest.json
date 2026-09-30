@@ -1,0 +1,51 @@
+{
+ "receiver": "ka9q-web",
+ "repeat": 1,
+ "environment": {
+  "mem_available_mb": 6567,
+  "disk_free_gb": 24.1
+ },
+ "steps": [
+  {
+   "listeners": 1,
+   "cpu_percent": 12.354189064878609,
+   "mem_mb": 36.51953125,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.0,
+   "waterfall_ratio_median": 1.0,
+   "audio_kbit_median": 19.545066666666667,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 10,
+   "cpu_percent": 15.425470219354931,
+   "mem_mb": 39.66015625,
+   "audio_ok_share": 0.0,
+   "audio_ratio_median": 0.392,
+   "waterfall_ratio_median": 0.2685185185185185,
+   "audio_kbit_median": 7.1290666666666676,
+   "closed_early": 4,
+   "spread_share": 0.8,
+   "errors": 0,
+   "first_errors": [
+    "1006"
+   ],
+   "passed": false
+  }
+ ],
+ "browser_rates": {
+  "control": 10.2,
+  "control_bytes": 778.8,
+  "waterfall": 7.2,
+  "waterfall_bytes": 12412.8,
+  "audio": 50.0,
+  "audio_bytes": 2437.2
+ },
+ "browser_exit": 0,
+ "knee": 1,
+ "state": "done"
+}

@@ -1,0 +1,79 @@
+{
+ "receiver": "openwebrx-plus",
+ "repeat": 1,
+ "environment": {
+  "mem_available_mb": 6461,
+  "disk_free_gb": 24.3
+ },
+ "steps": [
+  {
+   "listeners": 1,
+   "cpu_percent": 7.779599162831209,
+   "mem_mb": 245.09765625,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00005,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 44.578133333333334,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 10,
+   "cpu_percent": 30.162427478732063,
+   "mem_mb": 361.484375,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00005,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 44.578133333333334,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 50,
+   "cpu_percent": 122.33876091050786,
+   "mem_mb": 870.984375,
+   "audio_ok_share": 1.0,
+   "audio_ratio_median": 1.00005,
+   "waterfall_ratio_median": 1.00005,
+   "audio_kbit_median": 44.57386666666666,
+   "closed_early": 0,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [],
+   "passed": true
+  },
+  {
+   "listeners": 100,
+   "cpu_percent": 145.3025434179376,
+   "mem_mb": 1023.99609375,
+   "audio_ok_share": 0.0,
+   "audio_ratio_median": 0.09583812500000001,
+   "waterfall_ratio_median": 0.4296511111111111,
+   "audio_kbit_median": 32.6096,
+   "closed_early": 100,
+   "spread_share": 1.0,
+   "errors": 0,
+   "first_errors": [
+    "1006"
+   ],
+   "passed": false
+  }
+ ],
+ "browser_rates": {
+  "control": 4.699765011749412,
+  "control_bytes": 232.13839308034596,
+  "waterfall": 8.999550022498875,
+  "waterfall_bytes": 18485.07574621269,
+  "audio": 15.999200039998,
+  "audio_bytes": 5571.721413929303
+ },
+ "browser_exit": 0,
+ "knee": 50,
+ "state": "done"
+}

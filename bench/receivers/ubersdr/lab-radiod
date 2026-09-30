@@ -1,0 +1,29 @@
+#!/bin/bash
+# SPDX-License-Identifier: GPL-3.0-or-later
+#
+# Runs UberSDR's radiod (madpsy's fork of ka9q-radio) in the network
+# namespace of the UberSDR container:
+#
+#   lab-radiod RADIOD_CONF
+#
+# UberSDR's own radiod container is privileged, for the RX888's USB and for
+# `ip link set lo multicast on` in its start script. Here there is no USB,
+# and the only privileged step is that flag, which radiod needs (it exits
+# without it): this sets it with CAP_NET_ADMIN, or waits for the harness to
+# set it from outside (nsenter -t PID -n ip link set dev lo multicast on),
+# and then runs radiod with CAP_NET_ADMIN gone from every capability set.
+set -euo pipefail
+
+lo_multicast() { ip -o link show dev lo | grep -q '[<,]MULTICAST[,>]'; }
+
+if ! lo_multicast; then
+    ip link set dev lo multicast on 2>/dev/null || true
+    for _ in $(seq 1 60); do
+        lo_multicast && break
+        echo "lab-radiod: waiting for multicast on lo (needs CAP_NET_ADMIN, or the harness to set it)" >&2
+        sleep 0.5
+    done
+    lo_multicast || { echo "lab-radiod: lo has no multicast; radiod cannot run" >&2; exit 1; }
+fi
+exec setpriv --bounding-set=-net_admin --inh-caps=-net_admin --ambient-caps=-net_admin \
+    --no-new-privs -- /usr/local/sbin/radiod "$@"
