@@ -90,12 +90,22 @@ download() {
         # wget follows a redirect to plain HTTP even with --https-only, which
         # holds for recursive downloads only. What it fetched is kept only if
         # no redirect on the way left HTTPS, as the headers -S prints show.
-        if ! wget -q -S --max-redirect=5 --timeout=60 --tries=3 -O "$2" "$1" 2> "$2.headers" ||
-            ! https_redirects_only < "$2.headers"; then
-            rm -f "$2" "$2.headers"
+        # BusyBox wget, as on Alpine without curl, knows neither
+        # --max-redirect nor --tries; it follows a few redirects by itself.
+        if wget --help 2>&1 | grep -q -- --max-redirect; then
+            set -- "$1" "$2" "$3" --max-redirect=5 --timeout=60 --tries=3
+        else
+            set -- "$1" "$2" "$3" -T 60
+        fi
+        dl_url=$1 dl_file=$2 dl_limit=$3
+        shift 3
+        if ! wget -q -S "$@" -O "$dl_file" "$dl_url" 2> "$dl_file.headers" ||
+            ! https_redirects_only < "$dl_file.headers"; then
+            rm -f "$dl_file" "$dl_file.headers"
             return 1
         fi
-        rm -f "$2.headers"
+        rm -f "$dl_file.headers"
+        set -- "$dl_url" "$dl_file" "$dl_limit"
     fi
     [ "$(size_of "$2")" -le "$3" ]
 }
