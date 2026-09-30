@@ -170,6 +170,13 @@ void Decoder::run() {
 }
 
 bool Decoder::session(std::string& why) {
+    {
+        std::lock_guard<std::mutex> lock(status_mutex_);
+        sandbox_ = Json();
+        hello_version_.clear();
+    }
+    sandbox_partial_.clear();
+    log_partial_.clear();
     Program program;
     std::string error;
     restart_requested_.store(false);
@@ -185,15 +192,14 @@ bool Decoder::session(std::string& why) {
     const Json& settings = program.settings.is_object() ? program.settings : config_.settings;
     Subprocess::Options options;
     if (program.launcher.empty()) {
-        options.path = program.executable;
-        options.arguments = {"--fernsdr-module", "2"};
-    } else {
-        options.path = program.launcher;
-        options.arguments = {"--sandbox-exec", program.executable, "--fernsdr-module", "2"};
+        why = "the decoder needs the receiver's sandbox launcher";
+        return false;
     }
+    options.path = program.launcher;
+    options.arguments = {"--sandbox-exec-report", program.executable, "--fernsdr-module", "2"};
     options.environment = {"PATH=/usr/local/bin:/usr/bin:/bin", "LANG=C.UTF-8", "FERNSDR_MODULE_API=2"};
     options.streams = {Subprocess::Stream::ToChild, Subprocess::Stream::Null, Subprocess::Stream::FromChild,
-                       Subprocess::Stream::FromChild, Subprocess::Stream::ToChild};
+                       Subprocess::Stream::FromChild, Subprocess::Stream::ToChild, Subprocess::Stream::FromChild};
     process_ = std::make_unique<Subprocess>();
     if (!process_->start(options, error)) {
         why = error;
@@ -213,11 +219,6 @@ bool Decoder::session(std::string& why) {
     lost_since_.assign(taps_.size(), false);
     per_slot_.clear();
     newest_second_ = INT64_MIN;
-    {
-        std::lock_guard<std::mutex> lock(status_mutex_);
-        hello_version_.clear();
-    }
-
     std::string events;
     bool hello = false;
     bool ready = false;
@@ -230,11 +231,12 @@ bool Decoder::session(std::string& why) {
             ok = false;
             break;
         }
-        pollfd fds[3] = {{process_->fd(2), POLLIN, 0}, {process_->fd(3), POLLIN, 0},
-                         {process_->fd(4), static_cast<short>(ready && (!writing_.empty() || !pending_.empty()) ? POLLOUT : 0), 0}};
-        ::poll(fds, 3, 50);
+        pollfd fds[4] = {{process_->fd(2), POLLIN, 0}, {process_->fd(3), POLLIN, 0},
+                         {process_->fd(4), static_cast<short>(ready && (!writing_.empty() || !pending_.empty()) ? POLLOUT : 0), 0},
+                         {process_->fd(5), POLLIN, 0}};
+        ::poll(fds, 4, 50);
         read_log(process_->fd(2));
-        if (!read_events(process_->fd(3), events, ready, why)) {
+        if (!read_sandbox(why) || (sandbox_.is_object() && !read_events(process_->fd(3), events, ready, why))) {
             ok = false;
             break;
         }
@@ -288,7 +290,7 @@ bool Decoder::session(std::string& why) {
         Subprocess::Exit exit;
         if (process_->poll_exit(exit)) {
             read_log(process_->fd(2));
-            read_events(process_->fd(3), events, ready, why);
+            if (read_sandbox(why) && sandbox_.is_object()) read_events(process_->fd(3), events, ready, why);
             if (why.empty()) why = "the module ended: " + exit.describe();
             ok = false;
             break;
@@ -303,6 +305,36 @@ bool Decoder::session(std::string& why) {
     }
     process_.reset();
     return ok;
+}
+
+bool Decoder::read_sandbox(std::string& why) {
+    const int fd = process_->fd(5);
+    if (fd < 0) return true;
+    char chunk[2048];
+    const ssize_t got = ::read(fd, chunk, sizeof(chunk));
+    if (got < 0 && (errno == EAGAIN || errno == EINTR)) return true;
+    if (got > 0) sandbox_partial_.append(chunk, static_cast<size_t>(got));
+    const size_t end = sandbox_partial_.find('\n');
+    if (end == std::string::npos && got > 0 && sandbox_partial_.size() < sizeof(chunk)) return true;
+    Json report;
+    const bool valid = end != std::string::npos && end + 1 == sandbox_partial_.size() &&
+        sandbox_partial_.size() < sizeof(chunk) && Json::parse(sandbox_partial_.substr(0, end), report) &&
+        report.is_object() && report["seccomp"].is_bool() && report["files_closed"].is_bool() &&
+        report["scoped"].is_bool() && report["landlock_abi"].is_number() && report["problem"].is_string();
+    process_->close_fd(5);
+    if (!valid) {
+        why = "the sandbox launcher did not report confinement";
+        return false;
+    }
+    {
+        std::lock_guard<std::mutex> lock(status_mutex_);
+        sandbox_ = report;
+    }
+    if (!report["seccomp"].boolean()) {
+        why = report["problem"].string().empty() ? "the sandbox launcher could not apply seccomp" : report["problem"].string();
+        return false;
+    }
+    return true;
 }
 
 bool Decoder::read_events(int fd, std::string& buffer, bool& ready, std::string& why) {
@@ -529,6 +561,7 @@ Json Decoder::status() const {
     out.set("version", hello_version_);
     out.set("state", state_);
     out.set("message", message_);
+    out.set("sandbox", sandbox_);
     out.set("restarts", restarts_);
     out.set("rejected", static_cast<double>(rejected_));
     if (!last_rejection_.empty()) out.set("last_rejection", last_rejection_);

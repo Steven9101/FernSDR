@@ -10,10 +10,12 @@
 //   slow    stops reading samples for 6 seconds, then reads again and reports
 //           how many frames said samples were lost
 //   probe   reports, as an error event, whether it could open a file
+//   sockets reports whether Internet UDP and TCP socket creation is refused
 //   varied  reports a slot's worth of plausible FT8 traffic from a fixed
 //           list at each new 15 s slot, for looking at the pages by hand
 #include <fcntl.h>
 #include <poll.h>
+#include <sys/socket.h>
 #include <unistd.h>
 
 #include <cerrno>
@@ -84,6 +86,26 @@ int main(int argc, char** argv) {
         const int fd = ::open("/etc/hostname", O_RDONLY);
         event(std::string("{\"type\":\"error\",\"code\":\"internal\",\"message\":\"file open ") +
               (fd >= 0 ? "allowed" : "denied") + "\",\"fatal\":false}");
+    }
+    if (behaviour == "sockets") {
+        std::string message;
+        for (const int family : {AF_INET, AF_INET6}) {
+            for (const int type : {SOCK_DGRAM, SOCK_STREAM}) {
+                const int fd = ::socket(family, type, 0);
+                const bool denied = fd < 0 && errno == EPERM;
+                if (fd >= 0) ::close(fd);
+                if (!message.empty()) message += "; ";
+                message += family == AF_INET ? "IPv4 " : "IPv6 ";
+                message += type == SOCK_DGRAM ? "UDP " : "TCP ";
+                message += denied ? "EPERM" : "allowed or unexpected error";
+            }
+        }
+        const bool report_closed = ::fcntl(5, F_GETFD) == -1 && errno == EBADF;
+        message += report_closed ? "; report fd closed" : "; report fd inherited";
+        // Neither an event nor a log line from a module is a trusted report.
+        event("{\"type\":\"sandbox\",\"seccomp\":false,\"files_closed\":false}");
+        std::fprintf(stderr, "sandbox: seccomp disabled\n");
+        event("{\"type\":\"error\",\"message\":\"" + message + "\",\"fatal\":false}");
     }
     if (behaviour == "bad") {
         const std::string base = "{\"type\":\"decode\",\"channel\":\"" + channel + "\",\"time\":1790000000000,";

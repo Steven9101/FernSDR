@@ -9,6 +9,7 @@
 #include <arpa/inet.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
+#include <sys/stat.h>
 #include <unistd.h>
 
 #include <chrono>
@@ -28,13 +29,18 @@ std::string beside_tests(const char* name) {
     return self.substr(0, self.find_last_of('/')) + "/" + name;
 }
 
+std::string sandbox_launcher() {
+    const char* native = std::getenv("FERNSDR_TEST_SANDBOX_LAUNCHER");
+    return native ? native : beside_tests("fernsdr");
+}
+
 struct Rig {
     ConfigSection section{"band:40m"};
     std::unique_ptr<Band> band;
     DecodeStore store;
     std::unique_ptr<Decoder> decoder;
 
-    explicit Rig(const std::string& behaviour, bool sandboxed = false) {
+    explicit Rig(const std::string& behaviour, bool sandboxed = true, const std::string& launcher = "") {
         section.set("source", "test");
         section.set("sample_rate", "48000");
         section.set("center", "7074000");
@@ -52,9 +58,11 @@ struct Rig {
         config.channels.push_back(channel);
         decoder = std::make_unique<Decoder>(
             config,
-            [sandboxed](const std::string&, Decoder::Program& out, std::string&) {
+            [sandboxed, launcher](const std::string&, Decoder::Program& out, std::string&) {
                 out.executable = beside_tests("fake-decoder");
-                if (sandboxed) out.launcher = beside_tests("fernsdr");
+                if (sandboxed) {
+                    out.launcher = !launcher.empty() ? launcher : sandbox_launcher();
+                }
                 return true;
             },
             [this](const std::string& id) { return id == "40m" ? band.get() : nullptr; }, store);
@@ -81,7 +89,7 @@ struct Rig {
 // to exec: an ARM program it cannot run, so the child exits 127. The
 // sandbox itself is exercised by these tests on every native build.
 bool sandbox_unavailable_under_qemu() {
-    if (!std::getenv("FERNSDR_TEST_UNDER_QEMU")) return false;
+    if (!std::getenv("FERNSDR_TEST_UNDER_QEMU") || std::getenv("FERNSDR_TEST_SANDBOX_LAUNCHER")) return false;
     std::fprintf(stderr, "  skipped under qemu-user, which cannot exec the ARM program that enters the sandbox\n");
     return true;
 }
@@ -157,6 +165,31 @@ TEST_CASE(a_decoder_in_its_sandbox_can_open_no_file) {
     Rig rig("probe", true);
     CHECK(rig.wait([&] { return rig.decoder->status()["message"].string().find("file open") != std::string::npos; }));
     CHECK_EQ_STR(rig.decoder->status()["message"].string(), "file open denied");
+}
+
+TEST_CASE(a_decoder_in_its_sandbox_cannot_create_internet_sockets) {
+    if (sandbox_unavailable_under_qemu()) return;
+    Rig rig("sockets", true);
+    CHECK(rig.wait([&] { return rig.decoder->status()["message"].string().find("IPv4 UDP") != std::string::npos; }));
+    CHECK_EQ_STR(rig.decoder->status()["message"].string(), "IPv4 UDP EPERM; IPv4 TCP EPERM; IPv6 UDP EPERM; IPv6 TCP EPERM; report fd closed");
+    CHECK(rig.decoder->status()["sandbox"]["seccomp"].boolean());
+}
+
+TEST_CASE(a_decoder_requires_a_launcher_and_its_confinement_report) {
+    {
+        Rig rig("good", false);
+        CHECK(rig.wait([&] { return rig.decoder->status()["state"].string() == "waiting"; }));
+        CHECK(rig.decoder->status()["message"].string().find("needs the receiver's sandbox launcher") != std::string::npos);
+        CHECK(rig.decoder->status()["sandbox"].is_null());
+        CHECK_EQ(rig.store.size(), 0u);
+    }
+    {
+        Rig rig("good", true, "/bin/true");
+        CHECK(rig.wait([&] { return rig.decoder->status()["state"].string() == "waiting"; }));
+        CHECK(rig.decoder->status()["message"].string().find("did not report confinement") != std::string::npos);
+        CHECK(rig.decoder->status()["sandbox"].is_null());
+        CHECK_EQ(rig.store.size(), 0u);
+    }
 }
 
 #include "../src/core/module_store.h"
@@ -253,6 +286,32 @@ TEST_CASE(decoder_sections_are_checked_before_anything_runs) {
     CHECK_EQ(radio.listed_decoders_json().size(), 0u);
 }
 
+TEST_CASE(a_decoder_refuses_incomplete_or_invalid_confinement_reports) {
+    Scratch scratch;
+    std::string error;
+    const std::string launcher = scratch.path + "/launcher";
+    const std::string ready = "printf '%s\\n' '{\"type\":\"ready\"}' >&3\n";
+    const std::string report = R"({"seccomp":true,"files_closed":false,"landlock_abi":0,"scoped":false,"problem":""})";
+    for (const std::string& bad : {std::string("{"), report, report + "\n" + report + "\n",
+                                   std::string(3000, 'x'), std::string("{}\n")}) {
+        CHECK(write_text_file(launcher, "#!/bin/sh\n" + ready + "printf '%s' '" + bad + "' >&5\n", error));
+        CHECK(::chmod(launcher.c_str(), 0700) == 0);
+        Rig rig("good", true, launcher);
+        CHECK(rig.wait([&] { return rig.decoder->status()["state"].string() == "waiting"; }));
+        CHECK(rig.decoder->status()["message"].string().find("did not report confinement") != std::string::npos);
+        CHECK(rig.decoder->status()["sandbox"].is_null());
+        CHECK_EQ(rig.store.size(), 0u);
+    }
+    const std::string denied = R"({"seccomp":false,"files_closed":false,"landlock_abi":0,"scoped":false,"problem":"seccomp refused"})";
+    CHECK(write_text_file(launcher, "#!/bin/sh\n" + ready + "printf '%s\\n' '" + denied + "' >&5\n", error));
+    CHECK(::chmod(launcher.c_str(), 0700) == 0);
+    Rig rig("good", true, launcher);
+    CHECK(rig.wait([&] { return rig.decoder->status()["state"].string() == "waiting"; }));
+    CHECK(rig.decoder->status()["message"].string().find("seccomp refused") != std::string::npos);
+    CHECK(!rig.decoder->status()["sandbox"]["seccomp"].boolean());
+    CHECK_EQ_STR(rig.decoder->status()["sandbox"]["problem"].string(), "seccomp refused");
+}
+
 TEST_CASE(a_configured_decoder_runs_from_its_package_in_its_sandbox) {
     if (sandbox_unavailable_under_qemu()) return;
     Scratch scratch;
@@ -263,7 +322,7 @@ TEST_CASE(a_configured_decoder_runs_from_its_package_in_its_sandbox) {
     CHECK(config.parse(receiver_config(modules, "[decoder:ft8]\nmodule = fake\nchannels = 40m:7069000\nmodule.behaviour = good\n"),
                        error));
     Radio radio;
-    radio.set_decoder_launcher(beside_tests("fernsdr"));
+    radio.set_decoder_launcher(sandbox_launcher());
     CHECK(radio.configure(config, error));
     CHECK(radio.start(error));
     bool decoded = false;
@@ -287,7 +346,7 @@ TEST_CASE(an_input_module_is_not_taken_for_a_decoder) {
     std::string error;
     CHECK(config.parse(receiver_config(modules, "[decoder:ft8]\nmodule = fake\nchannels = 40m:7069000\n"), error));
     Radio radio;
-    radio.set_decoder_launcher(beside_tests("fernsdr"));
+    radio.set_decoder_launcher(sandbox_launcher());
     CHECK(radio.configure(config, error));
     CHECK(radio.start(error));
     bool refused = false;
@@ -348,7 +407,7 @@ TEST_CASE(decoder_sections_apply_to_a_running_receiver_restarting_only_what_chan
     const std::string a = "[decoder:a]\nmodule = fake\nchannels = 40m:7069000\nmodule.behaviour = good\n";
     const std::string b = "[decoder:b]\nmodule = fake\nchannels = 40m:7070000\nmodule.behaviour = good\n";
     Radio radio;
-    radio.set_decoder_launcher(beside_tests("fernsdr"));
+    radio.set_decoder_launcher(sandbox_launcher());
     std::string error;
     CHECK(radio.configure(config_with(a), error));
     CHECK(radio.start(error));
@@ -489,7 +548,7 @@ TEST_CASE(reported_spots_name_the_receiver_and_the_decoder_module_that_runs) {
                                                     "module.behaviour = good\nreport = pskreporter\n"),
                        error));
     Radio radio;
-    radio.set_decoder_launcher(beside_tests("fernsdr"));
+    radio.set_decoder_launcher(sandbox_launcher());
     CHECK(radio.configure(config, error));
     CHECK(radio.start(error));
     bool running = false;

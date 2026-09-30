@@ -1,4 +1,6 @@
 #include "sandbox.h"
+#include "sandbox_filter.h"
+#include "json.h"
 
 #include <fcntl.h>
 #include <sched.h>
@@ -71,7 +73,18 @@ bool allow(int ruleset, const char* path, uint64_t rights) {
 
 SandboxReport apply_decoder_sandbox(const std::string& executable) {
     SandboxReport report;
-    ::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0);
+    if (::prctl(PR_SET_NO_NEW_PRIVS, 1, 0, 0, 0) != 0) {
+        report.problem = std::string("cannot prevent new privileges: ") + std::strerror(errno);
+        return report;
+    }
+    auto filter = sandbox_detail::decoder_filter(::getpid());
+    sock_fprog program{static_cast<unsigned short>(filter.size()), filter.data()};
+    if (::prctl(PR_SET_SECCOMP, SECCOMP_MODE_FILTER, &program, 0, 0) != 0) {
+        report.problem = std::string("cannot apply seccomp: ") + std::strerror(errno);
+        return report;
+    }
+    report.seccomp = true;
+    report.network_closed = true;
     // The lowest priority there is: time the audio needs is never spent here.
     ::setpriority(PRIO_PROCESS, 0, 19);
     sched_param idle{};
@@ -88,10 +101,7 @@ SandboxReport apply_decoder_sandbox(const std::string& executable) {
     RulesetAttr attr{file_rights(report.landlock_abi), 0, 0};
     size_t size = sizeof(uint64_t);
     if (report.landlock_abi >= 4) {
-        // TCP bind and connect, with no port allowed: no network at all over
-        // TCP. UDP is not covered by Landlock; the decoder has no reason to
-        // use it, and PR_SET_NO_NEW_PRIVS already keeps it from gaining the
-        // rights raw sockets would need.
+        // Also restrict TCP descriptors obtained through allowed UNIX IPC.
         attr.handled_access_net = (1ull << 0) | (1ull << 1);
         size = 2 * sizeof(uint64_t);
     }
@@ -127,18 +137,34 @@ SandboxReport apply_decoder_sandbox(const std::string& executable) {
     }
     ::close(ruleset);
     report.files_closed = true;
-    report.network_closed = report.landlock_abi >= 4;
+    report.scoped = report.landlock_abi >= 6;
     return report;
 }
 
-int sandbox_exec_command(int argc, char** argv, int first) {
+int sandbox_exec_command(int argc, char** argv, int first, int report_fd) {
     if (first >= argc || argv[first][0] != '/') {
         std::fprintf(stderr, "--sandbox-exec needs the absolute path of a program to run\n");
         return 2;
     }
     const SandboxReport report = apply_decoder_sandbox(argv[first]);
+    if (report_fd >= 0) {
+        Json status = Json::make_object();
+        status.set("seccomp", report.seccomp);
+        status.set("files_closed", report.files_closed);
+        status.set("landlock_abi", report.landlock_abi);
+        status.set("scoped", report.scoped);
+        status.set("problem", report.problem);
+        const std::string line = status.serialize() + "\n";
+        ssize_t sent;
+        do { sent = ::write(report_fd, line.data(), line.size()); } while (sent < 0 && errno == EINTR);
+        // The module must never inherit the report pipe: it is trusted
+        // launcher output, unlike the module's events and log.
+        ::close(report_fd);
+        if (sent != static_cast<ssize_t>(line.size())) return 126;
+    }
     // On fd 2, which is the decoder's log: FernSDR shows it to the operator.
     if (!report.problem.empty()) std::fprintf(stderr, "sandbox: %s\n", report.problem.c_str());
+    if (!report.seccomp) return 126;
     std::vector<char*> arguments(argv + first, argv + argc);
     arguments.push_back(nullptr);
     ::execve(argv[first], arguments.data(), environ);

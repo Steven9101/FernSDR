@@ -167,8 +167,8 @@ RELEASE_TARGET_armhf := -march=armv7-a -mfpu=neon -mfloat-abi=hard
 RELEASE_LINK_x86_64  := -static-pie
 RELEASE_LINK_aarch64 := -static-pie
 RELEASE_LINK_armhf   := -static
-RELEASE_RUN_aarch64 := FERNSDR_TEST_UNDER_QEMU=1 qemu-aarch64 -cpu cortex-a53
-RELEASE_RUN_armhf   := FERNSDR_TEST_UNDER_QEMU=1 qemu-arm -cpu cortex-a7
+RELEASE_RUN_aarch64 := FERNSDR_TEST_UNDER_QEMU=1 FERNSDR_TEST_SANDBOX_LAUNCHER=$(abspath $(BUILD)/fernsdr) qemu-aarch64 -cpu cortex-a53
+RELEASE_RUN_armhf   := FERNSDR_TEST_UNDER_QEMU=1 FERNSDR_TEST_SANDBOX_LAUNCHER=$(abspath $(BUILD)/fernsdr) qemu-arm -cpu cortex-a7
 RELEASE_ISAS_x86_64  := avx2 sse2 scalar
 RELEASE_ISAS_aarch64 := scalar
 RELEASE_ISAS_armhf   := scalar
@@ -187,7 +187,7 @@ release-binary:
 # start are the host's own builds: qemu-user hands exec to the host kernel,
 # which could not run ARM ones, and the module protocols are the same on
 # every architecture.
-release-test: $(BUILD)/fake-module $(BUILD)/fake-decoder
+release-test: $(BUILD)/fake-module $(BUILD)/fake-decoder $(BUILD)/fernsdr
 	@test -n "$(RELEASE_CXX_$(ARCH))" || { echo "ARCH is x86_64, aarch64 or armhf, not $(ARCH)"; exit 1; }
 	@+$(RELEASE_MAKE) $(RELEASE_BUILD)/fernsdr-tests
 	@cp $(BUILD)/fake-module $(RELEASE_BUILD)/fake-module

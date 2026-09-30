@@ -254,9 +254,9 @@ int main(int argc, char** argv) {
             allow_root = true;
         } else if (argument == "--update-run" || argument == "--update-boot") {
             return update_command(argument == "--update-boot");
-        } else if (argument == "--sandbox-exec") {
+        } else if (argument == "--sandbox-exec" || argument == "--sandbox-exec-report") {
             // How decoder modules are started; see util/sandbox.h.
-            return fernsdr::sandbox_exec_command(argc, argv, i + 1);
+            return fernsdr::sandbox_exec_command(argc, argv, i + 1, argument == "--sandbox-exec-report" ? 5 : -1);
         } else if (argument == "--supervise") {
             bool daemon = false;
             std::string pidfile;

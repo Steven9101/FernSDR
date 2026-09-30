@@ -368,6 +368,8 @@ export interface DecoderStatus {
   version: string;
   state: 'starting' | 'running' | 'waiting' | 'stopped' | string;
   message: string;
+  /** The trusted launcher report for the most recent launch attempt. */
+  sandbox: { seccomp: boolean; files_closed: boolean; landlock_abi: number; scoped: boolean; problem: string } | null;
   restarts: number;
   rejected: number;
   last_rejection?: string;
@@ -802,4 +804,3 @@ export interface SpectrumView {
   levels: number[];
   recent?: RecentSpectrum;
 }
-

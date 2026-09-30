@@ -51,9 +51,8 @@ struct DecoderConfig {
 
 class Decoder {
 public:
-    // How to start the module: the executable, and whether to go through
-    // `fernsdr --sandbox-exec` (`launcher`, this program's own path; empty
-    // runs the module directly, for tests of everything but the sandbox).
+    // The executable and this program's own path, whose sandbox launcher
+    // reports confinement before executing the module.
     struct Program {
         std::string executable;
         std::string launcher;
@@ -88,6 +87,7 @@ public:
 private:
     void run();
     bool session(std::string& why);
+    bool read_sandbox(std::string& why);
     bool read_events(int fd, std::string& buffer, bool& ready, std::string& why);
     void handle_event(const Json& event, bool& ready, std::string& why);
     void read_log(int fd);
@@ -140,6 +140,8 @@ private:
     // without the lock; status() reads it under the lock.
     std::string hello_version_;
     std::string log_partial_;
+    Json sandbox_;
+    std::string sandbox_partial_;
 };
 
 }  // namespace fernsdr

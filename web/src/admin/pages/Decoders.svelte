@@ -358,9 +358,8 @@
 							None of your bands covers an FT8 frequency with 4 kHz to spare. Add a band that does, such
 							as 7,074 or 14,074 kHz, and come back.
 						{:else if ft8Installed || ft8Release}
-							Decodes stay on this page until you make them public. FernSDR runs the decoder at the lowest
-							CPU priority, in a sandbox that keeps it from files and TCP as far as this machine's kernel
-							allows.
+							Decodes stay on this page until you make them public. Decoders cannot create TCP or UDP
+							sockets. File restrictions depend on Landlock; each decoder's confinement is shown below.
 						{:else if !ft8Listed}
 							Fern-FT8 is not in this receiver's module catalog. Add Steven9101/Fern-FT8 to catalog under
 							[modules] in the configuration file on the machine, or install a package there with
@@ -458,6 +457,13 @@
 					{#if status?.rejected}
 						<SettingsRow label="Refused decodes" value={status.rejected.toLocaleString()} detail={status.last_rejection} />
 					{/if}
+					<SettingsRow
+						label="Confinement"
+						value={status?.sandbox?.seccomp ? 'Seccomp applied' : 'Not confirmed'}
+						detail={status?.sandbox?.seccomp
+							? `Non-UNIX socket creation blocked. kill and tgkill target only this decoder process. ${status.sandbox.files_closed ? `Landlock ABI ${status.sandbox.landlock_abi}: file reads limited to the executable, system library directories and loader cache.${status.sandbox.scoped ? ' Signals and abstract UNIX sockets also stay in the Landlock domain.' : ''}` : 'File access is unrestricted by the decoder sandbox.'} UNIX sockets remain allowed.${status.sandbox.problem ? ` ${status.sandbox.problem}` : ''}`
+							: status?.sandbox?.problem || 'Waiting for the sandbox launcher to report.'}
+					/>
 					<SettingsRow label="Change" tone="font-medium" onclick={() => openForm(decoder)} />
 					{#if status}
 						<SettingsRow label="Module log" value={`${status.log.length} lines`} onclick={() => { logOf = decoder.id; logOpen = true; }} />
@@ -476,8 +482,9 @@
 			<SettingsGroup title="How a channel works">
 				<p class="px-4 py-3 text-[13px] leading-relaxed text-muted-foreground">
 					A channel is 4 kHz of the band starting at its dial frequency, as a transceiver on USB would hear
-					it. It costs the receiver one small filter, whether or not anyone listens. Decoder modules run
-					with no access to files or the network.
+					it. It costs the receiver one small filter, whether or not anyone listens. Seccomp blocks new
+					Internet sockets. UNIX sockets can still reach local services and receive descriptors;
+					file restrictions depend on Landlock. Reporting spots is done by the receiver.
 				</p>
 			</SettingsGroup>
 		{/snippet}

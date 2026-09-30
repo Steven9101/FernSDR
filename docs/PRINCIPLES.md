@@ -51,10 +51,10 @@ filter edge and a CAT link to their rig. Both are served by one page:
   in, decoder modules turn channels into decodes. The core does not grow
   for one device, one mode or one service.
 - Modules run in their own processes with no more access than they need
-  (decoders: no devices, lowest priority, and as far as the kernel's
-  Landlock allows, no files and no TCP; MODULES.md says what each kernel
-  gives). What a module sends is checked field by field before anyone sees
-  it, and no module code or markup ever reaches a listener's page.
+  (decoders: seccomp socket and signal limits, Landlock file limits where
+  available, lowest priority). What a module sends is
+  checked field by field before anyone sees it, and no module code or markup
+  ever reaches a listener's page.
 - Features inside the page are loaded when first used, so the page a
   listener opens stays small however much FernSDR can do.
 
