@@ -106,6 +106,12 @@ its Updates page; nothing updates by itself.
    By hand, from the release's archives on a machine with Docker and buildx:
    `tools/build-image.sh OUT ghcr.io/steven9101/fernsdr push`, where `OUT`
    holds what `tools/build-release.sh` made.
+6. A release that comes with a new benchmark round gets the round's runs by
+   hand: they are kept only on the lab machine, and the workflow neither
+   packs nor uploads them. Pack each run's files without the audio captures
+   and attach the archive with `gh release upload vVERSION FILE`, then name
+   it in README.md and bench/README.md. For 0.1.0 it is
+   `fernsdr-bench-runs-20260929.tar.xz`.
 
 ## What a mistake costs
 

@@ -6,7 +6,8 @@ what it cannot say: [METHOD.md](METHOD.md). Results: the published round's
 summaries in [runs/20260929-final](runs/20260929-final/summary.md) and the
 capacity steps in `runs/20260929-capacity-R1` (with `-R1y`, the 1,600 step on
 a quiet machine). Each run's own files, without the audio, are the archive
-`fernsdr-bench-runs-20260929.tar.xz` on the v0.1.0 release.
+`fernsdr-bench-runs-20260929.tar.xz`, attached to the
+[v0.1.0 release](https://github.com/Steven9101/FernSDR/releases/tag/v0.1.0).
 
 | Directory | What |
 |---|---|

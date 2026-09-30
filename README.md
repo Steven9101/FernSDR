@@ -41,7 +41,8 @@ neither one's limit is known.
 
 Others do better on the stream's size, on CPU with a handful of listeners,
 and on audio SNR. The method, the lab and every figure, including those, are
-in [bench/](bench/); each run's own data is an archive on the release.
+in [bench/](bench/); each run's own data is the archive
+`fernsdr-bench-runs-20260929.tar.xz` on the [v0.1.0 release](https://github.com/Steven9101/FernSDR/releases/tag/v0.1.0).
 
 ## If none of that meant anything
 
