@@ -859,9 +859,12 @@ any address or claim HTTPS. Set `trusted_proxies = none` for one. Listeners
 then all share the tunnel's address, so the per-address limits have to be
 off (`max_users_per_address = 0` under `[site]` and
 `max_connections_per_address = 0` under `[server]`), with the far end limiting
-its clients instead, and administration works over HTTPS in
-front of the tunnel or through `ssh -L` as above. They share it for sign-in
-lockouts too: a stranger's wrong guesses through the tunnel lock the
+its clients instead. Administration works through `ssh -L` as above, not
+through the tunnel: with `trusted_proxies = none` the receiver cannot tell
+HTTPS at the far end from plain HTTP, so it refuses the admin panel there
+even when the far end serves HTTPS. Everything from loopback shares one
+address for sign-in lockouts too: a stranger's wrong guesses through the
+tunnel lock the
 administrator out as well, until the lockout ends or the receiver restarts.
 
 ## Running it as a service
