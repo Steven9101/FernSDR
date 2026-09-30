@@ -153,7 +153,25 @@ trap - EXIT HUP INT TERM
 
 if [ "$CLIENT" = 1 ]; then
     say "Building the browser client"
-    (cd web && npm ci --no-audit --no-fund && npm run build)
+    if [ "$(id -u)" = 0 ]; then
+        # npm runs the packages' own install scripts and build tools, which
+        # must not run as root: under sudo, as --service needs, the client is
+        # built as the checkout's owner.
+        OWNER=$(stat -c %U web)
+        [ "$OWNER" != root ] ||
+            die "the browser client's build runs code from npm packages, and here it would run as root. Build it as an ordinary user (cd web && npm ci && npm run build) and run this again with --no-client, or clone as an ordinary user and run this with sudo."
+        # Left by an earlier run as root, which the owner could not replace.
+        for built in web/node_modules web/dist; do
+            if [ -e "$built" ] && [ "$(stat -c %U "$built")" != "$OWNER" ]; then rm -rf "$built"; fi
+        done
+        if command -v runuser >/dev/null 2>&1; then
+            runuser -u "$OWNER" -- sh -c 'cd web && npm ci --no-audit --no-fund && npm run build'
+        else
+            su -s /bin/sh "$OWNER" -c 'cd web && npm ci --no-audit --no-fund && npm run build'
+        fi
+    else
+        (cd web && npm ci --no-audit --no-fund && npm run build)
+    fi
 fi
 
 # --- configure -------------------------------------------------------------

@@ -298,7 +298,10 @@ receiver. Use `sudo tools/source-install.sh --service` to install into
 `/opt/fernsdr/etc/fernsdr.conf`. `--prefix DIR` changes that location. Service
 installs must be outside home directories because the service has
 `ProtectHome=yes`, and cannot share a machine with one `install.sh` made,
-whose service has the same name; the script refuses to replace it.
+whose service has the same name; the script refuses to replace it. Under
+sudo it builds the client as the checkout's owner, because npm runs code from
+the packages it installs; a checkout that root owns needs the client built
+by an ordinary user first, and then `--no-client`.
 
 On a small machine, build `web/dist` elsewhere and copy the entire directory
 before running `tools/source-install.sh --no-client`. This skips npm and installs the
