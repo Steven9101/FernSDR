@@ -1,5 +1,6 @@
 #include "source.h"
 
+#include <cmath>
 #include <cstring>
 
 #include "source_file.h"
@@ -76,7 +77,12 @@ inline float component(SampleType type, const uint8_t* raw) {
         case SampleType::F32: {
             float v;
             std::memcpy(&v, raw, 4);
-            return v;
+            // A float from a file, a socket or a module can be anything. A NaN
+            // or an infinity let through reaches the DC remover and the AGC,
+            // whose state keeps it for good: the band goes silent and stays
+            // so. The integer formats cannot carry one. Past 1e4 is no
+            // sample either, and squared on the way it would overflow too.
+            return std::isfinite(v) && std::fabs(v) <= 1e4f ? v : 0.0f;
         }
     }
     return 0.0f;

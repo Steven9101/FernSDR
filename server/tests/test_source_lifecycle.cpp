@@ -6,6 +6,7 @@
 #include "../src/source/source_udp.h"
 
 #include <arpa/inet.h>
+#include <cmath>
 #include <fcntl.h>
 #include <signal.h>
 #include <sys/socket.h>
@@ -212,4 +213,19 @@ TEST_CASE(udp_input_takes_samples_only_from_its_listed_senders) {
         source->stop();
         CHECK_EQ(got.load(), listed);
     }
+}
+
+TEST_CASE(float_samples_that_are_no_number_arrive_as_zero) {
+    // One NaN in a float stream used to settle in the DC remover and keep
+    // the band silent for good; it and its kin come in as silence instead.
+    const float raw[8] = {0.25f, -0.5f, std::nanf(""), 0.1f, INFINITY, -INFINITY, 3e20f, 0.75f};
+    fernsdr::cfloat iq[4];
+    fernsdr::convert_iq(fernsdr::SampleType::F32, reinterpret_cast<const uint8_t*>(raw), iq, 4);
+    CHECK(iq[0] == fernsdr::cfloat(0.25f, -0.5f));
+    CHECK(iq[1] == fernsdr::cfloat(0.0f, 0.1f));
+    CHECK(iq[2] == fernsdr::cfloat(0.0f, 0.0f));
+    CHECK(iq[3] == fernsdr::cfloat(0.0f, 0.75f));
+    float real[8];
+    fernsdr::convert_real(fernsdr::SampleType::F32, reinterpret_cast<const uint8_t*>(raw), real, 8);
+    for (float v : real) CHECK(std::isfinite(v));
 }
