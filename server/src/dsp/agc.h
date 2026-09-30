@@ -180,9 +180,9 @@ private:
     // fine; a torn read would not be.
     std::atomic<float> strength_{0.0f};
     // Envelope follower: fast rise, very slow fall.
-    float reference_ = 0.0f;
-    float attack_coefficient_ = 0.99f;
-    float decay_coefficient_ = 0.9999f;
+    double reference_ = 0.0;
+    double attack_coefficient_ = 0.99;
+    double decay_coefficient_ = 0.9999;
     int blank_span_ = 2;
     size_t blanked_ = 0;
     size_t total_ = 0;

@@ -10,11 +10,6 @@ namespace fernsdr {
 
 namespace {
 
-float time_to_coefficient(double seconds, double sample_rate) {
-    if (seconds <= 0.0) return 0.0f;
-    return static_cast<float>(std::exp(-1.0 / (seconds * sample_rate)));
-}
-
 // How long each profile holds, how fast it comes back after, and, for AM and
 // SAM, how fast it follows the carrier. Slow's 2.5 s outlasts the pause
 // between overs, which runs to a second and a half or two, where 1.1 s did
@@ -299,8 +294,12 @@ void NoiseBlanker::configure(double sample_rate) {
     // factor, so ordinary peaks run several times either one. Nor can a
     // median: speech is silent about half the time, so the median lands
     // between the loud and quiet modes and everything above it gets blanked.
-    attack_coefficient_ = time_to_coefficient(0.010, sample_rate);
-    decay_coefficient_ = time_to_coefficient(2.0, sample_rate);
+    // In double, with the reference: at 64.8 Msps the two-second fall is
+    // 0.99999999228 a sample, which a float rounds to 1.0, and a reference
+    // that never falls leaves the threshold where an earlier, louder band
+    // put it.
+    attack_coefficient_ = std::exp(-1.0 / (0.010 * sample_rate));
+    decay_coefficient_ = std::exp(-1.0 / (2.0 * sample_rate));
     // How far either side of a detected impulse to blank.
     //
     // An impulse is microseconds long, and after the front end's own bandwidth
@@ -317,7 +316,7 @@ void NoiseBlanker::set_strength(float strength) {
 }
 
 void NoiseBlanker::reset() {
-    reference_ = 0.0f;
+    reference_ = 0.0;
     blanked_ = 0;
     total_ = 0;
     blanked_fraction_ = 0.0f;
@@ -401,7 +400,7 @@ void bridge(cfloat* samples, size_t count, size_t from, size_t to) {
 }
 
 template <typename Read, typename Blank, typename Repair>
-size_t blank_impulses(size_t count, float& reference, float attack, float decay, float multiple,
+size_t blank_impulses(size_t count, double& reference, double attack, double decay, float multiple,
                       int span, Read magnitude_of, Blank blank_at, Repair repair_run) {
     size_t blanked = 0;
     size_t blank_until = 0;
@@ -412,9 +411,9 @@ size_t blank_impulses(size_t count, float& reference, float attack, float decay,
     for (size_t i = 0; i < count; i++) {
         // Read before blanking: the reference must see what actually arrived.
         const float magnitude = magnitude_of(i);
-        if (reference <= 0.0f) reference = std::max(magnitude, 1e-9f);
+        if (reference <= 0.0) reference = std::max(magnitude, 1e-9f);
 
-        const float threshold = reference * multiple;
+        const float threshold = static_cast<float>(reference) * multiple;
 
         // The reference is updated on EVERY sample, with the magnitude clamped
         // to the threshold. Two traps live here, and both silence the band:
@@ -446,9 +445,9 @@ size_t blank_impulses(size_t count, float& reference, float attack, float decay,
         // has run for hundreds is a stuck blanker.
         const bool blanking = i < blank_until;
         const bool still_plausibly_a_burst = blanking && blank_run < kMaxBurstSamples;
-        const float rising = still_plausibly_a_burst ? decay : attack;
-        const float coefficient = used > reference ? rising : decay;
-        reference = coefficient * reference + (1.0f - coefficient) * used;
+        const double rising = still_plausibly_a_burst ? decay : attack;
+        const double coefficient = used > reference ? rising : decay;
+        reference = coefficient * reference + (1.0 - coefficient) * used;
 
         if (magnitude > threshold) {
             // Zeroing rather than clipping: a clipped impulse still has a

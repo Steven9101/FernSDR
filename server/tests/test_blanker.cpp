@@ -222,3 +222,24 @@ TEST_CASE(blanker_fill_reads_nothing_past_the_end_of_the_block) {
     }
     CHECK(alike);
 }
+
+TEST_CASE(blanker_reference_falls_at_a_wideband_rate) {
+    // At 64.8 Msps the two-second fall per sample rounds to 1.0 in a float.
+    // After a loud band goes quiet the threshold must come down with it, so
+    // an impulse on the quiet band is still taken out.
+    constexpr double kWide = 64.8e6;
+    NoiseBlanker blanker;
+    blanker.configure(kWide);
+    blanker.set_strength(0.7f);
+    std::vector<float> block(1 << 20);
+    std::fill(block.begin(), block.end(), 0.125f);
+    for (int i = 0; i < 8; i++) blanker.process_real(block.data(), block.size());
+    // Six seconds of a band sixteen times quieter.
+    std::fill(block.begin(), block.end(), 0.0078125f);
+    const size_t quiet_blocks = static_cast<size_t>(6.0 * kWide) / block.size();
+    for (size_t i = 0; i < quiet_blocks; i++) blanker.process_real(block.data(), block.size());
+    std::fill(block.begin(), block.end(), 0.0078125f);
+    block[block.size() / 2] = 0.25f;
+    blanker.process_real(block.data(), block.size());
+    CHECK(std::fabs(block[block.size() / 2]) < 0.25f);
+}
