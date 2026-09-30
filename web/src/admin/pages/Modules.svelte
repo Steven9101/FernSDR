@@ -315,11 +315,13 @@
 							{/snippet}
 						</SettingsRow>
 					{/each}
-					<SettingsRow
-						label={devices ? 'Look again' : 'Find devices'}
-						tone="font-medium"
-						onclick={() => start(() => api.findDevices(module.id))}
-					/>
+					{#if active?.kind !== 'decoder'}
+						<SettingsRow
+							label={devices ? 'Look again' : 'Find devices'}
+							tone="font-medium"
+							onclick={() => start(() => api.findDevices(module.id))}
+						/>
+					{/if}
 				</SettingsGroup>
 			{/each}
 		{/snippet}

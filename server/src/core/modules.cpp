@@ -421,6 +421,18 @@ bool ModuleManager::do_devices(const std::string& id, std::string& message) {
         devices_[id] = devices;
         return false;
     }
+    // Only an input module is asked. A decoder runs confined when it
+    // decodes, and asking it here would start it unconfined, with the
+    // receiver's own access, on a click.
+    const auto active = std::find_if(module.versions.begin(), module.versions.end(),
+                                     [&](const ModuleManifest& m) { return m.version == module.active; });
+    if (active == module.versions.end() || active->kind != "input") {
+        message = id + " is not a radio module";
+        devices.error = message;
+        std::lock_guard<std::mutex> lock(state_mutex_);
+        devices_[id] = devices;
+        return false;
+    }
     const std::string executable = store_->directory() + "/" + id + "/" + module.active + "/module";
     std::string output, errors, error;
     Subprocess::Exit status;

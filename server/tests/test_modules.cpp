@@ -714,6 +714,28 @@ TEST_CASE(module_sections_are_checked_against_the_installed_module) {
     CHECK(make_module_source(band_section("normal", "module.anything", "1"), empty, error) != nullptr);
 }
 
+// Asking for devices starts the module outside any confinement, so only a
+// radio module is asked; a decoder is refused without being started.
+TEST_CASE(module_manager_does_not_start_a_decoder_to_list_devices) {
+    TempDir directory;
+    auto store = std::make_shared<ModuleStore>(directory.path + "/modules");
+    const std::string program = read_binary(fake_module_path());
+    std::string manifest = manifest_for(program, "1.0.0", "", "fakedec");
+    const std::string input = R"("kind":"input","api":1)";
+    manifest.replace(manifest.find(input), input.size(), R"("kind":"decoder","api":2)");
+    ModuleManifest installed;
+    std::string error;
+    CHECK(store->install(package_of(manifest, program), "file", nullptr, installed, error));
+    if (!error.empty()) std::fprintf(stderr, "%s\n", error.c_str());
+    ModuleManager manager(store, {}, false);
+    CHECK(manager.list_devices("fakedec", error));
+    manager.run_pending();
+    Json view;
+    CHECK(Json::parse(manager.snapshot(), view));
+    CHECK(view["devices"]["fakedec"]["error"].string().find("not a radio module") != std::string::npos);
+    CHECK_EQ(view["devices"]["fakedec"]["devices"].size(), 0);
+}
+
 TEST_CASE(module_manager_runs_jobs_and_publishes_what_the_panel_shows) {
     TempDir directory;
     auto store = store_with_fake(directory);
