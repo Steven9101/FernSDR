@@ -272,6 +272,10 @@ void SpectrumPyramid::build(const float* line, size_t bins, double low_hz, doubl
         const float* src = levels_[level].data();
         float* dst = levels_[level + 1].data();
         for (size_t i = 0; i < half; i++) dst[i] = std::max(src[2 * i], src[2 * i + 1]);
+        // An odd line leaves its last bin over. It goes into the last cell
+        // rather than away: a carrier there would otherwise vanish from every
+        // coarser level, at the right edge of whatever view reads them.
+        if (levels_[level].size() % 2) dst[half - 1] = std::max(dst[half - 1], src[2 * half]);
         level++;
     }
     levels_.resize(level + 1);

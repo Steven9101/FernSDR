@@ -418,3 +418,19 @@ TEST_CASE(spectrum_line_is_the_windowed_transform_of_its_samples) {
     }
     CHECK_EQ(checked, 5);
 }
+
+TEST_CASE(spectrum_pyramid_keeps_a_carrier_in_the_last_bin_of_an_odd_line) {
+    // Halving a line of odd length leaves one bin over; a carrier in it must
+    // still show at every level the renderer may choose.
+    for (size_t bins : {9559u, 1025u, 4097u}) {
+        std::vector<float> line(bins, -120.0f);
+        line[bins - 1] = -40.0f;
+        fernsdr::SpectrumPyramid pyramid;
+        pyramid.build(line.data(), bins, 0.0, static_cast<double>(bins));
+        for (size_t width : {1000u, 300u, 64u, 16u}) {
+            std::vector<float> pixels(width);
+            pyramid.render(0.0, static_cast<double>(bins), pixels.data(), width);
+            CHECK(*std::max_element(pixels.begin(), pixels.end()) > -41.0f);
+        }
+    }
+}
