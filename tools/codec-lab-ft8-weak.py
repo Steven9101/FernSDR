@@ -81,10 +81,15 @@ def decode(work, path):
     # jt9 takes the UTC slot from the file name; give it a plain one.
     target = os.path.join(directory, "000000.wav")
     shutil.copy(path, target)
-    output = subprocess.run(["jt9", "-8", "-p", "15", "-m", "1", "-w", "0", "-d", "3",
+    result = subprocess.run(["jt9", "-8", "-p", "15", "-m", "1", "-w", "0", "-d", "3",
                              "-a", directory, "-t", directory, target],
-                            capture_output=True, text=True).stdout
+                            capture_output=True, text=True)
     shutil.rmtree(directory)
+    # A decoder that failed decoded nothing, which is not the same as a file
+    # with nothing decodable in it.
+    if result.returncode != 0:
+        sys.exit(f"jt9 failed on {path} with status {result.returncode}: {result.stderr.strip()}")
+    output = result.stdout
     messages = set()
     for line in output.splitlines():
         # jt9 marks a weak-confidence decode with a trailing "?" and an a-priori

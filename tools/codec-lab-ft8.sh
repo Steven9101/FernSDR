@@ -29,8 +29,13 @@ trap 'rm -rf "$WORK"' EXIT
 # so each decode gets a fresh one.
 decode() {
     dir=$(mktemp -d "$WORK/jt9.XXXXXX")
-    jt9 -8 -p 15 -m 1 -w 0 -d 3 -a "$dir" -t "$dir" "$1" 2>/dev/null |
-        grep -E '^[0-9*]{6} ' | sed -E 's/^[0-9*]{6} +-?[0-9]+ +-?[0-9.]+ +[0-9]+ +~ +//; s/ +\?$//; s/ +a[0-9]$//; s/ +$//' |
+    # A jt9 that failed decoded nothing, which is not a file with nothing in it.
+    if ! jt9 -8 -p 15 -m 1 -w 0 -d 3 -a "$dir" -t "$dir" "$1" > "$dir/decodes" 2> "$dir/errors"; then
+        echo "jt9 failed on $1:" >&2
+        cat "$dir/errors" >&2
+        exit 1
+    fi
+    grep -E '^[0-9*]{6} ' "$dir/decodes" | sed -E 's/^[0-9*]{6} +-?[0-9]+ +-?[0-9.]+ +[0-9]+ +~ +//; s/ +\?$//; s/ +a[0-9]$//; s/ +$//' |
         sort -u
 }
 

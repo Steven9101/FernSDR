@@ -30,8 +30,15 @@ ROUNDTRIP=$(dirname "$0")/../server/build/nac-roundtrip
 WORK=$(mktemp -d)
 trap 'rm -rf "$WORK"' EXIT
 
+# A decoder that failed decoded nothing, which is not a recording with
+# nothing in it.
 messages() {
-    "$DECODER" "$1" 2>/dev/null | grep '~' | sed 's/.*~ *//' | sort -u
+    if ! "$DECODER" "$1" > "$WORK/decodes" 2> "$WORK/errors"; then
+        echo "$DECODER failed on $1:" >&2
+        cat "$WORK/errors" >&2
+        exit 1
+    fi
+    grep '~' "$WORK/decodes" | sed 's/.*~ *//' | sort -u
 }
 
 printf '%-10s %10s %10s %10s %9s\n' "bitrate" "original" "survived" "lost" "kept"
