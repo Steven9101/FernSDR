@@ -87,11 +87,28 @@ download() {
         curl -q --silent --show-error --fail --location --max-redirs 5 --proto '=https' --proto-redir '=https' \
             --connect-timeout 30 --max-time 1800 --retry 3 --max-filesize "$3" --output "$2" "$1" || return 1
     else
-        # wget cannot be held to HTTPS across redirects. The signature and the
-        # hash vouch for what arrives, however it came.
-        wget -q --max-redirect=5 --timeout=60 --tries=3 -O "$2" "$1" || return 1
+        # wget follows a redirect to plain HTTP even with --https-only, which
+        # holds for recursive downloads only. What it fetched is kept only if
+        # no redirect on the way left HTTPS, as the headers -S prints show.
+        if ! wget -q -S --max-redirect=5 --timeout=60 --tries=3 -O "$2" "$1" 2> "$2.headers" ||
+            ! https_redirects_only < "$2.headers"; then
+            rm -f "$2" "$2.headers"
+            return 1
+        fi
+        rm -f "$2.headers"
     fi
     [ "$(size_of "$2")" -le "$3" ]
+}
+
+# Server responses on standard input, as wget -S prints them: whether every
+# redirect among them stays on HTTPS. A Location without a scheme keeps the
+# one of the address it came from.
+https_redirects_only() {
+    awk 'tolower($1) == "location:" {
+            target = tolower($2)
+            if (target ~ /^[a-z][a-z0-9+.-]*:/ && substr(target, 1, 6) != "https:") left = 1
+        }
+        END { exit left }'
 }
 
 # probe URL FILE: the receiver on this machine, over plain HTTP and past any
@@ -341,7 +358,7 @@ read_release() {
     else
         case $? in
             1) die "The release is not signed by a FernSDR release key, so nothing was installed." ;;
-            *) SIGNATURE="signature not checked, with no OpenSSL 3 here; fetched over HTTPS" ;;
+            *) SIGNATURE="signature not checked, with no OpenSSL 3 here: only HTTPS to the release's host vouches for it" ;;
         esac
     fi
     plain_text "$WORK/manifest" || die "The release's manifest is not one."

@@ -76,9 +76,10 @@ The receiver runs as the user `fernsdr` from `fernsdr.service`, and can write
 to `/var/lib/fernsdr` and, apart from a private `/tmp`, nowhere else: not to
 its own program, and not to the updater's directory. The release's archive is
 checked against the size and SHA-256 its manifest names, and the manifest's
-signature is checked with OpenSSL 3 where that is installed; without it, the
-first install relies on HTTPS, and every update after it is checked by the
-receiver's own updater.
+signature is checked with OpenSSL 3 where that is installed. Without it, the
+first install trusts whatever the release's host serves over HTTPS, and says
+so; a download that a redirect takes off HTTPS is refused either way. Every
+update after it is checked by the receiver's own updater.
 
 ### Without systemd
 
