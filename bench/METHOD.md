@@ -82,11 +82,14 @@ after a 10 s warm-up:
   namespace's veth in both directions: 2 % loss, Wi-Fi micro-stalls, a 1 s
   hold or loss every 10 s, a cell change every 20 s, 600 ms round trip,
   32 and 24 kbit/s with a 150 ms queue, and a 15 s outage. Timed impairments
-  start with the window and are logged. The links are shaped once the page
-  has loaded and tuned: a page of a few hundred kilobytes takes minutes at
-  24 kbit/s. What a page fetches in its first seconds, a typeface say, thus
-  comes in unshaped; page weight is measured by the requests, not by how
-  long it took here.
+  start with the window and are logged. The links are shaped once every
+  page has loaded, tuned and warmed up, before any window opens: a page of
+  a few hundred kilobytes takes minutes at 24 kbit/s. What a page fetches
+  in its first seconds, a typeface say, thus comes in unshaped; page weight
+  is measured by the requests, not by how long it took here. The published
+  round, 20260929-final, predates that order: there each page opened its
+  window on its own and the batch's links were shaped once all four had,
+  so an early window can start with a few seconds of unshaped link.
 
 **Latency** is from the moment a sample leaves `pace` to the moment the
 browser expects it at its audio output (`getOutputTimestamp`). An

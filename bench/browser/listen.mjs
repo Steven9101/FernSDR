@@ -5,8 +5,11 @@
 // analysis:
 //
 //   node bench/browser/listen.mjs ADAPTER URL --out DIR [--seconds 60]
-//        [--freq 7159000] [--mode usb] [--width 1920 --height 1080]
+//        [--freq 7159000] [--mode usb] [--width 1920 --height 1080] [--barrier FILE]
 //
+// With --barrier, once warmed up it writes ready.json into DIR and opens its
+// window only when FILE exists: harness/links.py shapes the link in between,
+// so that no part of the window runs on an unshaped link.
 // DIR gets audio.f32 (what the page played, from the audio context that
 // played most, NaN where the tap got nothing), audio.json (its rate and
 // first context frame), clocks.json (that context's getOutputTimestamp
@@ -83,6 +86,14 @@ try {
   // Players fill their buffers and AGCs settle before the window opens.
   meta.warmup = Number(opt.warmup);
   await page.waitForTimeout(meta.warmup * 1000);
+  if (opt.barrier) {
+    fs.writeFileSync(path.join(opt.out, 'ready.json'), JSON.stringify({readyWallMs: Date.now()}));
+    const until = Date.now() + 180000;
+    while (!fs.existsSync(opt.barrier)) {
+      if (Date.now() > until) throw new Error(`no ${opt.barrier} within 180 s`);
+      await page.waitForTimeout(100);
+    }
+  }
   meta.startFrames = await frames();
   meta.measurementStartedWallMs = Date.now();
   // Timed link impairments start from here (harness/links.py waits for it).

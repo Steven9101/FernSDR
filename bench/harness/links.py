@@ -200,7 +200,7 @@ def run_rep(rid, rep, profiles, parallel, out, seconds, warmup, slot=0):
             guard(min_mem_mb=1000)
             cs = [Client(slot * 20 + i + 2) for i in range(len(batch))]
             clients[:] = cs
-            # Links are shaped from the window's start, once the page has loaded
+            # Links are shaped just before the window opens, once the page has loaded
             # and tuned: a page of a few hundred kilobytes takes minutes at
             # 24 kbit/s, and what a listener on such a link then gets is what
             # this measures, not how long the page took.
@@ -221,7 +221,8 @@ def run_rep(rid, rep, profiles, parallel, out, seconds, warmup, slot=0):
                            os.path.join(BENCH, "browser", "listen.mjs"),
                            os.path.join(BENCH, "receivers", rid, "adapter.mjs"), rx.url, "--seconds", str(seconds),
                            "--warmup", str(warmup), "--freq", str(PROFILES[prof].get("freq", 7159200)),
-                           "--tone", str(PROFILES[prof].get("tone", 800)), "--out", str(d)] +
+                           "--tone", str(PROFILES[prof].get("tone", 800)), "--out", str(d),
+                           "--barrier", str(d / "go")] +
                           ([] if prof == "listen" else ["--width", str(small[0]), "--height", str(small[1])]),
                           timeout=seconds + warmup + 240)
                 (d / "browser.stderr.txt").write_text(r.stderr[-20000:])
@@ -230,21 +231,30 @@ def run_rep(rid, rep, profiles, parallel, out, seconds, warmup, slot=0):
             threads = [threading.Thread(target=listen, args=(c, prof)) for c, prof in zip(cs, batch)]
             for t in threads:
                 t.start()
-            # The window opens `warmup` seconds after tuning; each browser
-            # writes when that was into its meta.json. Timelines start once
-            # every page has opened its window.
+            # Each browser writes ready.json once warmed up and then waits for
+            # its go file: every link is shaped before any window opens, so
+            # no window has an unshaped stretch. The timelines start at each
+            # page's own window, which it writes to window.json.
             deadline = time.time() + 120
+            ready = set()
+            while time.time() < deadline and len(ready) < len(batch):
+                ready |= {prof for prof in batch if (base / prof / "ready.json").exists()}
+                time.sleep(0.2)
+            rng = random.Random(rep * 1000 + b)
+            for c, prof in zip(cs, batch):
+                shape(c, prof)
+                logs[prof].append({"t": time.time(), "what": "shaped"})
+            for prof in batch:
+                (base / prof).mkdir(parents=True, exist_ok=True)
+                (base / prof / "go").write_text("")
+            deadline = time.time() + 30
             starts = {}
             while time.time() < deadline and len(starts) < len(batch):
                 for prof in batch:
                     m = base / prof / "window.json"
                     if m.exists():
                         starts[prof] = json.loads(m.read_text())["startedWallMs"] / 1000
-                time.sleep(0.2)
-            rng = random.Random(rep * 1000 + b)
-            for c, prof in zip(cs, batch):
-                shape(c, prof)
-                logs[prof].append({"t": time.time(), "what": "shaped"})
+                time.sleep(0.1)
             tl = [threading.Thread(target=timeline, args=(c, prof, starts.get(prof, start_at), seconds, logs[prof], stop, rng))
                   for c, prof in zip(cs, batch)]
             for t in tl:
