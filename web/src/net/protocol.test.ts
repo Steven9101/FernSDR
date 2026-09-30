@@ -1,8 +1,28 @@
 import { describe, expect, it } from 'vitest';
+import { readFileSync } from 'node:fs';
 import { parseBinary } from './protocol';
 import vectors from '../dsp/testdata/vectors.json';
 
 const meterBytes = () => Uint8Array.from(vectors.meter.match(/../g)!.map(value => parseInt(value, 16)));
+
+it('documents only unassigned waterfall flags as reserved', () => {
+  const protocol = readFileSync(new URL('../../../docs/PROTOCOL.md', import.meta.url), 'utf8');
+  const reserved = protocol.match(/Waterfall bits (\d) through (\d)\s+are reserved/);
+  expect(reserved).not.toBeNull();
+  const bytes = new Uint8Array(23);
+  bytes[0] = 2;
+  const view = new DataView(bytes.buffer);
+  view.setFloat64(4, 900000, true);
+  view.setFloat64(12, 900100, true);
+  view.setUint16(20, 16, true);
+  for (let bit = 0; bit < 8; bit++) {
+    bytes[1] = 1 << bit;
+    const documentedReserved = bit >= Number(reserved![1]) && bit <= Number(reserved![2]);
+    expect(parseBinary(bytes.buffer) === null, `waterfall bit ${bit}`).toBe(documentedReserved);
+  }
+  bytes[1] = 16;
+  expect(parseBinary(bytes.buffer)).toMatchObject({ kind: 'waterfall', rangeCoded: true });
+});
 
 it('keeps the native-grid and predictor flags independent at every wire width', () => {
   const bytes = new Uint8Array(23);
