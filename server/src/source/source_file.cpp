@@ -12,6 +12,7 @@
 #include <cmath>
 #include <cstring>
 #include <thread>
+#include <utility>
 #include <vector>
 
 #include "../util/log.h"
@@ -131,9 +132,11 @@ private:
             if (is_fifo_) {
                 // Keep the reader open for a producer that starts later or
                 // reconnects. POLLHUP stays ready after a writer closes, so
-                // polling it alone would spin. Discard a partial old block.
+                // polling it alone would spin. Discard a partial old block,
+                // and say that the next one does not follow the last.
                 connected_ = false;
                 filled = 0;
+                discontinuity_ = true;
                 std::this_thread::sleep_for(std::chrono::milliseconds(100));
                 continue;
             }
@@ -155,6 +158,7 @@ public:
     double center_hz() const override { return center_hz_; }
     SourceStats stats() const override { return {total_samples_.load(), 0, connected_.load()}; }
     const char* kind_name() const override { return "file"; }
+    bool take_discontinuity() override { return std::exchange(discontinuity_, false); }
 
 private:
     bool wait_readable() {
@@ -198,6 +202,8 @@ private:
     bool inherited_blocking_ = false;
     bool is_stream_ = false;
     bool is_fifo_ = false;
+    // Set and cleared on the band's thread only: fill() runs inside read().
+    bool discontinuity_ = false;
     std::atomic<bool> connected_{false};
     std::atomic<bool> interrupted_{false};
     std::atomic<uint64_t> total_samples_{0};

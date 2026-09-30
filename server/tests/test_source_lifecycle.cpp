@@ -166,6 +166,52 @@ TEST_CASE(paced_sources_can_interrupt_a_long_sleep_and_reset_the_clock) {
     }
 }
 
+TEST_CASE(a_fifo_producer_that_comes_back_starts_decoder_time_afresh) {
+    // Samples written after a producer reconnects do not follow the ones
+    // before: a decoder frame half built from the old ones is dropped, and
+    // the new samples are timed by when they arrived, not joined on to the
+    // old count as if no time had passed.
+    SampleFile fifo;
+    ::unlink(fifo.path);
+    CHECK_EQ(::mkfifo(fifo.path, 0600), 0);
+    auto section = file_section(fifo.path);
+    std::string error;
+    Band band("test", "test", make_file_source(section, error), section);
+    auto tap = band.add_decoder_tap(0, 5000.0, 2000.0, 4000.0);
+    CHECK(band.start(error));
+    const auto now_us = [] {
+        return std::chrono::duration_cast<std::chrono::microseconds>(std::chrono::system_clock::now().time_since_epoch()).count();
+    };
+    std::vector<int16_t> block(512);
+    for (size_t i = 0; i < block.size(); i++) block[i] = static_cast<int16_t>(8000.0 * std::sin(2 * M_PI * 7000.0 * i / 48000.0));
+    const auto produce = [&](int blocks) {
+        const int fd = ::open(fifo.path, O_WRONLY);
+        CHECK(fd >= 0);
+        for (int b = 0; b < blocks; b++) CHECK_EQ(::write(fd, block.data(), block.size() * 2), static_cast<ssize_t>(block.size() * 2));
+        return fd;
+    };
+    // Less than a frame, then the producer goes away for a while.
+    const int first = produce(static_cast<int>(tap->frame_samples() / 2 * (48000.0 / tap->rate()) / block.size()));
+    std::this_thread::sleep_for(300ms);
+    ::close(first);
+    std::this_thread::sleep_for(700ms);
+    const int64_t resumed_us = now_us();
+    const int second = produce(200);
+    std::vector<TapFrame> frames;
+    for (int i = 0; i < 300 && frames.empty(); i++) {
+        for (auto& frame : tap->take_frames()) frames.push_back(std::move(frame));
+        std::this_thread::sleep_for(10ms);
+    }
+    ::close(second);
+    band.stop();
+    band.remove_decoder_tap(tap);
+    CHECK(!frames.empty());
+    if (frames.empty()) return;
+    CHECK((frames[0].flags & DecoderTap::kReanchored) != 0);
+    CHECK(frames[0].index > 0u);
+    CHECK(frames[0].utc_us >= resumed_us - 50000);
+}
+
 TEST_CASE(multiple_bands_cannot_consume_the_same_stdin_stream) {
     Config config;
     std::string error;

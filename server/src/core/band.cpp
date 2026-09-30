@@ -652,6 +652,13 @@ bool Band::advance_block(bool overlap) {
         conditioner_.process(input.data(), input.size());
         blanker_.process(input.data(), input.size());
     }
+    // A block that does not follow the last, after a FIFO producer came
+    // back: decoder channels drop a frame half built from before and time
+    // what comes now from scratch, as after a restart.
+    if (source_->take_discontinuity()) {
+        std::lock_guard<std::mutex> lock(taps_mutex_);
+        for (const auto& tap : taps_) tap->reanchor();
+    }
     // When the block's last sample arrived, as near as this thread can say:
     // what decoder channels are timed by.
     const int64_t arrived_us = std::chrono::duration_cast<std::chrono::microseconds>(

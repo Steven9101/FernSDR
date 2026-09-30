@@ -61,6 +61,11 @@ public:
     virtual SourceStats stats() const = 0;
     virtual const char* kind_name() const = 0;
 
+    // True once, after a read, when what that read delivered does not follow
+    // on from the read before: a FIFO producer went away and came back. The
+    // band then times decoder channels afresh. Called by the band's thread.
+    virtual bool take_discontinuity() { return false; }
+
     // A source that can fail and come back, such as a module whose USB
     // device was unplugged. Its band restarts it after a growing delay
     // instead of stopping.
