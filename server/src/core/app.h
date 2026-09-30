@@ -42,7 +42,7 @@ public:
     void set_listing_delay_ms(int64_t ms) { listing_delay_ms_ = ms; }
     // For tests: how long a new version on trial serves before saying it
     // works, a minute otherwise.
-    void set_update_settle_ms(int64_t ms) { update_settle_ms_ = ms; }
+    void set_update_settle_ms(int64_t ms) { update_settle_ms_.store(ms, std::memory_order_relaxed); }
     // For tests: what the Updates page talks to.
     void set_update_service(std::unique_ptr<UpdateService> service) { updates_ = std::move(service); }
     bool on_http(Connection& connection, const HttpRequest& request, std::string& response) override;
@@ -116,7 +116,8 @@ private:
     int64_t listing_delay_ms_ = DirectoryListing::kFirstReportMs;
     // Set when this program is the new version of an update on trial.
     std::unique_ptr<UpdateTrial> update_trial_;
-    int64_t update_settle_ms_ = 60 * 1000;
+    // Atomic because a test changes it while the server thread runs.
+    std::atomic<int64_t> update_settle_ms_{60 * 1000};
     // The Updates page: absent when the configuration has no directory.
     std::unique_ptr<UpdateService> updates_;
     std::string listing_problem_;

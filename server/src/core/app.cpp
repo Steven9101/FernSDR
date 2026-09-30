@@ -266,7 +266,7 @@ void Application::on_tick() {
             for (const auto& band : radio_.bands()) {
                 if (band->online() || !band->on_air()) running.push_back(band->id());
             }
-            if (update_trial_->tick(now, running, update_settle_ms_)) {
+            if (update_trial_->tick(now, running, update_settle_ms_.load(std::memory_order_relaxed))) {
                 LOG_INFO("update", "%s works: the updater can keep it", kVersion);
                 update_trial_.reset();
             }
