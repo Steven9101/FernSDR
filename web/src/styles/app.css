@@ -3527,6 +3527,19 @@ kbd {
   font-size: var(--text-sm);
 }
 
+/* 16px on a touch screen, like the chat's fields: below that, iOS Safari
+   zooms the page when a field takes focus. The viewport sets no maximum
+   scale to stop that, because the same cap takes pinch zoom away from a
+   listener who needs it to read the page. */
+@media (pointer: coarse) {
+  .tool__input,
+  .band-list__search,
+  .field__select,
+  .edges__input {
+    font-size: 16px;
+  }
+}
+
 /* Station and report, then note and the button: a callsign and Enter logs. */
 .tool__form {
   display: grid;

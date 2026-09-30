@@ -543,6 +543,19 @@ async function phone() {
   await page.goto(base);
   await page.locator('.audio-gate__card').waitFor();
   await connected(page);
+  // Pinch zoom stays with the listener, and no field is small enough for
+  // iOS to zoom into it on focus.
+  seen.viewportMeta = await page.locator('meta[name="viewport"]').getAttribute('content');
+  assert.doesNotMatch(seen.viewportMeta, /maximum-scale|user-scalable\s*=\s*no/);
+  seen.fieldFontSizes = await page.evaluate(() => ['tool__input', 'band-list__search', 'field__select', 'edges__input', 'chat__input'].map((name) => {
+    const field = document.createElement('input');
+    field.className = name;
+    document.body.append(field);
+    const size = parseFloat(getComputedStyle(field).fontSize);
+    field.remove();
+    return size;
+  }));
+  assert.ok(seen.fieldFontSizes.every((size) => size >= 16), `fields under 16px: ${seen.fieldFontSizes}`);
   const sheet = page.locator('.sheet');
   const grip = page.locator('.sheet__grip');
   const snap = () => sheet.getAttribute('data-snap');
