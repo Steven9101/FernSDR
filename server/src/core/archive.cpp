@@ -4,6 +4,7 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <cerrno>
 #include <cmath>
 #include <cstring>
 
@@ -113,6 +114,7 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
     }
     close();
 
+    failing_ = false;
     bins_ = bins;
     seconds_per_line_ = seconds_per_line;
     capacity_ = static_cast<uint64_t>(retention_hours * 3600.0 / seconds_per_line);
@@ -241,13 +243,28 @@ void WaterfallArchive::append(const float* bins, size_t count, int64_t now_ms) {
 
     const uint64_t slot = next_index_ % capacity_;
     const off_t offset = static_cast<off_t>(sizeof(Header) + slot * slot_bytes());
-    if (::fseeko(file_, offset, SEEK_SET) != 0) return;
-    if (std::fwrite(scratch_.data(), scratch_.size(), 1, file_) != 1) return;
+    if (::fseeko(file_, offset, SEEK_SET) != 0 || std::fwrite(scratch_.data(), scratch_.size(), 1, file_) != 1) {
+        note_written(false);
+        return;
+    }
 
     next_index_++;
     // The header is rewritten every line. It is 48 bytes against a kilobyte of
     // payload, and it is what makes the file describe itself after a crash.
-    write_header();
+    // Its flush is also where a buffered line meets the disk and fails.
+    note_written(write_header());
+}
+
+void WaterfallArchive::note_written(bool written) {
+    if (written != failing_) return;
+    failing_ = !written;
+    // Once each way: a full disk would otherwise fill the log a line a second.
+    if (failing_) {
+        LOG_WARN("archive", "%s: a line cannot be written (%s); the record has a gap until one can", path_.c_str(),
+                 std::strerror(errno));
+    } else {
+        LOG_INFO("archive", "%s: lines are written again", path_.c_str());
+    }
 }
 
 bool WaterfallArchive::read(int64_t from_ms, int64_t to_ms, std::vector<uint8_t>& rows,

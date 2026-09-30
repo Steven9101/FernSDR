@@ -1,9 +1,11 @@
 #include "../src/core/archive.h"
 #include "test_util.h"
 
+#include <sys/resource.h>
 #include <sys/stat.h>
 
 #include <cmath>
+#include <csignal>
 #include <cstdio>
 #include <cstring>
 #include <limits>
@@ -183,6 +185,42 @@ TEST_CASE(archive_past_two_gigabytes_records_and_reads_at_its_end) {
         CHECK(rows[700] > 200 && rows[100] < 100);
     }
     again.close();
+    std::remove(path.c_str());
+    std::remove((path + ".span").c_str());
+}
+
+TEST_CASE(archive_says_when_a_line_cannot_be_written) {
+    // A file size limit fails writes past it as a full disk does, on the
+    // archive's own descriptor: the second slot cannot be written, then can.
+    const std::string path = temp_path("full");
+    std::remove(path.c_str());
+    WaterfallArchive archive;
+    std::string error;
+    CHECK(archive.open(path, 32, 1.0, 1, error));
+    const int64_t start = 1'700'000'000'000;
+    const auto line = line_with_carrier(32, 5);
+    archive.append(line.data(), line.size(), start);
+    CHECK(!archive.failing());
+
+    rlimit previous {};
+    CHECK(::getrlimit(RLIMIT_FSIZE, &previous) == 0);
+    const auto old_handler = ::signal(SIGXFSZ, SIG_IGN);
+    rlimit limited = previous;
+    limited.rlim_cur = 48 + 40;  // the header and the first slot of 8 + 32 bytes
+    CHECK(::setrlimit(RLIMIT_FSIZE, &limited) == 0);
+    archive.append(line.data(), line.size(), start + 1000);
+    const bool failed = archive.failing();
+    CHECK(::setrlimit(RLIMIT_FSIZE, &previous) == 0);
+    ::signal(SIGXFSZ, old_handler);
+    CHECK(failed);
+
+    archive.append(line.data(), line.size(), start + 2000);
+    CHECK(!archive.failing());
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(archive.read(start, start + 2000, rows, times));
+    CHECK(!times.empty() && times.front() == start && times.back() == start + 2000);
+    archive.close();
     std::remove(path.c_str());
     std::remove((path + ".span").c_str());
 }

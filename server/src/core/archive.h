@@ -68,6 +68,13 @@ public:
     void append(const float* bins, size_t count, int64_t now_ms);
 
     /**
+     * Whether the last line that was due could not be written: a full disk
+     * or a failing card. The record has a gap until one can be again; the
+     * change either way is logged, once.
+     */
+    bool failing() const { return failing_; }
+
+    /**
      * Reads the lines covering a time range, oldest first.
      *
      * Returns one row of `bins()` bytes per line found, and writes the
@@ -136,6 +143,7 @@ private:
     bool write_header() const;
     size_t slot_bytes() const { return sizeof(uint64_t) + bins_; }
     int64_t time_of(uint64_t index) const;
+    void note_written(bool written);
 
     std::FILE* file_ = nullptr;
     std::string path_;
@@ -144,6 +152,7 @@ private:
     uint64_t capacity_ = 0;
     uint64_t next_index_ = 0;
     int64_t epoch_ms_ = 0;
+    bool failing_ = false;
     std::vector<uint8_t> scratch_;
 };
 
