@@ -63,8 +63,10 @@ public decoder answers 404.
   asked for.
 - **Invalid input is isolated.** Invalid commands receive an error. Invalid
   framing, UTF-8, oversized messages or sustained flooding close the sender.
-- **Anything clamped is explained.** A client that asks for a 40 kHz passband
-  is told why it did not get one.
+- **A clamped passband, frequency or viewport is explained.** A client that
+  asks for a 40 kHz passband is told why it did not get one. Other numbers,
+  such as gain, volume or CW pitch, are clamped to their range without a
+  note; the state shows the value in use.
 
 ## Client to server
 
@@ -330,8 +332,11 @@ when the operator changes the configuration, always carries `decoders`, as
 
 ### `state`
 
-The authoritative receiver state, sent after every change. Carries an optional
-`note` when a value had to be clamped.
+The authoritative receiver state, sent after every `tune`, `dsp` and `audio`
+command, on joining a band, when a band's schedule moves the listener, and
+when a client sends `{"type":"state"}`. A `viewport` command gets one only
+when the server had to clamp it. Carries an optional `note` saying what the
+server clamped or changed.
 
 ```json
 {"type":"state","band":"40m","freq":7100000,"mode":"usb",
@@ -350,8 +355,10 @@ as the `dsp` command sets them.
 
 `tune`, `viewport` and `dsp` commands may each carry a monotonically increasing
 `request_id`. State replies include `ack: {"tune":N,"viewport":N,"dsp":N}` with
-the most recently processed ID for each group. Clients should apply each
-group only when its acknowledgement catches up with their latest local edit.
+the most recently processed ID for each group; a `viewport` command taken as
+it was gets no reply of its own, and its ID arrives with the next state.
+Clients should apply each group only when its acknowledgement catches up with
+their latest local edit.
 This prevents a delayed reply from moving a view backwards during a gesture.
 `filter_limit` is the largest absolute audio cutoff the current channel can
 represent. `agc_effective` is what `agc` comes to in the current mode: the
@@ -545,7 +552,7 @@ The native-grid and precision flags are independent of the predictor flag.
 Width, grid-bound, precision or sequence changes invalidate temporal prediction. The server sends an
 independent row after changing the view or dropping a row, and at least once
 every two seconds. After queue expiry, already encoded dependent rows are
-also withheld until an independent row survives. Waterfall bits 4 through 7
+also withheld until an independent row survives. Waterfall bits 5 through 7
 are reserved. Bitstream layouts and invalid encodings are specified in
 [`CODEC.md`](CODEC.md).
 

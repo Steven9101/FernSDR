@@ -55,7 +55,8 @@ inline int audio_frames(const uint8_t* message, size_t size) {
 // Waterfall: [type u8][flags u8][sequence u16 LE][low Hz f64 LE][high Hz f64 LE]
 //            [width u16 LE][compressed line]
 // flags: bit 0 zero runs, bit 1 extended predictor, bit 2 native grid,
-//        bit 3 uses 2 dB quantizer units (otherwise 1 dB).
+//        bit 3 uses 2 dB quantizer units (otherwise 1 dB), bit 4 a
+//        range-coded WFC5 row (bits 0 and 1 then clear); 5 to 7 reserved.
 //
 // The frequency span travels with every line rather than being implied by the
 // last viewport command.  A line in flight when the user pans would otherwise
