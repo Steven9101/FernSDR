@@ -149,7 +149,11 @@ Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, con
         }
     }
     max_bandwidth_hz_ = std::max(1000.0, section.get_double("max_bandwidth", 20000.0));
-    wfm_allowed_ = section.get_bool("wfm", true);
+    // Left out, wide FM is offered where the band shows FM broadcasting, so
+    // that a long, medium or short wave band does not carry a mode with
+    // nothing to hear; wfm = yes or no decides it either way.
+    wfm_allowed_ = section.has("wfm") ? section.get_bool("wfm", true)
+                                      : high_hz_ > kFmBroadcastLowHz && low_hz_ < kFmBroadcastHighHz;
     max_user_bitrate_ = static_cast<int>(std::clamp(section.get_int("max_user_bitrate", 100000), 16000L, 1000000L));
     default_audio_bitrate_ =
         static_cast<int>(std::clamp(section.get_int("audio_bitrate", 48000), 8000L, 128000L));

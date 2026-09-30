@@ -101,7 +101,7 @@ export const SECTIONS: Section[] = [
       { key: 'iq_balance', detail: 'Correct I against Q, which suppresses mirror images', values: ['yes', 'no'] },
       { key: 'usable_fraction', detail: 'How much of the band is free of the front end roll-off' },
       { key: 'max_bandwidth', detail: 'Widest passband one listener may ask for', example: '12k' },
-      { key: 'wfm', detail: 'Offer broadcast FM, where the band is sampled at 240 kHz or more', values: ['yes', 'no'] },
+      { key: 'wfm', detail: 'Offer broadcast FM. Left out, only where the band shows 64 to 108 MHz; it needs 240 kHz or more', values: ['yes', 'no'] },
       { key: 'max_user_bitrate', detail: 'Ceiling on one listener, audio and waterfall together', example: '100000' },
       { key: 'audio_bitrate', detail: 'The SSB figure. Other modes scale from it', example: '48000' },
       { key: 'noise_blanker', detail: 'Impulse blanking, 0 to 1. 0 is off', example: '0' },

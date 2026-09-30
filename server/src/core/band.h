@@ -238,9 +238,14 @@ public:
     // Widest passband a single listener may ask for.
     double max_bandwidth_hz() const { return max_bandwidth_hz_; }
     // Whether listeners may use broadcast FM here: a band sampled wide enough
-    // for its channel, unless the operator said wfm = no.
+    // for its channel that shows FM broadcasting, or whatever the operator's
+    // wfm = yes or no says.
     bool wfm() const { return wfm_allowed_ && sample_rate_ >= kWfmMinimumBandRate; }
     static constexpr double kWfmMinimumBandRate = 240000.0;
+    // FM broadcasting everywhere: Eastern Europe's OIRT band from 65.8 MHz,
+    // Japan's from 76 MHz and the usual 87.5 to 108 MHz, with room below.
+    static constexpr double kFmBroadcastLowHz = 64e6;
+    static constexpr double kFmBroadcastHighHz = 108e6;
 
     // Settable while the band is running, from the admin panel. Atomic
     // because the DSP thread reads them every block and the HTTP thread

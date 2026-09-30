@@ -1315,7 +1315,7 @@ The ones worth knowing:
 | `spectrum_smoothing` | 0.5 | Same, applied across lines. The variance it removes is noise the codec would otherwise spend bits encoding. |
 | `max_bandwidth` | 20 kHz | The widest passband one listener may request. |
 | `max_user_bitrate` | 100000 | The ceiling described above. |
-| `wfm` | yes | Offers wide FM, with RDS, on a band of 240 kHz or more; `no` leaves only the narrow modes. |
+| `wfm` | where the band shows 64 to 108 MHz | Offers wide FM, with RDS, on a band of 240 kHz or more that shows FM broadcasting; `yes` offers it anywhere, `no` nowhere. |
 
 ## Troubleshooting
 

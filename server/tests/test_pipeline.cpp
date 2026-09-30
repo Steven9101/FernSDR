@@ -435,3 +435,27 @@ TEST_CASE(pipeline_source_failure_drains_the_previous_completion_before_stopping
     listeners.clear();
     CHECK(released.expired());
 }
+
+TEST_CASE(band_offers_wide_fm_where_it_shows_fm_broadcasting_unless_told) {
+    // Left out, wfm follows the band: offered on one that shows part of 64 to
+    // 108 MHz, not on long, medium or short wave; wfm = yes or no decides it
+    // either way.
+    const auto offers = [](const std::string& center, const std::string& wfm) {
+        fernsdr::ConfigSection section("band:t");
+        section.set("source", "test");
+        section.set("sample_rate", "2400000");
+        section.set("center", center);
+        if (!wfm.empty()) section.set("wfm", wfm);
+        std::string error;
+        auto source = fernsdr::make_source(section, error);
+        CHECK(source != nullptr);
+        fernsdr::Band band("t", "t", std::move(source), section);
+        return band.wfm();
+    };
+    CHECK(!offers("1200000", ""));
+    CHECK(!offers("7100000", ""));
+    CHECK(offers("98000000", ""));
+    CHECK(offers("66500000", ""));
+    CHECK(offers("7100000", "yes"));
+    CHECK(!offers("98000000", "no"));
+}
