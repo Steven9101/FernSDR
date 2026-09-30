@@ -706,6 +706,7 @@
   class="spectrum"
   data-view-low={Math.round(viewport.value.lowHz)}
   data-view-high={Math.round(viewport.value.highHz)}
+  data-trace-height={Math.round(traceLayout(displayHeight).spectrumHeight)}
   data-renderer={fallback ? '2d' : 'webgl'}
   style:touch-action="none"
   onpointerdown={onPointerDown}

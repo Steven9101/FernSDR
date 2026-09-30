@@ -173,7 +173,7 @@
       </button>
       {#if bandLabel}
         <Editable label="Band name" inline shown={layout.value.show.band} onToggle={(band) => setLayout({ show: { band } })}>
-          <span class="frequency__band">{bandLabel}</span>
+          <span class="frequency__band" title={bandLabel}>{bandLabel}</span>
         </Editable>
       {/if}
       <Editable label="Tools" inline container shown={layout.value.show.tools} onToggle={(tools) => setLayout({ show: { tools } })}>

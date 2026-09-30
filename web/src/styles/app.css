@@ -1114,7 +1114,11 @@ a {
   border-top: 1px solid var(--border);
   border-radius: var(--radius-lg) var(--radius-lg) 0 0;
   box-shadow: var(--shadow-sheet);
-  max-height: min(68dvh, calc(100dvh - 34dvh - 5rem - var(--banner-height, 0px)));
+  /* What the page leaves: the stage's own minimum (240 px on a small phone,
+     more than 34dvh there), and 5.25rem for the top bar and the status line
+     (52 and 30 px on a phone). With 34dvh and 5rem the page scrolled by
+     2 px at the full snap. */
+  max-height: min(68dvh, calc(100dvh - var(--stage-min, 34dvh) - 5.25rem - var(--banner-height, 0px)));
   /* The grip and the tab row must always fit, however short the viewport, or a
      phone in landscape clips the controls out of existence: grip, the tabs'
      well and its margins. */
@@ -2018,6 +2022,25 @@ kbd {
   .frequency__meta {
     flex-wrap: wrap;
     row-gap: var(--space-2);
+  }
+
+  /* The band's name takes what is left beside the button and is cut short
+     there, rather than wrapping to a line of its own: on a small phone that
+     line was the waterfall's height (the whole name is its title). */
+  .frequency__band {
+    display: block;
+    flex: 1 1 0;
+    min-width: 0;
+    overflow: hidden;
+    line-height: 32px;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+  }
+
+  /* The tools always start a line of their own, so the name above keeps the
+     rest of the first line instead of being squeezed to nothing. */
+  .frequency__meta .tools {
+    flex-basis: 100%;
   }
 
   .frequency__digits {
