@@ -449,6 +449,10 @@ size_t blank_impulses(size_t count, double& reference, double attack, double dec
         const double coefficient = used > reference ? rising : decay;
         reference = coefficient * reference + (1.0 - coefficient) * used;
 
+        // Where a blank starting here really starts: the backward reach below
+        // zeroes samples before this one, and a fill seeded from those would
+        // continue silence instead of the signal.
+        size_t leading = i;
         if (magnitude > threshold) {
             // Zeroing rather than clipping: a clipped impulse still has a
             // broadband spectrum, and keeping it out of the passband is the
@@ -460,12 +464,13 @@ size_t blank_impulses(size_t count, double& reference, double attack, double dec
                 blanked++;
             }
             blank_until = i + span + 1;
+            leading = from;
         }
 
         if (i < blank_until) {
             blank_at(i);
             blanked++;
-            if (blank_run == 0) run_from = i;
+            run_from = blank_run == 0 ? leading : std::min(run_from, leading);
             blank_run++;
         } else {
             // Where a repair would go. Both edges of the run are known here,

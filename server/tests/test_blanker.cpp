@@ -246,6 +246,31 @@ TEST_CASE(blanker_reference_falls_at_a_wideband_rate) {
     CHECK(std::fabs(block[block.size() / 2]) < 0.25f);
 }
 
+TEST_CASE(blanker_rebuilds_both_edges_of_an_isolated_impulse) {
+    // The blank reaches back a sample or two before the impulse itself; the
+    // fill must start there, from real signal, not from a sample it has just
+    // zeroed, or the leading edge stays a hole and the rest is a ramp up
+    // from silence.
+    constexpr size_t kCount = 4096;
+    constexpr size_t kImpulse = 2000;
+    std::vector<cfloat> clean(kCount);
+    for (size_t i = 0; i < kCount; i++) {
+        const double phase = kTwoPi * 20000.0 * static_cast<double>(i) / kRate;
+        clean[i] = cfloat(static_cast<float>(std::cos(phase)), static_cast<float>(std::sin(phase)));
+    }
+    std::vector<cfloat> band = clean;
+    band[kImpulse] = cfloat(50.0f, 50.0f);
+
+    NoiseBlanker blanker;
+    blanker.configure(kRate);
+    blanker.set_strength(0.7f);
+    blanker.process(band.data(), band.size());
+
+    float worst = 0.0f;
+    for (size_t i = kImpulse - 8; i <= kImpulse + 8; i++) worst = std::max(worst, std::abs(band[i] - clean[i]));
+    CHECK(worst < 0.05f);
+}
+
 TEST_CASE(blanker_fraction_can_be_read_while_the_band_runs) {
     // The band's thread writes the fraction and the admin panel's reads it.
     // Under TSan this is the check that the two do not race.
