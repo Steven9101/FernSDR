@@ -2,8 +2,8 @@
  * Where a CW signal sits relative to the frequency the receiver is tuned to.
  *
  * CW is heard as a beat note, so the signal cannot sit on the tuned frequency:
- * a zero-beat is silence. The server places the CW filter at the pitch — the
- * passband is {pitch-250, pitch+250} for CW and the mirror of that for CW-L —
+ * a zero-beat is silence. The server places the CW filter at the pitch: the
+ * passband is {pitch-250, pitch+250} for CW and the mirror of that for CW-L,
  * so a signal is audible when it is exactly `pitch` away from the carrier.
  *
  * Every operator-facing frequency is therefore the *signal*, and the carrier
