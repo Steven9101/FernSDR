@@ -53,8 +53,10 @@ private:
     std::vector<std::shared_ptr<ZoomSpectrum>> channel_snapshot_;
     std::vector<std::shared_ptr<BinTile>> tile_snapshot_;
     ChannelBlock block_;
-    // Tiles make their lines together, at the band's line rate.
+    // Tiles make their lines together, at the band's line rate; line_ is
+    // whether this block makes one.
     double credit_ = 0.0;
+    bool line_ = false;
 };
 
 }  // namespace fernsdr

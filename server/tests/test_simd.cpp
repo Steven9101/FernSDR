@@ -99,3 +99,23 @@ TEST_CASE(simd_power_to_db_matches_log10_from_the_noise_to_full_scale) {
     simd::power_to_db(odd.data(), odd.size(), 1.0f, 0.0f, odd_out.data());
     for (const float db : odd_out) CHECK_NEAR(db, 0.0, 1e-4);
 }
+
+TEST_CASE(simd_kernel_power_matches_the_kernel_bin_by_bin) {
+    // Every length from 1 to 41, so both the vector body and the tail run,
+    // added onto what the accumulator already holds.
+    std::mt19937 rng(9);
+    std::normal_distribution<float> value(0.0f, 1.0f);
+    for (size_t n = 1; n <= 41; n++) {
+        std::vector<float> re(n + 2), im(n + 2), acc(n), want(n);
+        for (auto& v : re) v = value(rng);
+        for (auto& v : im) v = value(rng);
+        for (size_t j = 0; j < n; j++) acc[j] = want[j] = std::fabs(value(rng));
+        for (size_t j = 0; j < n; j++) {
+            const double yr = 0.5 * re[j + 1] - 0.25 * (re[j] + re[j + 2]);
+            const double yi = 0.5 * im[j + 1] - 0.25 * (im[j] + im[j + 2]);
+            want[j] = static_cast<float>(want[j] + yr * yr + yi * yi);
+        }
+        fernsdr::simd::kernel_power(re.data() + 1, im.data() + 1, n, acc.data());
+        for (size_t j = 0; j < n; j++) CHECK_NEAR(acc[j], want[j], 1e-5 * (1.0 + want[j]));
+    }
+}

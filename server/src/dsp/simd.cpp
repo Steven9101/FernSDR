@@ -183,6 +183,39 @@ FERNSDR_SIMD_INLINE void power_to_db_lanes(const float* power, size_t n, float s
     for (; i < n; i++) out[i] = 10.0f * std::log10(power[i] * scale + 1e-30f) - offset_db;
 }
 
+template <size_t Lanes>
+FERNSDR_SIMD_INLINE void kernel_power_lanes(const float* re, const float* im, size_t n, float* acc) {
+    typedef typename Lane<Lanes>::V V;
+    size_t j = 0;
+    for (; j + Lanes <= n; j += Lanes) {
+        V r0, r1, r2, i0, i1, i2, a;
+        load(r0, re + j - 1);
+        load(r1, re + j);
+        load(r2, re + j + 1);
+        load(i0, im + j - 1);
+        load(i1, im + j);
+        load(i2, im + j + 1);
+        load(a, acc + j);
+        const V yr = 0.5f * r1 - 0.25f * (r0 + r2);
+        const V yi = 0.5f * i1 - 0.25f * (i0 + i2);
+        a += yr * yr + yi * yi;
+        store(acc + j, a);
+    }
+    for (; j < n; j++) {
+        const float yr = 0.5f * re[j] - 0.25f * (re[j - 1] + re[j + 1]);
+        const float yi = 0.5f * im[j] - 0.25f * (im[j - 1] + im[j + 1]);
+        acc[j] += yr * yr + yi * yi;
+    }
+}
+
+void kernel_power_scalar(const float* re, const float* im, size_t n, float* acc) {
+    for (size_t j = 0; j < n; j++) {
+        const float yr = 0.5f * re[j] - 0.25f * (re[j - 1] + re[j + 1]);
+        const float yi = 0.5f * im[j] - 0.25f * (im[j - 1] + im[j + 1]);
+        acc[j] += yr * yr + yi * yi;
+    }
+}
+
 float dot_scalar(const float* a, const float* b, size_t n) {
     float s0 = 0.0f, s1 = 0.0f, s2 = 0.0f, s3 = 0.0f;
     size_t i = 0;
@@ -226,6 +259,9 @@ __attribute__((noinline)) void phase_steps_four(const cfloat* in, size_t n, cflo
 __attribute__((noinline)) void power_to_db_four(const float* power, size_t n, float scale, float offset_db, float* out) {
     power_to_db_lanes<4>(power, n, scale, offset_db, out);
 }
+__attribute__((noinline)) void kernel_power_four(const float* re, const float* im, size_t n, float* acc) {
+    kernel_power_lanes<4>(re, im, n, acc);
+}
 #endif
 
 #if (defined(__x86_64__) || defined(__i386__)) && defined(__GNUC__) && defined(__SSE2__) && \
@@ -246,6 +282,10 @@ __attribute__((target("avx2,fma"), noinline)) void power_to_db_avx2(const float*
                                                                     float offset_db, float* out) {
     power_to_db_lanes<8>(power, n, scale, offset_db, out);
 }
+__attribute__((target("avx2,fma"), noinline)) void kernel_power_avx2(const float* re, const float* im, size_t n,
+                                                                     float* acc) {
+    kernel_power_lanes<8>(re, im, n, acc);
+}
 #endif
 
 struct Kernels {
@@ -253,6 +293,7 @@ struct Kernels {
     void (*dot2)(const float*, const float*, const float*, size_t, float*, float*) = dot2_scalar;
     void (*phase_steps)(const cfloat*, size_t, cfloat, float*) = phase_steps_scalar;
     void (*power_to_db)(const float*, size_t, float, float, float*) = power_to_db_scalar;
+    void (*kernel_power)(const float*, const float*, size_t, float*) = kernel_power_scalar;
     const char* name = "scalar";
 };
 
@@ -268,6 +309,7 @@ Kernels choose() {
         k.dot2 = dot2_avx2;
         k.phase_steps = phase_steps_avx2;
         k.power_to_db = power_to_db_avx2;
+        k.kernel_power = kernel_power_avx2;
         k.name = "avx2";
         return k;
     }
@@ -278,6 +320,7 @@ Kernels choose() {
         k.dot2 = dot2_four;
         k.phase_steps = phase_steps_four;
         k.power_to_db = power_to_db_four;
+        k.kernel_power = kernel_power_four;
         k.name = isa;
     }
 #endif
@@ -318,6 +361,10 @@ void phase_steps(const cfloat* in, size_t n, cfloat previous, float* out) {
 
 void power_to_db(const float* power, size_t n, float scale, float offset_db, float* out) {
     kernels().power_to_db(power, n, scale, offset_db, out);
+}
+
+void kernel_power(const float* re, const float* im, size_t n, float* acc) {
+    kernels().kernel_power(re, im, n, acc);
 }
 
 const char* instruction_set() { return kernels().name; }

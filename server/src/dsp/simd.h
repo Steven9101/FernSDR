@@ -36,6 +36,12 @@ float fast_atan2(float y, float x);
 // which a waterfall drawn in whole decibels cannot show.
 void power_to_db(const float* power, size_t n, float scale, float offset_db, float* out);
 
+// acc[j] += |0.5 X[j] - 0.25 (X[j-1] + X[j+1])|^2 for j below n, X held as
+// its real and imaginary parts: the power of a sine-windowed transform's
+// bins seen through sin^3 (see ZoomSpectrum). re[-1] and re[n], and the
+// same of im, are read.
+void kernel_power(const float* re, const float* im, size_t n, float* acc);
+
 // Which kernels are in use, as FftSplit::instruction_set() names them.
 const char* instruction_set();
 

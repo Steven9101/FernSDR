@@ -95,42 +95,34 @@ void ZoomBank::process(const ChannelBlock& block, DspWorkers* workers) {
         }
     }
     block_ = block;
-    const bool hand_over = workers && workers->has_workers();
-
-    // Each tile and each channel reads the same finished block and writes
-    // only its own state.
     credit_ += block.block_seconds() * lines_per_second_;
-    const bool line = credit_ >= 1.0;
-    if (line) credit_ = std::min(credit_ - 1.0, 1.0);
-    if (!tile_snapshot_.empty()) {
-        void (*tile)(void*, size_t) = [](void* context, size_t index) {
-            auto& bank = *static_cast<ZoomBank*>(context);
-            bank.tile_snapshot_[index]->accumulate(bank.block_);
-        };
-        if (line) {
-            tile = [](void* context, size_t index) {
-                auto& bank = *static_cast<ZoomBank*>(context);
-                bank.tile_snapshot_[index]->accumulate(bank.block_);
-                bank.tile_snapshot_[index]->finish_line();
-            };
-        }
-        if (hand_over && tile_snapshot_.size() >= kWorthHandingOver) workers->run(tile_snapshot_.size(), tile, this);
-        else for (size_t i = 0; i < tile_snapshot_.size(); i++) tile(this, i);
-    }
-
+    line_ = credit_ >= 1.0;
+    if (line_) credit_ = std::min(credit_ - 1.0, 1.0);
     channel_snapshot_.clear();
     for (const auto& zoom : zoom_snapshot_) {
-        if (zoom->reads_bins()) zoom->assemble(line);
-        else channel_snapshot_.push_back(zoom);
+        if (!zoom->reads_bins()) channel_snapshot_.push_back(zoom);
     }
-    if (!channel_snapshot_.empty()) {
-        const auto channel = [](void* context, size_t index) {
-            auto& bank = *static_cast<ZoomBank*>(context);
-            bank.channel_snapshot_[index]->process(bank.block_);
-        };
-        if (hand_over && channel_snapshot_.size() >= kWorthHandingOver)
-            workers->run(channel_snapshot_.size(), channel, this);
-        else for (size_t i = 0; i < channel_snapshot_.size(); i++) channel(this, i);
+
+    // Tiles and channels each read the same finished block and write only
+    // their own state, so they go to the workers as one batch: one wake of
+    // the workers a block rather than one for each kind.
+    const auto work = [](void* context, size_t index) {
+        auto& bank = *static_cast<ZoomBank*>(context);
+        if (index < bank.tile_snapshot_.size()) {
+            BinTile& tile = *bank.tile_snapshot_[index];
+            tile.accumulate(bank.block_);
+            if (bank.line_) tile.finish_line();
+        } else {
+            bank.channel_snapshot_[index - bank.tile_snapshot_.size()]->process(bank.block_);
+        }
+    };
+    const size_t count = tile_snapshot_.size() + channel_snapshot_.size();
+    if (workers && workers->has_workers() && count >= kWorthHandingOver) workers->run(count, work, this);
+    else for (size_t i = 0; i < count; i++) work(this, i);
+
+    // Views of tiles copy the tiles' lines once all of them are made.
+    for (const auto& zoom : zoom_snapshot_) {
+        if (zoom->reads_bins()) zoom->assemble(line_);
     }
     zoom_snapshot_.clear();
     channel_snapshot_.clear();

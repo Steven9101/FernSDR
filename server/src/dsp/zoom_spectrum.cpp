@@ -39,21 +39,6 @@ long floor_div(long a, long b) {
     return a >= 0 ? a / b : -((-a + b - 1) / b);
 }
 
-// The kernel over a run of bins with both neighbours inside the array:
-// 0.5 X[k] - 0.25 (X[k-1] + X[k+1]) is the transform of the block
-// windowed by sin^3 instead of sin (see the header), and its power is added
-// to `acc`. The neighbours' phase factor, exp(+-i pi / K), is left out: a
-// view reads bins only where the band's own line is capped below the
-// channelizer's resolution, on transforms of 131,072 points or more, where
-// it is under 3e-5 rad.
-void kernel_power(const float* re, const float* im, size_t count, float* acc) {
-    for (size_t j = 0; j < count; j++) {
-        const float yr = 0.5f * re[j] - 0.25f * (re[j - 1] + re[j + 1]);
-        const float yi = 0.5f * im[j] - 0.25f * (im[j - 1] + im[j + 1]);
-        acc[j] += yr * yr + yi * yi;
-    }
-}
-
 }  // namespace
 
 bool zoom_wanted(double low_hz, double high_hz, int width, double band_bin_hz) {
@@ -69,6 +54,11 @@ BinTile::BinTile(size_t parent_size, long first_bin, float gain_db, float smooth
       power_(kBins, 0.0f),
       line_(kBins, -160.0f) {}
 
+// Each bin through the kernel 0.5 X[k] - 0.25 (X[k-1] + X[k+1]), the
+// transform of the block windowed by sin^3 instead of sin (see the header).
+// The neighbours' phase factor, exp(+-i pi / K), is left out: with the
+// default spectrum_bins a view reads bins only on transforms of 131,072
+// points or more, where it is under 3e-5 rad.
 void BinTile::accumulate(const ChannelBlock& block) {
     const float* re = block.spectrum_re();
     const float* im = block.spectrum_im();
@@ -85,7 +75,7 @@ void BinTile::accumulate(const ChannelBlock& block) {
             continue;
         }
         const size_t run = std::min(kBins - i, static_cast<size_t>(size - 1 - k));
-        kernel_power(re + k, im + k, run, power_.data() + i);
+        simd::kernel_power(re + k, im + k, run, power_.data() + i);
         i += run;
     }
     blocks_++;
