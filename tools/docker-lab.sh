@@ -10,9 +10,10 @@
 # plain HTTP from the machine it runs on in the default home setup and not
 # with FERNSDR_SETUP=internet; that a host directory owned by root works as
 # the volume; that a USB device given with --device reaches the receiver's
-# group; that a restart keeps configuration and password; and that `docker
-# stop` ends it cleanly. Changes nothing but containers and volumes named
-# fernsdr-docker-lab-*, removed at the end.
+# group; that a restart keeps configuration and password; that `docker
+# stop` ends it cleanly; and that a first start writes nothing through
+# links the receiver left in the volume. Changes nothing but containers and
+# volumes named fernsdr-docker-lab-*, removed at the end.
 set -u
 REPO=$(cd "$(dirname "$0")/.." && pwd)
 VERSION=$(sed -n 's/.*kVersion = "\(.*\)";/\1/p' "$REPO/server/src/version.h")
@@ -24,8 +25,8 @@ FAILURES=0
 pass() { printf 'PASS  %s\n' "$*"; }
 fail() { printf 'FAIL  %s\n' "$*"; FAILURES=$((FAILURES + 1)); }
 cleanup() {
-    docker rm -f "$PREFIX-a" "$PREFIX-b" "$PREFIX-c" > /dev/null 2>&1
-    docker volume rm "$PREFIX-state" > /dev/null 2>&1
+    docker rm -f "$PREFIX-a" "$PREFIX-b" "$PREFIX-c" "$PREFIX-d" > /dev/null 2>&1
+    docker volume rm "$PREFIX-state" "$PREFIX-linked" > /dev/null 2>&1
     rm -rf "$WORK"
 }
 trap cleanup EXIT
@@ -92,5 +93,17 @@ sleep 2
 docker logs "$PREFIX-c" 2>&1 | grep -q 'FERNSDR_SETUP is home or internet' &&
     [ "$(docker inspect -f '{{.State.Running}}' "$PREFIX-c")" = false ] &&
     pass "an unknown FERNSDR_SETUP stops with the reason" || fail "FERNSDR_SETUP=office: $(docker logs "$PREFIX-c" 2>&1 | tail -2)"
+
+# 4. A volume where the receiver, which owns it, left links to a file of
+# root's in place of the files a first start writes. Root must not write
+# through them.
+docker run --rm -u fernsdr --entrypoint /bin/sh -v "$PREFIX-linked:/var/lib/fernsdr" "$IMAGE" -c \
+    'ln -s /usr/local/bin/fernsdr-entrypoint /var/lib/fernsdr/fernsdr.conf.new &&
+     ln -s /usr/local/bin/fernsdr-entrypoint /var/lib/fernsdr/admin-password'
+docker run -d --name "$PREFIX-d" -v "$PREFIX-linked:/var/lib/fernsdr" "$IMAGE" > /dev/null
+sleep 2
+! docker diff "$PREFIX-d" | grep -q ' /usr/local/bin/fernsdr-entrypoint$' &&
+    pass "a first start does not write through links the receiver left in the volume" ||
+    fail "a first start wrote through a link in the volume: $(docker diff "$PREFIX-d" | grep /usr/local/bin)"
 
 if [ "$FAILURES" -eq 0 ]; then echo "all passed"; else echo "$FAILURES failed"; exit 1; fi

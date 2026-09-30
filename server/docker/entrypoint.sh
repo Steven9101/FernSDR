@@ -1,7 +1,7 @@
 #!/bin/sh
 # Starts FernSDR in its image. It begins as root only to make the volume and
-# any USB devices the container was given the receiver's, and to write a
-# configuration on the first start; the receiver itself runs as `fernsdr`.
+# any USB devices the container was given the receiver's; the receiver runs
+# as `fernsdr`, and the configuration of a first start is written as it too.
 #
 # FERNSDR_SETUP=internet leaves the admin panel to HTTPS through a web
 # server in front, as install.sh does for a server on the internet; http
@@ -64,7 +64,7 @@ if [ ! -f "$CONFIG" ]; then
             *) proxies="loopback, $gateway" ;;
         esac
     fi
-    {
+    config=$(
         awk -v proxies="$proxies" '
             /^[ \t]*\[/ { section = $0; gsub(/[][ \t]/, "", section) }
             section == "server" && /^[ \t]*trusted_proxies[ \t]*=/ { print "trusted_proxies = " proxies; next }
@@ -84,12 +84,12 @@ if [ ! -f "$CONFIG" ]; then
             printf '# on the way can read it and catch the password (docs/DEPLOYMENT.md).\n'
             printf 'plain_http_anywhere = yes\n'
         fi
-    } > "$CONFIG.new"
-    umask 077
-    printf '%s\n' "$password" > "$STATE/admin-password"
-    chown fernsdr:fernsdr "$CONFIG.new" "$STATE/admin-password"
-    chmod 0600 "$CONFIG.new"
-    mv "$CONFIG.new" "$CONFIG"
+    )
+    # Written as the receiver, not as root: the receiver owns the volume and
+    # could have left a link to /usr/local/bin/fernsdr-entrypoint where
+    # either file goes, and root would write through it and hand it over.
+    printf '%s\n' "$password" | su-exec fernsdr sh -c 'umask 077 && cat > "$1" && chmod 0600 "$1"' sh "$STATE/admin-password"
+    printf '%s\n' "$config" | su-exec fernsdr sh -c 'umask 077 && cat > "$1.new" && chmod 0600 "$1.new" && mv -f "$1.new" "$1"' sh "$CONFIG"
     echo "FernSDR: a configuration was made in the volume, with a synthetic band to try it."
     echo "FernSDR: admin password: $password (also in the volume as admin-password)"
 fi

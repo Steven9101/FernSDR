@@ -1355,7 +1355,7 @@ docker_first() {
     docker volume create fernsdr > /dev/null
     docker_run "$WHERE" "$PLAIN_ADMIN" || die "Docker could not start the container."
     docker_wait || die "The container does not answer; docker logs $CONTAINER says why."
-    PASSWORD=$(docker exec "$CONTAINER" cat /var/lib/fernsdr/admin-password 2> /dev/null || true)
+    PASSWORD=$(docker exec -u fernsdr "$CONTAINER" cat /var/lib/fernsdr/admin-password 2> /dev/null || true)
     setup_https
     docker_summary
 }
@@ -1402,8 +1402,10 @@ docker_password() {
     make_password
     printf '%s\n' "$PASSWORD" | docker exec -i "$CONTAINER" /opt/fernsdr/fernsdr --set-password /var/lib/fernsdr/fernsdr.conf \
         > /dev/null 2>&1 || die "The container did not take the new password."
-    printf '%s\n' "$PASSWORD" | docker exec -i "$CONTAINER" sh -c \
-        'umask 077 && cat > /var/lib/fernsdr/admin-password && chown fernsdr:fernsdr /var/lib/fernsdr/admin-password'
+    # As the receiver: root writing into the volume the receiver owns would
+    # follow any link the receiver had left in the file's place.
+    printf '%s\n' "$PASSWORD" | docker exec -i -u fernsdr "$CONTAINER" sh -c \
+        'umask 077 && cat > /var/lib/fernsdr/admin-password && chmod 0600 /var/lib/fernsdr/admin-password'
     docker restart "$CONTAINER" > /dev/null
     docker_wait || warn "The container does not answer yet; docker logs $CONTAINER says why."
     printf '\n'
