@@ -26,7 +26,11 @@ export async function launch({width = 1920, height = 1080} = {}) {
     channel: 'chromium',
     headless: true,
     chromiumSandbox: false,
-    args: ['--autoplay-policy=no-user-gesture-required'],
+    // FB_SECURE_ORIGINS lets a plain-HTTP lab address count as a secure
+    // context, as the same page behind HTTPS does: AudioWorklet instead of
+    // the ScriptProcessor fallback.
+    args: ['--autoplay-policy=no-user-gesture-required',
+           ...(process.env.FB_SECURE_ORIGINS ? [`--unsafely-treat-insecure-origin-as-secure=${process.env.FB_SECURE_ORIGINS}`] : [])],
     ignoreDefaultArgs: ['--mute-audio'],
     env: {...process.env, PULSE_SERVER: labPulse()},
   });
