@@ -1,5 +1,6 @@
 #include "stream_delivery.h"
 #include "protocol.h"
+#include "../codec/waterfall_rc.h"
 
 namespace fernsdr {
 namespace {
@@ -11,6 +12,9 @@ bool is_waterfall(const uint8_t* data, size_t size) {
 }
 bool independent_waterfall(const uint8_t* data) {
     const auto prefix = data[proto::kWaterfallHeaderBytes];
+    // A range-coded line (flag 16) marks a key row in bit 0 of its first
+    // payload byte; the older codecs carry a mode in the top bits.
+    if (data[1] & 16) return (prefix & wfc::kRangedKey) != 0;
     const auto mode = data[1] & 2 ? prefix >> 6 : prefix >> 7;
     return mode == 1 || mode == 3;
 }

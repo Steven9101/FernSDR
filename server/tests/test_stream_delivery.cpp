@@ -23,6 +23,16 @@ std::vector<uint8_t> waterfall(uint16_t sequence, int mode, bool adaptive = fals
     payload[22] = static_cast<uint8_t>(mode << (adaptive ? 6 : 7));
     return payload;
 }
+// A range-coded (wfc5) line: flag 16, and the payload's first byte is 1 on a
+// key row.
+std::vector<uint8_t> ranged(uint16_t sequence, bool key) {
+    std::vector<uint8_t> payload(23, 0);
+    payload[0] = 2;
+    payload[1] = 16;
+    fernsdr::proto::write_u16(payload.data() + 2, sequence);
+    payload[22] = key ? 1 : 0;
+    return payload;
+}
 void enqueue(StreamDelivery& delivery, OutputQueue& queue, std::vector<uint8_t> payload, int64_t at) {
     if (delivery.prepare(payload)) queue.frame(Opcode::Binary, payload.data(), payload.size(), at);
 }
@@ -137,6 +147,24 @@ TEST_CASE(stream_delivery_recovers_both_waterfall_headers_after_queued_and_futur
         CHECK_EQ(packets[1][2], 4);
         CHECK_EQ(packets[2][2], 5);
     }
+}
+
+TEST_CASE(stream_delivery_recovers_range_coded_waterfalls_on_their_key_rows) {
+    // A band switch restarts the line sequence, which reads as a loss; the
+    // new band's first line is a key row and must end the wait for one.
+    StreamDelivery delivery;
+    for (uint16_t seq = 0; seq < 40; seq++) {
+        auto line = ranged(seq, seq == 0);
+        CHECK(delivery.prepare(line));
+    }
+    auto dependent = ranged(0, false);
+    CHECK(!delivery.prepare(dependent));
+    CHECK(delivery.needs_keyframe());
+    auto key = ranged(1, true);
+    CHECK(delivery.prepare(key));
+    CHECK(!delivery.needs_keyframe());
+    auto next = ranged(2, false);
+    CHECK(delivery.prepare(next));
 }
 
 TEST_CASE(stream_delivery_does_not_let_an_earlier_keyframe_repair_a_later_tail_loss) {
