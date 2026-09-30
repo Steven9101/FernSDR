@@ -13,6 +13,8 @@ export interface Bookmark {
   mode: string;
   low: number;
   high: number;
+  /** The CW pitch the edges were kept at, Hz: they move with it on the way back. */
+  pitch?: number;
   /** When it was kept, ms since 1970. */
   created: number;
 }
@@ -36,6 +38,7 @@ export function validBookmark(value: unknown): Bookmark | null {
   if (!MODES.has(mode) || !Number.isFinite(low) || !Number.isFinite(high) || low >= high) return null;
   const name = String(v.name ?? '').trim().slice(0, 80);
   const created = Number(v.created);
+  const pitch = Number(v.pitch);
   return {
     id: typeof v.id === 'string' && /^[a-z0-9-]{1,40}$/i.test(v.id) ? v.id : newId(),
     name: name || `${(freq / 1e6).toFixed(4)} MHz`,
@@ -43,6 +46,7 @@ export function validBookmark(value: unknown): Bookmark | null {
     mode,
     low: Math.round(low),
     high: Math.round(high),
+    ...(v.pitch !== undefined && pitch >= 200 && pitch <= 1500 ? { pitch: Math.round(pitch) } : {}),
     created: Number.isFinite(created) && created > 0 ? created : Date.now(),
   };
 }

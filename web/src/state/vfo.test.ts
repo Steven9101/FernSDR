@@ -43,4 +43,11 @@ describe('VFO A and B', () => {
     loadVfo();
     expect(vfo.value.a).toEqual({ freq: 7_074_000, mode: 'usb', low: 300, high: 2700 });
   });
+
+  it('keeps the CW pitch each VFO\'s filter was set at', () => {
+    equalizeVfo({ freq: 7_030_000, mode: 'cw', low: 850, high: 950, pitch: 900 });
+    vfo.value = { active: 'a', a: null, b: null };
+    loadVfo();
+    expect(vfo.value.a!.pitch).toBe(900);
+  });
 });

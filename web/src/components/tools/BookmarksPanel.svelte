@@ -15,7 +15,7 @@
     renameBookmark,
     type Bookmark,
   } from '../../state/bookmarks';
-  import { signalForCarrier } from '../../util/cw';
+  import { edgesAtPitch, signalForCarrier } from '../../util/cw';
   import { saveFile } from '../../util/save-file';
 
   let name = $state('');
@@ -35,13 +35,16 @@
       mode: tune.mode,
       low: tune.low,
       high: tune.high,
+      pitch: tune.cwPitch,
     });
     message = added ? '' : 'The list is full; remove some first.';
     name = '';
   }
 
   function go(bookmark: Bookmark) {
-    if (controller.goTo(bookmark.freq, bookmark.mode)) controller.setPassband(bookmark.low, bookmark.high);
+    if (!controller.goTo(bookmark.freq, bookmark.mode)) return;
+    const edges = edgesAtPitch(bookmark.mode, bookmark.low, bookmark.high, bookmark.pitch, tuning.value.cwPitch);
+    controller.setPassband(edges.low, edges.high);
   }
 
 

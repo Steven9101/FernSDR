@@ -35,7 +35,7 @@
     /** Only the record button: the tools are hidden, but a recording runs and must stay in reach. */
     recordingOnly?: boolean;
   } = $props();
-  import { signalForCarrier } from '../util/cw';
+  import { edgesAtPitch, signalForCarrier } from '../util/cw';
   import { saveFile } from '../util/save-file';
 
   let open = $state<'bookmarks' | 'log' | 'rig' | null>(null);
@@ -60,6 +60,7 @@
       mode: tune.mode,
       low: tune.low,
       high: tune.high,
+      pitch: tune.cwPitch,
       band: tune.band,
       view: [view.lowHz, view.highHz],
     };
@@ -71,7 +72,8 @@
       // land on the wrong one; the view last, since tuning moves it.
       if (setting.band) controller.selectBand(setting.band);
       if (!controller.goTo(setting.freq, setting.mode)) return;
-      controller.setPassband(setting.low, setting.high);
+      const edges = edgesAtPitch(setting.mode, setting.low, setting.high, setting.pitch, tuning.value.cwPitch);
+      controller.setPassband(edges.low, edges.high);
       if (setting.view) controller.setViewport(setting.view[0], setting.view[1]);
     });
   }

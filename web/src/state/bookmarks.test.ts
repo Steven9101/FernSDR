@@ -31,6 +31,16 @@ describe('bookmarks', () => {
     expect(validBookmark({ freq: 7e6, mode: 'USB', low: 300, high: 2700, name: 'x'.repeat(200) })!.name).toHaveLength(80);
   });
 
+  it('keeps the CW pitch its filter was set at, and nothing that is not one', () => {
+    const kept = addBookmark({ name: 'CW', freq: 7_030_000, mode: 'cw', low: 850, high: 950, pitch: 900 })!;
+    bookmarks.value = [];
+    loadBookmarks();
+    expect(bookmarks.value[0].pitch).toBe(900);
+    expect(kept.pitch).toBe(900);
+    expect(validBookmark({ freq: 7e6, mode: 'cw', low: 450, high: 950, pitch: 'x' })!.pitch).toBeUndefined();
+    expect(validBookmark({ freq: 7e6, mode: 'cw', low: 450, high: 950 })!.pitch).toBeUndefined();
+  });
+
   it('moves between browsers by export and import, without duplicates or overflow', () => {
     addBookmark({ name: 'A', freq: 7_074_000, mode: 'usb', low: 0, high: 3000 });
     const file = exportBookmarks();

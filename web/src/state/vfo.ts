@@ -11,6 +11,8 @@ export interface VfoSetting {
   mode: string;
   low: number;
   high: number;
+  /** The CW pitch the edges were kept at, Hz: they move with it on the way back. */
+  pitch?: number;
   /** The band it was on, where bands overlap. */
   band?: string;
   /** The waterfall's edges, Hz: switching back finds the view as it was left. */
@@ -33,6 +35,8 @@ function valid(value: unknown): VfoSetting | null {
   const freq = Number(v.freq), low = Number(v.low), high = Number(v.high);
   if (!(freq > 0) || !Number.isFinite(low) || !Number.isFinite(high) || low >= high || typeof v.mode !== 'string') return null;
   const setting: VfoSetting = { freq, mode: v.mode, low, high };
+  const pitch = Number(v.pitch);
+  if (v.pitch !== undefined && pitch >= 200 && pitch <= 1500) setting.pitch = pitch;
   if (typeof v.band === 'string' && v.band.length <= 64) setting.band = v.band;
   const view = Array.isArray(v.view) ? v.view.map(Number) : null;
   if (view && view.length === 2 && view[0] > 0 && view[1] > view[0]) setting.view = [view[0], view[1]];

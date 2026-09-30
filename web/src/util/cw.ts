@@ -29,3 +29,17 @@ export function carrierForSignal(signalHz: number, mode: CwOffsetMode, cwPitchHz
 export function signalForCarrier(carrierHz: number, mode: CwOffsetMode, cwPitchHz: number): number {
   return carrierHz + cwOffsetHz(mode, cwPitchHz);
 }
+
+/**
+ * A CW filter's carrier-relative edges, kept at one pitch, moved to another.
+ * The edges are where the note was; restored at a different pitch without
+ * this, the signal lands the pitch difference outside the filter and is
+ * silent. Without a kept pitch (entries from before one was kept), the edges
+ * are used as they are.
+ */
+export function edgesAtPitch(mode: CwOffsetMode, low: number, high: number, keptPitchHz: number | undefined,
+  pitchHz: number): { low: number; high: number } {
+  if (keptPitchHz === undefined || !Number.isFinite(keptPitchHz)) return { low, high };
+  const shift = cwOffsetHz(mode, pitchHz) - cwOffsetHz(mode, keptPitchHz);
+  return { low: low + shift, high: high + shift };
+}
