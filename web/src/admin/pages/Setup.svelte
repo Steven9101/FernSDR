@@ -28,6 +28,7 @@
 	import { dismissSetup, finishSetup, setupDone, setupStep, SETUP_STEPS, type SetupStep } from '../lib/setup';
 	import RestoreBackup from '../components/RestoreBackup.svelte';
 	import { installFromCatalog, restartAndReload } from '../lib/receiver';
+	import { deviceSelector } from '../lib/device-selector';
 
 	/*
 	Setting a receiver up, from the first sign-in: one question at a time, in the order an operator
@@ -121,7 +122,8 @@
 		try {
 			[hardware, modules] = await Promise.all([api.hardware(), api.modules()]);
 			const usable = hardware.radios.filter((radio) => radio.module && installed(radio.module));
-			if (!chosen || !hardware.radios.some((radio) => radio.port === chosen?.port)) chosen = usable[0] ?? null;
+			// The same radio as before, as the new look describes it.
+			chosen = hardware.radios.find((radio) => radio.port === chosen?.port) ?? usable[0] ?? null;
 		} catch (problem) {
 			toast.error((problem as ApiError).message);
 		} finally {
@@ -195,15 +197,14 @@
 	const pickedSuggestions = $derived(suggestions.filter((suggestion) => picked.includes(suggestion.id)));
 	const turns = $derived(pickedSuggestions.length === 2 ? dayAndNight(pickedSuggestions[0], pickedSuggestions[1]) : null);
 
-	function deviceSetting(): string {
-		// Only where there is more than one radio for the module: a single one is found by itself.
-		const same = hardware?.radios.filter((radio) => radio.module === chosen?.module) ?? [];
-		if (same.length < 2 || !chosen) return '';
-		return chosen.serial ? `serial:${chosen.serial}` : `index:${same.indexOf(chosen)}`;
-	}
-
 	async function applyBands() {
 		if (!chosen || pickedSuggestions.length === 0) return;
+		// Only where there is more than one radio for the module: a single one is found by itself.
+		const device = deviceSelector(hardware?.radios ?? [], chosen);
+		if (device === null) {
+			toast.error('That radio is no longer there. Look again, and choose it.');
+			return;
+		}
 		applying = 'Writing the bands…';
 		try {
 			let { text } = await api.readConfig();
@@ -219,7 +220,7 @@
 			pickedSuggestions.forEach((suggestion, i) => {
 				const id = freeId(suggestion.id, taken);
 				taken.push(id);
-				text = writeSection(text, `band:${id}`, bandSection(suggestion, chosen!.module, deviceSetting(), turns?.[i]));
+				text = writeSection(text, `band:${id}`, bandSection(suggestion, chosen!.module, device, turns?.[i]));
 			});
 			await api.writeConfig(text);
 			await restartAndContinue();
