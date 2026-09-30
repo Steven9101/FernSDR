@@ -1,6 +1,8 @@
 #include "../src/core/archive.h"
 #include "test_util.h"
 
+#include <sys/stat.h>
+
 #include <cmath>
 #include <cstdio>
 #include <cstring>
@@ -145,6 +147,44 @@ TEST_CASE(archive_forgets_the_oldest_first) {
     CHECK(!times.empty());
     archive.close();
     std::remove(path.c_str());
+}
+
+TEST_CASE(archive_past_two_gigabytes_records_and_reads_at_its_end) {
+    // Thirty days of a thousand bins a second is 2.7 GB: past what a 32-bit
+    // long or off_t reaches, which armhf has unless large files are asked
+    // for. The file is sparse, so it costs the test a few blocks.
+    const std::string path = temp_path("large");
+    std::remove(path.c_str());
+    const int64_t start = 1'700'000'000'000;
+    const int64_t late = start + 2'500'000LL * 1000;  // slot 2 500 000, 2.58 GB in
+    {
+        WaterfallArchive archive;
+        std::string error;
+        CHECK(archive.open(path, 1024, 1.0, 24 * 30, error));
+        CHECK(archive.size_bytes() > (1ull << 31));
+        struct stat info {};
+        CHECK(::stat(path.c_str(), &info) == 0);
+        CHECK_EQ(static_cast<uint64_t>(info.st_size), archive.size_bytes());
+        const auto first = line_with_carrier(1024, 100);
+        archive.append(first.data(), first.size(), start);
+        const auto line = line_with_carrier(1024, 700);
+        archive.append(line.data(), line.size(), late);
+        archive.close();
+    }
+    WaterfallArchive again;
+    std::string error;
+    CHECK(again.open(path, 1024, 1.0, 24 * 30, error));
+    std::vector<uint8_t> rows;
+    std::vector<int64_t> times;
+    CHECK(again.read(late, late, rows, times));
+    CHECK_EQ(times.size(), 1u);
+    if (times.size() == 1) {
+        CHECK_EQ(times[0], late);
+        CHECK(rows[700] > 200 && rows[100] < 100);
+    }
+    again.close();
+    std::remove(path.c_str());
+    std::remove((path + ".span").c_str());
 }
 
 TEST_CASE(archive_survives_being_reopened) {

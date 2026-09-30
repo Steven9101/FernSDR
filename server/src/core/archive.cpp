@@ -15,6 +15,10 @@ namespace {
 
 constexpr char kMagic[8] = {'F', 'R', 'N', 'W', 'F', 'A', '1', '\0'};
 
+// A month of a thousand bins a second is past 2 GB, beyond a 32-bit offset;
+// the Makefile asks for 64-bit ones on every system.
+static_assert(sizeof(off_t) >= 8, "the archive needs 64-bit file offsets: build with -D_FILE_OFFSET_BITS=64");
+
 }  // namespace
 
 WaterfallArchive::~WaterfallArchive() { close(); }
@@ -164,7 +168,7 @@ bool WaterfallArchive::open(const std::string& path, size_t bins, double seconds
     // The file is created at full size rather than grown: the operator is told
     // what it costs before it is switched on, and being told is worth nothing
     // if the number only becomes true a day later.
-    if (std::fseek(file_, static_cast<long>(size_bytes() - 1), SEEK_SET) != 0 ||
+    if (::fseeko(file_, static_cast<off_t>(size_bytes() - 1), SEEK_SET) != 0 ||
         std::fputc(0, file_) == EOF || std::fflush(file_) != 0) {
         error = "cannot reserve " + std::to_string(size_bytes()) + " bytes for " + path;
         close();
@@ -236,8 +240,8 @@ void WaterfallArchive::append(const float* bins, size_t count, int64_t now_ms) {
     std::memcpy(scratch_.data(), &next_index_, sizeof(uint64_t));
 
     const uint64_t slot = next_index_ % capacity_;
-    const long offset = static_cast<long>(sizeof(Header) + slot * slot_bytes());
-    if (std::fseek(file_, offset, SEEK_SET) != 0) return;
+    const off_t offset = static_cast<off_t>(sizeof(Header) + slot * slot_bytes());
+    if (::fseeko(file_, offset, SEEK_SET) != 0) return;
     if (std::fwrite(scratch_.data(), scratch_.size(), 1, file_) != 1) return;
 
     next_index_++;

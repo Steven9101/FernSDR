@@ -7,7 +7,9 @@ OPT      ?= -O3
 WARN     := -Wall -Wextra -Wno-unused-parameter
 # TARGET_FLAGS and LINK_FLAGS are for release builds (see `release` below),
 # which set them on a make of their own rather than replace CXXFLAGS.
-CXXFLAGS += $(CXXSTD) $(OPT) $(WARN) $(TARGET_FLAGS) -pthread -MMD -MP
+# Large files everywhere: a month's waterfall archive is past 2 GB, which a
+# 32-bit system (armhf) otherwise cannot open or seek in.
+CXXFLAGS += $(CXXSTD) $(OPT) $(WARN) $(TARGET_FLAGS) -D_FILE_OFFSET_BITS=64 -pthread -MMD -MP
 LDFLAGS  += $(TARGET_FLAGS) $(LINK_FLAGS) -pthread
 LDLIBS   += -lm
 
