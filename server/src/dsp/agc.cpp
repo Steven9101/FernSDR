@@ -379,7 +379,9 @@ void bridge(cfloat* samples, size_t count, size_t from, size_t to) {
     };
 
     const cfloat left_rotation = rotation(samples + from - kFit, kFit - 1, 1);
-    const cfloat right_rotation = rotation(samples + to + kFit, kFit - 1, -1);
+    // Read backwards from the last sample of the right-hand window, samples
+    // [to, to + kFit), which the guard above keeps inside the block.
+    const cfloat right_rotation = rotation(samples + to + kFit - 1, kFit - 1, -1);
 
     cfloat forward = samples[from - 1];
     cfloat backward = samples[to];

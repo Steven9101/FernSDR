@@ -194,3 +194,31 @@ TEST_CASE(blanker_fills_the_gap_rather_than_leaving_a_hole) {
     // Measured: -23.0 dBc when the gap was zeroed, -28.3 when it is filled.
     CHECK(dbc < -26.0);
 }
+
+TEST_CASE(blanker_fill_reads_nothing_past_the_end_of_the_block) {
+    // A run ending one fitting window before the end of the block must be
+    // filled from the block alone: what lies in memory after it cannot move
+    // the result. The block is followed by a sentinel sample, set to two
+    // different values; every impulse position near the end must fill alike.
+    constexpr size_t kCount = 2048;
+    bool alike = true;
+    for (size_t impulse = 1700; impulse < 1800 && alike; impulse++) {
+        std::vector<cfloat> filled[2];
+        for (int run = 0; run < 2; run++) {
+            std::vector<cfloat> band(kCount + 1);
+            for (size_t i = 0; i < kCount; i++) {
+                const double phase = kTwoPi * 20000.0 * static_cast<double>(i) / kRate;
+                band[i] = cfloat(static_cast<float>(0.01 * std::cos(phase)), static_cast<float>(0.01 * std::sin(phase)));
+            }
+            band[impulse] = cfloat(1.0f, 1.0f);
+            band[kCount] = run == 0 ? cfloat(1000.0f, 0.0f) : cfloat(0.0f, -1000.0f);
+            NoiseBlanker blanker;
+            blanker.configure(kRate);
+            blanker.set_strength(0.7f);
+            blanker.process(band.data(), kCount);
+            filled[run].assign(band.begin(), band.begin() + kCount);
+        }
+        alike = filled[0] == filled[1];
+    }
+    CHECK(alike);
+}
