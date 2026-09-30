@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { matchesPreset, PRESETS, RECEIVER_DEFAULTS, resolvedColors, safeImageUrl } from './theme';
+import { matchesPreset, PRESETS, RECEIVER_DEFAULTS, resolvedColors, safeImageUrl, withLook, withWidgets, type Theme } from './theme';
 
 describe('resolvedColors', () => {
   it('fills what the theme leaves unset from the scheme a listener uses', () => {
@@ -48,5 +48,25 @@ describe('RECEIVER_DEFAULTS', () => {
         expect(match?.[1], `${scheme} ${key}`).toBe(value);
       }
     }
+  });
+});
+
+describe('writing one page of the theme', () => {
+  // Appearance and Widgets loaded the theme, then another tab changed the
+  // accent and added a notice before either wrote.
+  const loaded: Theme = { colors: { accent: '#111111' }, widgets: [{ type: 'clock' }] };
+  const now: Theme = { colors: { accent: '#ff0000' }, widgets: [{ type: 'clock' }, { type: 'notice', text: 'Hi' }] };
+
+  it('keeps the look changed elsewhere when the widgets are written', () => {
+    const written = withWidgets(now, [{ type: 'clock' }, { type: 'chat' }]);
+    expect(written.colors).toEqual({ accent: '#ff0000' });
+    expect(written.widgets).toEqual([{ type: 'clock' }, { type: 'chat' }]);
+  });
+
+  it('keeps the widgets changed elsewhere when the look is written', () => {
+    const written = withLook({ ...loaded, colors: { accent: '#00ff00' } }, now);
+    expect(written.colors).toEqual({ accent: '#00ff00' });
+    expect(written.widgets).toEqual(now.widgets);
+    expect(withLook(loaded, { colors: {} })).not.toHaveProperty('widgets');
   });
 });

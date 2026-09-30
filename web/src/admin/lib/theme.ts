@@ -147,3 +147,21 @@ export function safeImageUrl(value: string | undefined): string {
   if (/^https?:\/\//i.test(value) || value.startsWith('/') || /^data:image\//i.test(value)) return value;
   return '';
 }
+
+/*
+The theme is written whole, and two pages edit it: Appearance the look, Widgets the widgets. Each
+holds the copy it loaded when it opened, and writing that copy back whole put back whatever the
+other page, or another tab, had changed since. So each writes its own part over the theme read
+again just before.
+*/
+
+/** The receiver's theme as it is now, with the Widgets page's widgets. */
+export function withWidgets(current: Theme, widgets: Theme['widgets']): Theme {
+  return { ...current, widgets };
+}
+
+/** The Appearance page's look, with the widgets the receiver has now. */
+export function withLook(look: Theme, current: Theme): Theme {
+  const { widgets: _, ...rest } = look;
+  return current.widgets === undefined ? rest : { ...rest, widgets: current.widgets };
+}

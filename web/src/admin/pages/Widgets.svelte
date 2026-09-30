@@ -31,7 +31,7 @@
 	import TextRow from '../components/TextRow.svelte';
 	import * as Dialog from '../components/ui/dialog/index';
 	import { Button } from '../components/ui/button/index';
-	import type { Theme } from '../lib/theme';
+	import { withWidgets, type Theme } from '../lib/theme';
 	import type { ThemeWidget } from '../../state/theme';
 
 	/*
@@ -138,7 +138,8 @@
 		busy = true;
 		const sending = JSON.stringify(plain(widgets));
 		try {
-			const result = await api.writeTheme({ ...theme, widgets: JSON.parse(sending) });
+			const current = (await api.readTheme()).theme as Theme;
+			const result = await api.writeTheme(withWidgets(current, JSON.parse(sending)));
 			theme = result.theme as Theme;
 			const applied = (theme.widgets ?? []).map(complete);
 			saved = JSON.stringify(plain(applied));

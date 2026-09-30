@@ -143,8 +143,11 @@
 		busy = true;
 		const values = () => JSON.stringify(Object.fromEntries(editable.map((key) => [key, $state.snapshot(band[key])])));
 		const sending = values();
+		// Only what was changed here: the rest of the band may have been changed
+		// in another tab since this one loaded, and sending it back would undo that.
+		const changes = Object.fromEntries(changed.map((key) => [key, $state.snapshot(band[key])]));
 		try {
-			const result = await api.writeBand(band.id, JSON.parse(sending));
+			const result = await api.writeBand(band.id, changes);
 			saved = structuredClone(result.bands as BandSettings[]);
 			// The receiver's version of what was sent, unless the operator kept editing meanwhile.
 			if (values() === sending) settings = structuredClone(result.bands as BandSettings[]);

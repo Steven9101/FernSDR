@@ -16,7 +16,7 @@
 	import Uploads from '../components/Uploads.svelte';
 	import { Confirm } from '../components/ui/confirm/index';
 	import { Segmented } from '../components/ui/segmented/index';
-	import { matchesPreset, PRESETS, RECEIVER_DEFAULTS, TOKEN_GROUPS, type Theme } from '../lib/theme';
+	import { matchesPreset, PRESETS, RECEIVER_DEFAULTS, TOKEN_GROUPS, withLook, type Theme } from '../lib/theme';
 
 	/*
 	How the receiver looks to everyone. Nothing reaches listeners until Apply, so an operator can
@@ -73,7 +73,8 @@
 		busy = true;
 		const sending = JSON.stringify(theme);
 		try {
-			const result = await api.writeTheme(JSON.parse(sending));
+			const current = (await api.readTheme()).theme as Theme;
+			const result = await api.writeTheme(withLook(JSON.parse(sending), current));
 			const applied = normalise(result.theme as Theme);
 			saved = JSON.stringify(applied);
 			// The receiver's version of what was sent, unless the operator kept changing things.
