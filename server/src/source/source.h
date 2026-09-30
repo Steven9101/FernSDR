@@ -101,6 +101,10 @@ public:
 // What building a source may need beyond its own section.
 struct SourceContext {
     std::shared_ptr<ModuleStore> modules;  // for source = module; may be null
+    // A file being saved from the panel rather than one being started: a
+    // module band that contradicts its module is refused, instead of
+    // started to fail on its own as it always has (see make_module_source).
+    bool strict = false;
 };
 
 // Builds a source from a [band:...] config section. `error` explains any

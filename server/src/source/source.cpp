@@ -160,7 +160,7 @@ std::unique_ptr<Source> make_source(const ConfigSection& section, const SourceCo
     if (kind == "test") return make_test_source(section, error);
     if (kind == "file" || kind == "pipe" || kind == "stdin") return make_file_source(section, error);
     if (kind == "udp") return make_udp_source(section, error);
-    if (kind == "module") return make_module_source(section, context.modules, error);
+    if (kind == "module") return make_module_source(section, context.modules, error, ModuleTiming{}, context.strict);
 
     error = "unknown source '" + kind + "' in [" + section.name() +
             "]; expected one of: test, file, pipe, stdin, udp, module";

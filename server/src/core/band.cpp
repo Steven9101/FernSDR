@@ -20,6 +20,54 @@ size_t choose_fft_size(double sample_rate) {
     return std::clamp<size_t>(size, 1024, 1u << 20);
 }
 
+namespace {
+
+// What an input covers and what a band shows of it by default, as the band
+// works them out; check_band_settings() and the band itself both take them
+// from here, so what one accepts the other runs.
+struct Coverage {
+    double first = 0.0, last = 0.0;         // what the input covers
+    double low = 0.0, high = 0.0;           // the default range shown
+    double tolerance = 1.0;                 // hertz a stated edge may lie outside
+};
+
+Coverage coverage_of(const ConfigSection& section, double sample_rate, SignalKind kind, double source_center_hz) {
+    const double offset = section.get_double("frequency_offset", 0.0);
+    const double ppm = section.get_double("ppm", 0.0);
+    const double scale = 1.0 + (std::isfinite(ppm) ? std::clamp(ppm, -500.0, 500.0) : 0.0) * 1e-6;
+    const double rate = sample_rate * scale;
+    const double usable =
+        std::clamp(section.get_double("usable_fraction", kind == SignalKind::Real ? 0.94 : 0.8), 0.1, 1.0);
+    Coverage c;
+    const double centre = kind == SignalKind::Real ? offset + rate / 4.0 : source_center_hz * scale + offset;
+    if (kind == SignalKind::Real) {
+        c.first = offset;
+        c.last = offset + rate / 2.0;
+        c.low = offset;
+        c.high = offset + rate * usable / 2.0;
+    } else {
+        c.first = centre - rate / 2.0;
+        c.last = centre + rate / 2.0;
+        c.low = centre - rate * usable / 2.0;
+        c.high = centre + rate * usable / 2.0;
+    }
+    // An edge written as the nominal one, before the crystal correction
+    // moved it, still counts as inside.
+    c.tolerance = 1.0 + std::fabs(scale - 1.0) * (std::fabs(centre) + rate / 2.0);
+    return c;
+}
+
+// The range a band shows: low and high as stated, each defaulting to the
+// usable range's edge, when they make a range inside the input.
+bool stated_range(const ConfigSection& section, const Coverage& c, double& low, double& high) {
+    low = section.get_double("low", c.low);
+    high = section.get_double("high", c.high);
+    return std::isfinite(low) && std::isfinite(high) && low < high && low >= c.first - c.tolerance &&
+           high <= c.last + c.tolerance;
+}
+
+}  // namespace
+
 bool check_band_settings(const ConfigSection& section, const Source& source, std::string& error) {
     const std::string where = "[" + section.name() + "] ";
     const auto power_of_two = [](long value) { return value > 0 && (value & (value - 1)) == 0; };
@@ -37,31 +85,18 @@ bool check_band_settings(const ConfigSection& section, const Source& source, std
         return false;
     }
     if (!section.has("low") && !section.has("high")) return true;
-    // What the input covers, as the band will place it: from DC to half the
-    // rate for a real signal, the rate about the centre for IQ.
-    const double offset = section.get_double("frequency_offset", 0.0);
-    const double ppm = section.get_double("ppm", 0.0);
-    const double rate = source.sample_rate() * (1.0 + (std::isfinite(ppm) ? std::clamp(ppm, -500.0, 500.0) : 0.0) * 1e-6);
-    const bool real = source.kind() == SignalKind::Real;
-    const double centre = real ? offset + rate / 4.0 : source.center_hz() * rate / source.sample_rate() + offset;
-    const double first = real ? offset : centre - rate / 2.0;
-    const double last = real ? offset + rate / 2.0 : centre + rate / 2.0;
-    const double low = section.get_double("low", first);
-    const double high = section.get_double("high", last);
-    const auto mhz = [](double hz) {
-        char text[32];
-        std::snprintf(text, sizeof text, "%.3f", hz / 1e6);
-        return std::string(text);
-    };
-    if (!std::isfinite(low) || !std::isfinite(high) || low >= high) {
-        error = where + "low must be below high";
-        return false;
+    const Coverage c = coverage_of(section, source.sample_rate(), source.kind(), source.center_hz());
+    double low = 0.0, high = 0.0;
+    if (stated_range(section, c, low, high)) return true;
+    char text[160];
+    if (!(std::isfinite(low) && std::isfinite(high) && low < high)) {
+        std::snprintf(text, sizeof text, "low (%.0f Hz) must be below high (%.0f Hz)", low, high);
+    } else {
+        std::snprintf(text, sizeof text, "low and high must lie in what the input covers, %.0f to %.0f Hz", c.first,
+                      c.last);
     }
-    if (low < first - 1.0 || high > last + 1.0) {
-        error = where + "low and high must lie in what the input covers, " + mhz(first) + " to " + mhz(last) + " MHz";
-        return false;
-    }
-    return true;
+    error = where + text;
+    return false;
 }
 
 Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, const ConfigSection& section)
@@ -106,11 +141,9 @@ Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, con
     // An operator can always state the usable range directly, within what
     // the input covers (check_band_settings() says why it was not taken).
     {
-        const double first = signal_kind_ == SignalKind::Real ? offset : center_hz_ - rf_rate() / 2.0;
-        const double last = signal_kind_ == SignalKind::Real ? offset + rf_rate() / 2.0 : center_hz_ + rf_rate() / 2.0;
-        const double low = section.get_double("low", low_hz_);
-        const double high = section.get_double("high", high_hz_);
-        if (std::isfinite(low) && std::isfinite(high) && low < high && low >= first - 1.0 && high <= last + 1.0) {
+        const Coverage c = coverage_of(section, sample_rate_, signal_kind_, source_->center_hz());
+        double low = 0.0, high = 0.0;
+        if (stated_range(section, c, low, high)) {
             low_hz_ = low;
             high_hz_ = high;
         }

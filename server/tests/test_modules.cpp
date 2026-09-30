@@ -952,7 +952,11 @@ TEST_CASE(module_band_takes_signal_and_rate_from_what_the_module_says) {
     CHECK_EQ(source->sample_rate(), 64800000.0);
 }
 
-TEST_CASE(module_band_that_contradicts_the_module_is_refused_with_the_fix) {
+TEST_CASE(module_band_that_contradicts_the_module_is_refused_when_saved_and_started_as_before) {
+    // Saved from the panel, IQ from a real radio or a centre on a real
+    // signal is refused with what to change. Started, the same file makes
+    // its band as it always did, for the module to turn down: one band
+    // fails, not the receiver.
     TempDir directory;
     auto real = store_with_tuning(directory, R"({"ranges":[[0,64800000]],"rates":[64800000],"signal":"real"})");
     CHECK(real != nullptr);
@@ -960,24 +964,24 @@ TEST_CASE(module_band_that_contradicts_the_module_is_refused_with_the_fix) {
     std::string error;
     ConfigSection iq = plain_module_band();
     iq.set("signal", "iq");
-    CHECK(make_module_source(iq, real, error, quick_timing()) == nullptr);
+    CHECK(make_module_source(iq, real, error, quick_timing(), true) == nullptr);
     CHECK(error.find("set signal = real") != std::string::npos);
+    CHECK(make_module_source(iq, real, error, quick_timing()) != nullptr);
     ConfigSection centred = plain_module_band();
     centred.set("center", "7100000");
-    CHECK(make_module_source(centred, real, error, quick_timing()) == nullptr);
+    CHECK(make_module_source(centred, real, error, quick_timing(), true) == nullptr);
     CHECK(error.find("center is 0") != std::string::npos);
+    CHECK(make_module_source(centred, real, error, quick_timing()) != nullptr);
 
+    // The centres a module lists are what it suggests bands for: an RTL-SDR
+    // takes long wave below them by direct sampling, saved or started.
     TempDir other;
     auto tuner = store_with_tuning(other, R"({"ranges":[[500000,1766000000]],"rates":[2400000],"signal":"iq"})");
     CHECK(tuner != nullptr);
     if (!tuner) return;
-    ConfigSection low = plain_module_band();
-    low.set("center", "100000");
-    CHECK(make_module_source(low, tuner, error, quick_timing()) == nullptr);
-    CHECK(error.find("0.500 to 1766.000 MHz") != std::string::npos);
-    ConfigSection fine = plain_module_band();
-    fine.set("center", "7100000");
-    auto source = make_module_source(fine, tuner, error, quick_timing());
+    ConfigSection long_wave = plain_module_band();
+    long_wave.set("center", "200000");
+    auto source = make_module_source(long_wave, tuner, error, quick_timing(), true);
     CHECK(source != nullptr);
     if (source) CHECK_EQ(source->sample_rate(), 2400000.0);
 }
@@ -989,7 +993,7 @@ TEST_CASE(band_values_set_by_hand_are_refused_when_saved_and_replaced_at_a_start
     const char* cases[] = {"fft_size = 2\n", "spectrum_bins = 100000\n", "low = 7000000\nhigh = 9000000\n",
                            "low = 7200000\nhigh = 7100000\n"};
     const char* reasons[] = {"fft_size is a power of two", "spectrum_bins is a power of two",
-                             "must lie in what the input covers", "low must be below high"};
+                             "must lie in what the input covers", "must be below high"};
     for (size_t i = 0; i < 4; i++) {
         fernsdr::Config config;
         std::string error;
@@ -1001,4 +1005,20 @@ TEST_CASE(band_values_set_by_hand_are_refused_when_saved_and_replaced_at_a_start
         fernsdr::Radio started;
         CHECK(started.configure(config, error));
     }
+}
+
+TEST_CASE(band_range_is_judged_as_the_band_will_place_it) {
+    // The nominal full span of a band whose crystal is 1 ppm off is still
+    // inside what it covers; a high below the default low, stated alone,
+    // is refused at save and not quietly dropped at a start.
+    const auto verdict = [](const std::string& extra, std::string& error) {
+        fernsdr::Config config;
+        CHECK(config.parse("[band:t]\nsource = test\nsample_rate = 192000\ncenter = 7100000\n" + extra, error));
+        fernsdr::Radio saved;
+        return saved.configure(config, error, true);
+    };
+    std::string error;
+    CHECK(verdict("ppm = 1\nlow = 7004000\nhigh = 7196000\n", error));
+    CHECK(!verdict("high = 7020000\n", error));
+    CHECK(error.find("must be below high") != std::string::npos);
 }

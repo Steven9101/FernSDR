@@ -223,9 +223,11 @@ cannot suggest bands for the radio, and the operator writes the band by hand.
 
 A band written by hand for a module with `tuning` may leave `signal` and
 `sample_rate` out: it takes the module's signal and first rate. One that
-contradicts them (IQ from a real radio, a centre other than 0 on a real
-signal, or a centre outside `ranges`) is refused when the file is saved,
-with what to change, rather than when the band starts.
+contradicts them (IQ from a real radio, or a centre other than 0 on a real
+signal) is refused when the panel saves the file, with what to change; a
+receiver that starts with such a file starts that band as before, for the
+module to refuse. `ranges` only guide the suggestions: a band outside them,
+such as long wave by direct sampling, is the module's to take or refuse.
 
 `type` is `string`, `number`, `boolean` or `choice`, with `choices` for the
 last and optional `min`, `max` and `unit` for numbers. `advanced: true` marks

@@ -271,6 +271,7 @@ bool Radio::configure(const Config& config, std::string& error, bool strict) {
         std::string source_error;
         SourceContext context;
         context.modules = module_store_;
+        context.strict = strict;
         auto source = make_source(*section, context, source_error);
         if (!source) {
             error = source_error;

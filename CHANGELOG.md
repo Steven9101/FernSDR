@@ -59,8 +59,8 @@ The first release.
   what the module says of itself, and a band the panel saves that
   contradicts the module, or sets fft_size, spectrum_bins, low or high
   outside what the band can run with, is refused with what to change; a
-  receiver that started with such a file before still starts, on its
-  defaults, and says so in its log.
+  receiver that started with such a file before still starts as it did,
+  and says so in its log.
 
 ### Listener page
 

@@ -922,7 +922,7 @@ private:
 }  // namespace
 
 std::unique_ptr<Source> make_module_source(const ConfigSection& section, const std::shared_ptr<ModuleStore>& store,
-                                           std::string& error, const ModuleTiming& timing) {
+                                           std::string& error, const ModuleTiming& timing, bool strict) {
     const std::string band = section.name().substr(section.name().find(':') + 1);
     const std::string id = section.get("module", "");
     if (!valid_module_id(id)) {
@@ -938,11 +938,14 @@ std::unique_ptr<Source> make_module_source(const ConfigSection& section, const s
         error = "[" + section.name() + "] a module announces its own sample format; remove format";
         return nullptr;
     }
-    // What the installed module says of itself: the signal it delivers,
-    // the rates worth offering (the first its default) and the centres it
-    // tunes. A band that leaves signal or sample_rate out takes them from
-    // there, and one that contradicts them is refused now, with the file
-    // still open in front of the operator, rather than when the band starts.
+    // What the installed module says of itself: the signal it delivers and
+    // the rates worth offering, the first its default. A band that leaves
+    // signal or sample_rate out takes them from there. One that contradicts
+    // the module is refused when the panel saves it, with what to change;
+    // a file the receiver starts with is started as it always was, and the
+    // module turns the band down on its own, which fails that band alone.
+    // (The centres a module lists are what it suggests bands for, not all it
+    // tunes: an RTL-SDR takes long wave by direct sampling below them.)
     ModuleStore::Module installed;
     const ModuleManifest* active = nullptr;
     if (store->find(id, installed)) {
@@ -956,12 +959,6 @@ std::unique_ptr<Source> make_module_source(const ConfigSection& section, const s
         error = "[" + section.name() + "] signal must be 'iq' or 'real', not '" + signal + "'";
         return nullptr;
     }
-    if (tuning && signal != tuning->signal) {
-        error = "[" + section.name() + "] the " + id + " module delivers " +
-                (tuning->signal == "real" ? "a real signal from 0 Hz up" : "IQ about its centre") +
-                ": set signal = " + tuning->signal + ", or leave the line out";
-        return nullptr;
-    }
     const double sample_rate =
         section.get_double("sample_rate", tuning && !tuning->rates.empty() ? tuning->rates.front() : 0.0);
     if (!std::isfinite(sample_rate) || sample_rate <= 0.0) {
@@ -973,19 +970,21 @@ std::unique_ptr<Source> make_module_source(const ConfigSection& section, const s
         error = "[" + section.name() + "] center must be a frequency in Hz";
         return nullptr;
     }
-    if (signal == "real" && center != 0.0) {
-        error = "[" + section.name() + "] a real signal starts at 0 Hz, so center is 0 (or left out); "
-                "low and high say what listeners see";
-        return nullptr;
+    std::string contradiction;
+    if (tuning && signal != tuning->signal) {
+        contradiction = "[" + section.name() + "] the " + id + " module delivers " +
+                        (tuning->signal == "real" ? "a real signal from 0 Hz up" : "IQ about its centre") +
+                        ": set signal = " + tuning->signal + ", or leave the line out";
+    } else if (signal == "real" && center != 0.0) {
+        contradiction = "[" + section.name() + "] a real signal starts at 0 Hz, so center is 0 (or left out); "
+                        "low and high say what listeners see";
     }
-    if (tuning && signal == "iq" && !tuning->ranges.empty() &&
-        std::none_of(tuning->ranges.begin(), tuning->ranges.end(),
-                     [&](const auto& range) { return center >= range.first && center <= range.second; })) {
-        char text[160];
-        std::snprintf(text, sizeof text, "the %s module tunes %.3f to %.3f MHz; center %.3f MHz is outside that",
-                      id.c_str(), tuning->ranges.front().first / 1e6, tuning->ranges.back().second / 1e6, center / 1e6);
-        error = "[" + section.name() + "] " + text;
-        return nullptr;
+    if (!contradiction.empty()) {
+        if (strict) {
+            error = contradiction;
+            return nullptr;
+        }
+        LOG_WARN("module", "%s", contradiction.c_str());
     }
     std::map<std::string, std::string> settings;
     if (!ModuleSource::collect_settings(section, settings, error)) return nullptr;

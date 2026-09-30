@@ -19,6 +19,7 @@ struct ModuleTiming {
 };
 
 std::unique_ptr<Source> make_module_source(const ConfigSection& section, const std::shared_ptr<ModuleStore>& store,
-                                           std::string& error, const ModuleTiming& timing = {});
+                                           std::string& error, const ModuleTiming& timing = {},
+                                           bool strict = false);
 
 }  // namespace fernsdr
