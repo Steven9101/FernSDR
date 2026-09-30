@@ -52,10 +52,17 @@ SharedWaterfall::SharedWaterfall(const Band& band, const WaterfallKey& key) : ba
     viewport_.width = key.width;
     viewport_.lines_per_second = key.lines_per_second;
     viewport_.step_db = key.step_db;
+    zoom_ = band.share_zoom(viewport_);
 }
 
 void SharedWaterfall::process(double block_seconds, const SpectrumPyramid* line, const SpectrumPyramid* paired) {
     has_row_ = false;
+    // As a listener's own rows: the zoom's lines once it has one.
+    if (zoom_ && zoom_->ready()) {
+        const bool fresh = zoom_->has_line();
+        line = fresh ? &zoom_->line() : nullptr;
+        paired = fresh ? &zoom_->paired() : nullptr;
+    }
     // The same pacing as a listener's own rows: credit on every block, a row
     // on a block with a line once there is enough, and at half the band's
     // line rate or less, the mean of two lines.

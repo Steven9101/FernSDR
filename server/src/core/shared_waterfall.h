@@ -17,9 +17,11 @@
 
 #include "../codec/waterfall_rc.h"
 #include "../dsp/spectrum.h"
+#include "../dsp/zoom_spectrum.h"
 #include "settings.h"
 
 #include <cstdint>
+#include <memory>
 #include <vector>
 
 namespace fernsdr {
@@ -75,6 +77,8 @@ private:
     const Band& band_;
     WaterfallKey key_;
     ViewportSettings viewport_;
+    // The view's own spectrum when the band's is too coarse for it.
+    std::shared_ptr<ZoomSpectrum> zoom_;
     wfc::RangedLineEncoder encoder_;
     std::vector<float> line_;
     const std::vector<uint8_t>* payload_ = nullptr;

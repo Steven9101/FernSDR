@@ -68,6 +68,11 @@ The first release.
 - Waterfall and spectrum with peak hold and four colour maps (Classic unless
   the operator or the listener picks another), tuning by drag, tap, wheel,
   digit or typed frequency, and a phone layout with a sheet of controls.
+- A waterfall as fine as the screen at every zoom, on every band: a view
+  finer than the band's own line gets a spectrum of its own, cut from the
+  channelizer's transform, with bins down to 2 Hz. On a 0 to 30 MHz band
+  an SSB signal on 40 m fills the view instead of three kilohertz-wide bins,
+  for 0.1 to 2 % of a core per view, shared by everyone near it.
 - The band plan of the station's IARU region, or of the United States,
   Canada, the United Kingdom, Germany, Australia or Japan, chosen on the
   Station page or worked out from the grid square: amateur segments with

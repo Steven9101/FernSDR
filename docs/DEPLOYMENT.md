@@ -1310,7 +1310,7 @@ The ones worth knowing:
 | Setting | Default | When to change it |
 |---|---|---|
 | `usable_fraction` | 0.8, 0.94 for `signal = real` | How much of the sample rate to show. Raise if your front end's anti-alias filter is sharper than usual. |
-| `spectrum_bins` | 2× the channelizer FFT | Raise for finer waterfall resolution on a wide band; costs CPU per band, not per user. |
+| `spectrum_bins` | 2× the channelizer FFT, at most 65,536 | The band's own waterfall line. A listener zoomed in past its bins gets a finer spectrum of their own view, so raising this is rarely worth what it costs every block. |
 | `spectrum_averages` | 8 | More averaging steadies the display and lowers the waterfall bitrate. Averages that would overlap by more than 75 % are left out: on a 2 Msps band that is 5, and the line is as steady. |
 | `spectrum_smoothing` | 0.5 | Same, applied across lines. The variance it removes is noise the codec would otherwise spend bits encoding. |
 | `max_bandwidth` | 20 kHz | The widest passband one listener may request. |

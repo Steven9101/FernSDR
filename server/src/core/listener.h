@@ -181,6 +181,11 @@ private:
     // The shared rows for this view, and whether this listener is sending
     // them rather than its own.
     std::shared_ptr<SharedWaterfall> shared_waterfall_;
+    // The finer spectrum this listener's view needs, or null; see
+    // Band::share_zoom.
+    std::shared_ptr<ZoomSpectrum> zoom_;
+    // The one before, while zoom_ has no line yet.
+    std::shared_ptr<ZoomSpectrum> previous_zoom_;
     bool waterfall_joined_ = false;
     bool waterfall_lost_ = false;  // a row was dropped since this listener joined
     void leave_shared_waterfall(bool at_once);

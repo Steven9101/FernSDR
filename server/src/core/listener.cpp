@@ -261,6 +261,16 @@ void Listener::apply_pending() {
             // spectrum. Waiting for credit from the old view delays zooming.
             waterfall_credit_ = 1;
         }
+        // A view finer than the band's line gets a spectrum of its own, or
+        // the one already made for it; see ZoomSpectrum.
+        auto zoom = active_viewport_.enabled ? band_.share_zoom(active_viewport_) : nullptr;
+        if (zoom != zoom_) {
+            // The zoom this view had draws on until the new one has a line,
+            // where it covers the new view: zooming in a step or panning
+            // past its channel then never falls back to the band's line.
+            if (zoom_ && zoom_->ready()) previous_zoom_ = std::move(zoom_);
+            zoom_ = std::move(zoom);
+        }
     }
 
     if (!channel_changed) return;
@@ -709,6 +719,22 @@ void Listener::process_block(const ChannelBlock& channelizer, const SpectrumPyra
         waterfall_credit_ += channelizer.block_seconds() * effective_lines_per_second_;
     } else {
         waterfall_credit_ = 0.0;
+    }
+    // Its lines replace the band's once it has one; until then the band's,
+    // stretched, stand in, so a new view is never blank.
+    const ZoomSpectrum* zoom = nullptr;
+    if (zoom_ && zoom_->ready()) {
+        zoom = zoom_.get();
+        previous_zoom_.reset();
+    } else if (previous_zoom_ && previous_zoom_->covers(active_viewport_.low_hz, active_viewport_.high_hz)) {
+        zoom = previous_zoom_.get();
+    } else {
+        previous_zoom_.reset();
+    }
+    if (zoom) {
+        const bool fresh = zoom->has_line();
+        spectrum = fresh ? &zoom->line() : nullptr;
+        paired = fresh ? &zoom->paired() : nullptr;
     }
     // At half the band's line rate or less, every line this listener shows
     // stands for two or more the band made: show their mean.

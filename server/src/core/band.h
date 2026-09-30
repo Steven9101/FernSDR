@@ -360,6 +360,13 @@ public:
     // The shared rows for a view (see SharedWaterfall), made on first ask.
     std::shared_ptr<SharedWaterfall> share_waterfall(const WaterfallKey& key) const;
     size_t shared_waterfall_count() const;
+    // A spectrum finer than the band's for a view it is too coarse for (see
+    // ZoomSpectrum), shared by everyone on that view and made on first ask;
+    // null when the band's own line resolves the view. It runs from the next
+    // block and is released with the last holder. Safe from any listener's
+    // thread.
+    std::shared_ptr<ZoomSpectrum> share_zoom(const ViewportSettings& viewport) const;
+    size_t zoom_count() const;
 
     std::shared_ptr<DecoderTap> add_decoder_tap(uint16_t index, double dial_hz, double offset_hz, double width_hz);
     void remove_decoder_tap(const std::shared_ptr<DecoderTap>& tap);
@@ -426,6 +433,7 @@ private:
     size_t spectrum_bins_ = 0;
     double spectrum_lines_per_second_ = 25.0;
     int spectrum_averages_ = 8;
+    float spectrum_smoothing_ = 0.5f;
 
     std::atomic<bool> running_{false};
     std::atomic<bool> restarting_{false};
@@ -466,6 +474,10 @@ private:
     mutable std::mutex waterfall_mutex_;
     mutable std::vector<std::weak_ptr<SharedWaterfall>> shared_waterfalls_;
     std::vector<std::shared_ptr<SharedWaterfall>> waterfall_snapshot_;
+    mutable std::mutex zoom_mutex_;
+    mutable std::vector<std::weak_ptr<ZoomSpectrum>> zooms_;
+    std::vector<std::shared_ptr<ZoomSpectrum>> zoom_snapshot_;
+    ChannelBlock zoom_block_;
     std::vector<std::shared_ptr<DecoderTap>> tap_snapshot_;
 
     std::function<void()> wake_;
