@@ -32,9 +32,14 @@ filter edge and a CAT link to their rig. Both are served by one page:
   on FT8 decoding, reporting spots. The panel offers what makes sense for
   this receiver (the FT8 frequencies its bands cover, the devices it finds)
   and applies the change without a restart where it can.
-- Everything the panel does can also be written in the configuration file,
-  for those who keep their setup in version control; the file is the one
-  source of truth, and the panel writes it.
+- Everything the panel does, apart from the look, can also be written in
+  the configuration file, for those who keep their setup in version
+  control. The panel writes the file, except for the station details and
+  the look, which it keeps in `fernsdr-settings.json` and
+  `fernsdr-theme.json` beside it; for a station detail, whichever of the
+  two changed last wins. A copy of a receiver's setup needs all three
+  files, as the backup on the Updates page has them (DEPLOYMENT.md,
+  "Moving to another machine").
 - When something cannot work (a band too narrow for broadcast FM, a vendor
   library not installed), the page and the panel say why and what to do,
   in words, instead of failing quietly.
