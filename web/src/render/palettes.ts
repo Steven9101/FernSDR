@@ -1,12 +1,13 @@
 /**
  * Waterfall colour maps.
  *
- * All four are monotonic in perceived lightness, so a stronger signal always
- * looks brighter. That is not decoration: on a non-monotonic map (the classic
- * blue-red-yellow ramps are the usual offenders) two different levels can read
- * as the same brightness, and weak signals disappear into a band of the scale.
- * `ember` is the one to reach for if you have trouble distinguishing colours -
- * it carries level entirely in lightness and saturation.
+ * `mono` and `ember` rise in perceived lightness all the way, so a stronger
+ * signal always looks brighter. `classic` and `aurora` do not: near the top
+ * their orange stop is darker than the yellow below it (CIE L* about 80 to 56
+ * in `classic`, 80 to 69 in `aurora`), so two different levels there can read
+ * as the same brightness. `ember` is the one to reach for if you have trouble
+ * distinguishing colours: it carries level entirely in lightness and
+ * saturation.
  */
 
 export type PaletteId = 'aurora' | 'classic' | 'mono' | 'ember';
