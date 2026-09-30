@@ -2,6 +2,8 @@
 #include "../src/util/log.h"
 #include "test_util.h"
 
+#include <dirent.h>
+#include <fcntl.h>
 #include <sys/stat.h>
 #include <unistd.h>
 
@@ -134,6 +136,39 @@ TEST_CASE(config_files_holding_secrets_are_written_for_their_owner_only) {
     CHECK(::access((directory + "/elsewhere").c_str(), F_OK) != 0);
 
     for (const char* name : {"fernsdr.conf", "theme.json", "linked.tmp"}) ::unlink((directory + "/" + name).c_str());
+    ::rmdir(directory.c_str());
+}
+
+namespace {
+
+size_t open_descriptors() {
+    size_t count = 0;
+    if (DIR* listing = ::opendir("/proc/self/fd")) {
+        while (::readdir(listing)) count++;
+        ::closedir(listing);
+    }
+    return count;
+}
+
+}  // namespace
+
+TEST_CASE(config_save_that_cannot_sync_closes_its_file) {
+    // A pipe cannot be synced: a temporary that is one makes fsync() fail
+    // the way a disk that has gone bad would, after every byte was written.
+    const std::string directory = scratch_directory();
+    CHECK(!directory.empty());
+    const std::string path = directory + "/fernsdr.conf";
+    CHECK(::mkfifo((path + ".tmp").c_str(), 0600) == 0);
+    const int reader = ::open((path + ".tmp").c_str(), O_RDONLY | O_NONBLOCK | O_CLOEXEC);
+    CHECK(reader >= 0);
+    const size_t before = open_descriptors();
+    std::string error;
+    CHECK(!fernsdr::write_text_file(path, "[a]\n", error));
+    CHECK(error.find("failed") != std::string::npos);
+    CHECK_EQ(open_descriptors(), before);
+    CHECK(::access(path.c_str(), F_OK) != 0);
+    ::close(reader);
+    ::unlink((path + ".tmp").c_str());
     ::rmdir(directory.c_str());
 }
 

@@ -293,8 +293,13 @@ bool write_text_file(const std::string& path, const std::string& text, std::stri
             return false;
         }
     }
-    if (::fsync(fd) != 0 || ::close(fd) != 0) {
-        error = "write to " + temporary + " failed: " + std::strerror(errno);
+    // Closed whether or not the sync worked, and the sync's reason is the
+    // one given: every failed save would otherwise keep a descriptor open.
+    const bool synced = ::fsync(fd) == 0;
+    const int sync_errno = errno;
+    const bool closed = ::close(fd) == 0;
+    if (!synced || !closed) {
+        error = "write to " + temporary + " failed: " + std::strerror(synced ? errno : sync_errno);
         std::remove(temporary.c_str());
         return false;
     }
