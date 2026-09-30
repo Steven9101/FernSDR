@@ -210,6 +210,26 @@ describe('rig link', () => {
     await link.disconnect();
   });
 
+  it('stays disconnected when Disconnect is pressed while the port is still opening', async () => {
+    const radio = new FakeRadio();
+    let opened: () => void = () => {};
+    let closed = 0;
+    radio.open = () => new Promise<void>((resolve) => (opened = resolve));
+    radio.close = async () => void closed++;
+    const link = new RigLink(receiver().access, { requestPort: async () => radio }, now);
+    const connecting = link.connect(settings('both'));
+    await advance(0);
+    await link.disconnect();
+    expect(rigState.value.status).toBe('off');
+    opened();
+    await connecting;
+    await advance(1000);
+    expect(link.connected).toBe(false);
+    expect(rigState.value.status).toBe('off');
+    expect(radio.written).toEqual([]);
+    expect(closed).toBe(1);
+  });
+
   it('explains a browser without Web Serial, and treats a closed chooser as nothing', async () => {
     await new RigLink(receiver().access, null, now).connect(settings('follow'));
     expect(rigState.value.message).toContain('Chrome, Edge or Opera');

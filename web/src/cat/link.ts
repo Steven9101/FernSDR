@@ -105,6 +105,13 @@ export class RigLink {
   private quietUntil = 0;
   private lastAnswer = 0;
   private closing = false;
+  /**
+   * Counts connection attempts and disconnects. A connect waiting on the
+   * port chooser or on the port opening checks it after each wait: the
+   * listener may have pressed Disconnect meanwhile, and the radio must then
+   * stay unlinked rather than come alive once the port answers.
+   */
+  private attempt = 0;
 
   constructor(
     private readonly receiver: ReceiverAccess,
@@ -119,6 +126,8 @@ export class RigLink {
   /** Must be called from the click that asks for it: the browser shows its port chooser. */
   async connect(settings: RigSettings): Promise<void> {
     if (this.port) await this.disconnect();
+    const attempt = ++this.attempt;
+    const stale = () => attempt !== this.attempt;
     if (!this.serial) {
       this.fail('This browser cannot reach a serial port. Chrome, Edge or Opera on a computer can.');
       return;
@@ -129,14 +138,15 @@ export class RigLink {
       port = await this.serial.requestPort();
     } catch {
       // The listener closed the chooser: not an error worth a red line.
-      rigState.value = { status: 'off', message: '', freq: null, mode: null };
+      if (!stale()) rigState.value = { status: 'off', message: '', freq: null, mode: null };
       return;
     }
+    if (stale()) return;
     const driver = DRIVERS.find((d) => d.id === settings.driver) ?? DRIVERS[0];
     try {
       await port.open({ baudRate: settings.baud, stopBits: driver.stopBits });
     } catch {
-      this.fail('The port would not open. Another program may be using it: close its CAT connection and try again.');
+      if (!stale()) this.fail('The port would not open. Another program may be using it: close its CAT connection and try again.');
       return;
     }
     // Many shacks key the transmitter, or CW, from the port's DTR or RTS
@@ -147,6 +157,14 @@ export class RigLink {
       await port.setSignals?.({ dataTerminalReady: false, requestToSend: false });
     } catch {
       // Some adapters have no modem lines to set.
+    }
+    if (stale()) {
+      try {
+        await port.close();
+      } catch {
+        // Unplugged meanwhile: nothing left to close.
+      }
+      return;
     }
     this.port = port;
     this.settings = settings;
@@ -169,6 +187,7 @@ export class RigLink {
   }
 
   async disconnect(message = ''): Promise<void> {
+    this.attempt++;
     this.closing = true;
     for (const timer of this.timers) clearInterval(timer);
     this.timers = [];
