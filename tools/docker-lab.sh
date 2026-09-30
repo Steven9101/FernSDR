@@ -90,7 +90,7 @@ up "$((PORT + 1))" && pass "a host directory owned by root works as the volume" 
 # 3. A setup that is neither.
 docker run -d --name "$PREFIX-c" -e FERNSDR_SETUP=office "$IMAGE" > /dev/null
 sleep 2
-docker logs "$PREFIX-c" 2>&1 | grep -q 'FERNSDR_SETUP is home or internet' &&
+docker logs "$PREFIX-c" 2>&1 | grep -q 'FERNSDR_SETUP is home, internet or http, not office' &&
     [ "$(docker inspect -f '{{.State.Running}}' "$PREFIX-c")" = false ] &&
     pass "an unknown FERNSDR_SETUP stops with the reason" || fail "FERNSDR_SETUP=office: $(docker logs "$PREFIX-c" 2>&1 | tail -2)"
 
