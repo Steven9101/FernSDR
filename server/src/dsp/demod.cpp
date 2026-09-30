@@ -172,6 +172,11 @@ void Demodulator::process(const cfloat* in, size_t count, float* out) {
             for (size_t i = 0; i < count; i++) out[i] *= fm_gain_;
             break;
     }
+    // On silence these decay into subnormals and stay there, a rounding step
+    // from zero, and every sample after costs two to three times as much.
+    // Far below anything audible, so zero, as the biquads do.
+    if (std::fabs(dc_state_) < 1e-30f) dc_state_ = 0.0f;
+    if (std::fabs(deemph_state_) < 1e-30f) deemph_state_ = 0.0f;
 }
 
 // The channelizer's mask already selected the sideband, so the audio is

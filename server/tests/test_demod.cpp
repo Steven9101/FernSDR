@@ -52,6 +52,30 @@ TEST_CASE(demod_ssb_takes_the_real_part_at_full_amplitude) {
     CHECK_NEAR(d.level_dbfs(), 20.0 * std::log10(0.4), 0.1);
 }
 
+TEST_CASE(demod_settles_to_exact_zero_on_silence) {
+    // A carrier, then silence long enough for the carrier removal and the
+    // de-emphasis to decay past the smallest normal float. Left there they
+    // would stay a rounding step from zero, subnormal, and make every
+    // sample after two to three times as costly.
+    for (Mode mode : {Mode::Am, Mode::Sam, Mode::Nfm}) {
+        Demodulator demod;
+        demod.configure(mode, kRate);
+        std::vector<cfloat> block(128);
+        std::vector<float> out(block.size());
+        for (int b = 0; b < 200; b++) {
+            for (size_t i = 0; i < block.size(); i++) {
+                block[i] = std::polar(0.3f, static_cast<float>(0.2 * static_cast<double>(b * block.size() + i)));
+            }
+            demod.process(block.data(), block.size(), out.data());
+        }
+        std::fill(block.begin(), block.end(), cfloat(0.0f, 0.0f));
+        for (int b = 0; b < 3000; b++) demod.process(block.data(), block.size(), out.data());
+        bool settled = true;
+        for (float value : out) settled = settled && value == 0.0f;
+        CHECK(settled);
+    }
+}
+
 TEST_CASE(demod_am_recovers_the_envelope) {
     const size_t n = 24000;
     std::vector<cfloat> in(n);

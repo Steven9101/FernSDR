@@ -143,6 +143,11 @@ void AudioPost::apply_noise_reduction(float* coeffs) {
         // Blend toward unity so partial strength means partial reduction.
         const float applied = 1.0f + nr_strength_ * (gain_state_[k] - 1.0f);
         coeffs[k] *= applied;
+        // Behind a squelch the energies decay into subnormals and stay there,
+        // and the whole stage costs more than twice as much. Far below
+        // anything audible, so zero.
+        if (smoothed_energy_[k] < 1e-30f) smoothed_energy_[k] = 0.0f;
+        if (noise_floor_[k] < 1e-30f) noise_floor_[k] = 0.0f;
     }
     primed_ = true;
 }
@@ -150,6 +155,7 @@ void AudioPost::apply_noise_reduction(float* coeffs) {
 void AudioPost::apply_auto_notch(float* coeffs) {
     for (size_t k = 0; k < kPostHop; k++) {
         tonal_average_[k] += kTonalAverageRate * (std::fabs(coeffs[k]) - tonal_average_[k]);
+        if (tonal_average_[k] < 1e-30f) tonal_average_[k] = 0.0f;
     }
 
     for (size_t k = 0; k < kPostHop; k++) {
