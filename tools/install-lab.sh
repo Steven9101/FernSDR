@@ -678,6 +678,7 @@ run() {
     name=$PREFIX-$(slug "$distro")
     results=$WORK/result-$(slug "$distro").txt
     : > "$results"
+    rm -f "$WORK/done-$(slug "$distro")"
     boot "$name" "$distro"
     machine "$name" "$distro" "$results" >> "$WORK/log-$(slug "$distro").txt" 2>&1 || true
     [ -n "${LAB_KEEP:-}" ] || docker rm -f "$name" > /dev/null
@@ -685,6 +686,7 @@ run() {
         extras "$distro" "$results" >> "$WORK/log-$(slug "$distro").txt" 2>&1 || true
     fi
     cat "$results"
+    : > "$WORK/done-$(slug "$distro")"
 }
 
 say "running on:$READY"
@@ -703,6 +705,14 @@ wait
 say ""
 FAILURES=$(cat "$WORK"/result-*.txt | grep -c '^FAIL' || true)
 PASSES=$(cat "$WORK"/result-*.txt | grep -c '^PASS' || true)
+# A machine that did not boot, or whose run stopped on the way under set -e,
+# leaves no FAIL line of its own: its missing record of a finished run is it.
+for distro in $READY; do
+    if [ ! -f "$WORK/done-$(slug "$distro")" ]; then
+        say "FAIL  $distro: its run stopped before the end; log-$(slug "$distro").txt and the output above say where"
+        FAILURES=$((FAILURES + 1))
+    fi
+done
 if [ "$FAILURES" -eq 0 ]; then
     say "all $PASSES checks passed"
 else
