@@ -15,13 +15,17 @@ try {
       const rect = s => document.querySelector(s).getBoundingClientRect().toJSON();
       return { gate: rect('.audio-gate'), title: rect('.audio-gate__title'),
         action: rect('.audio-gate__action'), tuner: rect('.tuner'), stage: rect('.stage'),
-        spectrum: rect('.spectrum'),
+        spectrum: rect('.spectrum'), trace: Number(document.querySelector('.spectrum').dataset.traceHeight),
         overflow: document.documentElement.scrollWidth - innerWidth };
     });
     assert.equal(geometry.overflow, 0);
     assert(geometry.gate.x >= 0 && geometry.gate.right <= width);
     assert(geometry.gate.bottom <= geometry.tuner.top + 1, JSON.stringify(geometry));
-    assert(geometry.spectrum.bottom <= geometry.gate.top + 1, 'tuning controls cover the spectrum');
+    // The prompt to start the audio floats over the waterfall, so that its
+    // going on the first tap moves nothing; the spectrum's trace stays in
+    // view (a phone on its side too short for one shows none).
+    assert(geometry.spectrum.top + geometry.trace <= geometry.gate.top + 1 || geometry.trace === 0,
+           'the audio prompt covers the spectrum');
     assert(geometry.title.height < 30 && geometry.action.height < 48, JSON.stringify(geometry));
     await page.screenshot({ path: `${out}/audio-${width}x${height}.png` });
     await page.locator('.audio-gate__card').focus();

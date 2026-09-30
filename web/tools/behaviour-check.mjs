@@ -117,7 +117,7 @@ async function desktop() {
     tabs: [...document.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent),
   }));
   assert.equal(seen.identity.operator, 'Test operator');
-  assert.deepEqual(seen.identity.tabs, ['Receive', 'Display', 'Connection', 'History', 'Station']);
+  assert.deepEqual(seen.identity.tabs, ['Receive', 'Display', 'Stream', 'History', 'Station']);
 
   seen.notice = await bannerGeometry(page);
   assert.equal(seen.notice.text, 'Maintenance tonight at 22 UTC');
@@ -176,7 +176,7 @@ async function desktop() {
   await page.keyboard.press('?');
   await dialog.waitFor();
   seen.help = { rows: await dialog.locator('.shortcuts__row').count(), keys: await dialog.locator('kbd').allTextContents() };
-  assert.equal(seen.help.rows, 10);
+  assert.equal(seen.help.rows, 11);
   await page.keyboard.press('Escape');
   await dialog.waitFor({ state: 'detached' });
   await page.keyboard.press('?');
@@ -233,10 +233,13 @@ async function desktop() {
   await page.getByLabel('Floor', { exact: true }).focus();
   await page.keyboard.press('Home');
   seen.floor = await page.locator('.field', { hasText: 'Floor' }).locator('.field__value').textContent();
-  assert.equal(seen.floor, '-150 dBFS');
+  assert.equal(seen.floor, '\u2212150 dBFS');
   await automatic.click();
   await page.getByRole('switch', { name: 'Band plan' }).click();
   await page.getByRole('switch', { name: 'Band plan' }).click();
+
+  // Sound shaping, de-emphasis among it, is shown with the Full controls.
+  await page.getByRole('radio', { name: 'Full', exact: true }).click();
 
   // Receive controls.
   await page.locator('#control-tab-receive').click();
@@ -259,7 +262,7 @@ async function desktop() {
   seen.squelchClosed = await page.locator('.field', { has: squelch }).locator('.field__value').textContent();
   await page.keyboard.press('Home');
   seen.squelchOpen = await page.locator('.field', { has: squelch }).locator('.field__value').textContent();
-  assert.deepEqual([seen.squelchClosed, seen.squelchOpen], ['-20 dBFS', 'open']);
+  assert.deepEqual([seen.squelchClosed, seen.squelchOpen], ['\u221220 dBFS', 'open']);
   const reduction = page.getByLabel('Reduction', { exact: true });
   await reduction.focus();
   for (let i = 0; i < 5; i++) await page.keyboard.press('ArrowRight');
@@ -327,8 +330,8 @@ async function desktop() {
   await page.locator('.widgets').waitFor();
   seen.widgets = await page.locator('.widget__head').allTextContents();
   assert.deepEqual(seen.widgets, ['Chat', 'Time', 'About', 'Links', 'Bands']);
-  seen.clock = await page.locator('.widget__clock').textContent();
-  assert.match(seen.clock, /^\d\d:\d\d:\d\dUTC$/);
+  seen.clock = await page.locator('.clock__time').textContent();
+  assert.match(seen.clock, /^\d\d:\d\d:\d\d$/);
   seen.links = await page.locator('.widget__links a').evaluateAll((links) => links.map((link) => `${link.textContent}|${link.target}|${link.rel}`));
   seen.bars = await page.locator('.widget__bar-label').allTextContents();
   const name = page.getByLabel('Your name or callsign');
