@@ -3561,6 +3561,24 @@ select.tool__input {
   padding-right: var(--space-2);
 }
 
+/* The page's own few native selects (rig, baud, CI-V address, tone squelch,
+   decoder channel) in the theme's colours, closed and open: left transparent,
+   the list a system draws when one opens came up light on some systems while
+   its text followed the dark theme, white on white. */
+select.tool__input,
+.field__select,
+.decodes__channel {
+  background-color: var(--popover);
+  color: var(--foreground);
+}
+
+select.tool__input option,
+.field__select option,
+.decodes__channel option {
+  background-color: var(--popover);
+  color: var(--foreground);
+}
+
 .tool__input:disabled {
   opacity: 0.6;
 }
