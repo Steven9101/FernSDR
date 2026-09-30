@@ -199,9 +199,11 @@ bool Server::start(std::string& error) {
     // later must not inherit the listening socket, or it would keep the port
     // bound after the receiver stops.
     listen_fd_ = ::socket(use_ipv6 ? AF_INET6 : AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
-    if (listen_fd_ < 0 && use_ipv6) {
+    if (listen_fd_ < 0 && wildcard) {
         // A kernel built without IPv6, or a container that hides it. Fall back
-        // rather than refusing to start.
+        // rather than refusing to start. Only for an address meaning
+        // everywhere: an IPv6 address the operator named, ::1 say, must not
+        // turn into every IPv4 interface, so that fails below instead.
         LOG_INFO("server", "this kernel has no IPv6; falling back to IPv4");
         dual_stack_ = false;
         listen_fd_ = ::socket(AF_INET, SOCK_STREAM | SOCK_CLOEXEC, 0);
