@@ -202,16 +202,18 @@ FERNSDR_SIMD_INLINE void kernel_power_lanes(const float* re, const float* im, si
         store(acc + j, a);
     }
     for (; j < n; j++) {
-        const float yr = 0.5f * re[j] - 0.25f * (re[j - 1] + re[j + 1]);
-        const float yi = 0.5f * im[j] - 0.25f * (im[j - 1] + im[j + 1]);
+        const float yr = 0.5f * re[j] - 0.25f * ((re + j)[-1] + re[j + 1]);
+        const float yi = 0.5f * im[j] - 0.25f * ((im + j)[-1] + im[j + 1]);
         acc[j] += yr * yr + yi * yi;
     }
 }
 
 void kernel_power_scalar(const float* re, const float* im, size_t n, float* acc) {
+    // (re + j)[-1], not re[j - 1]: at j = 0 the unsigned index would wrap,
+    // and the halo sample before `re` is only reachable by a signed step.
     for (size_t j = 0; j < n; j++) {
-        const float yr = 0.5f * re[j] - 0.25f * (re[j - 1] + re[j + 1]);
-        const float yi = 0.5f * im[j] - 0.25f * (im[j - 1] + im[j + 1]);
+        const float yr = 0.5f * re[j] - 0.25f * ((re + j)[-1] + re[j + 1]);
+        const float yi = 0.5f * im[j] - 0.25f * ((im + j)[-1] + im[j + 1]);
         acc[j] += yr * yr + yi * yi;
     }
 }
