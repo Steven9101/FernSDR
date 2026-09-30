@@ -74,12 +74,15 @@ bool check_band_settings(const ConfigSection& section, const Source& source, std
     // Both follow the sample rate by themselves; a value set by hand is held
     // to what the transforms are built and measured for, rather than taken
     // as it comes or quietly replaced.
-    const long fft = section.get_int("fft_size", 0);
+    // Left out or empty is 0, which follows the sample rate; a value that is
+    // not a number is -1, refused like any other, not read as left out.
+    const auto stated = [&](const char* key) { return trim(section.get(key)).empty() ? 0 : section.get_int(key, -1); };
+    const long fft = stated("fft_size");
     if (fft != 0 && (!power_of_two(fft) || fft < 1024 || fft > (1L << 20))) {
         error = where + "fft_size is a power of two from 1024 to 1048576; left out, it follows the sample rate";
         return false;
     }
-    const long bins = section.get_int("spectrum_bins", 0);
+    const long bins = stated("spectrum_bins");
     if (bins != 0 && (!power_of_two(bins) || bins < 1024 || bins > (1L << 21))) {
         error = where + "spectrum_bins is a power of two from 1024 to 2097152; left out, it follows the sample rate";
         return false;

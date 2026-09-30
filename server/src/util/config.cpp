@@ -8,6 +8,7 @@
 
 #include <cctype>
 #include <cerrno>
+#include <cmath>
 #include <cstdlib>
 #include <cstdio>
 #include <cstring>
@@ -215,21 +216,23 @@ bool parse_frequency(const std::string& text, double& hz) {
     const double value = std::strtod(t.c_str(), &end);
     if (end == t.c_str()) return false;
 
-    const std::string suffix = trim(std::string(end));
-    if (suffix.empty()) {
-        hz = value;
-        return true;
+    // Accept "7.1M", "7.1MHz", "14074k", "14074 kHz", "500Hz", and nothing
+    // after the unit: "7.1MHzjunk" is a typo, not a frequency.
+    std::string suffix = trim(std::string(end));
+    for (char& c : suffix) c = static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+    double multiplier = 1.0;
+    if (!suffix.empty() && suffix != "hz") {
+        switch (suffix[0]) {
+            case 'k': multiplier = 1e3; break;
+            case 'm': multiplier = 1e6; break;
+            case 'g': multiplier = 1e9; break;
+            default: return false;
+        }
+        if (suffix.size() > 1 && suffix.compare(1, std::string::npos, "hz") != 0) return false;
     }
-    // Accept "7.1M", "7.1MHz", "14074k", "14074 kHz".
-    const char unit = static_cast<char>(std::tolower(static_cast<unsigned char>(suffix[0])));
-    double multiplier;
-    switch (unit) {
-        case 'k': multiplier = 1e3; break;
-        case 'm': multiplier = 1e6; break;
-        case 'g': multiplier = 1e9; break;
-        case 'h': multiplier = 1.0; break;  // plain "Hz"
-        default: return false;
-    }
+    // "nan" and "inf" read as numbers, and so does 1e400 as infinity; no
+    // setting means either, and a NaN passes every range check after it.
+    if (!std::isfinite(value * multiplier)) return false;
     hz = value * multiplier;
     return true;
 }

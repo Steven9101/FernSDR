@@ -61,6 +61,10 @@ TEST_CASE(calibration_parses_the_configuration_form) {
     CHECK(cal.parse("7100k:+12", error));
     CHECK(std::fabs(cal.points()[0].hz - 7.1e6) < 1.0);
     CHECK(std::fabs(cal.points()[0].offset_db - 12.0) < 1e-9);
+
+    // The suffixes the rest of the file takes.
+    CHECK(cal.parse("14.1 MHz:-3, 7100kHz:-2", error));
+    CHECK(cal.points().size() == 2);
 }
 
 TEST_CASE(calibration_refuses_what_it_cannot_read) {
@@ -76,6 +80,9 @@ TEST_CASE(calibration_refuses_what_it_cannot_read) {
     CHECK(!cal.parse("14.1M:loud", error));
     CHECK(!cal.parse("14.1M:-23dB", error));
     CHECK(!cal.parse("14.1M:-999", error));
+    CHECK(!cal.parse("14.1M:nan", error));
+    CHECK(!cal.parse("nan:-3", error));
+    CHECK(!cal.parse("14.1Mjunk:-3", error));
     CHECK(cal.points().size() == 1);
     CHECK(std::fabs(cal.points()[0].offset_db - -20.0) < 1e-9);
 }

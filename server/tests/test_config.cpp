@@ -73,6 +73,13 @@ TEST_CASE(config_parses_frequency_suffixes) {
     CHECK(!fernsdr::parse_frequency("banana", hz));
     CHECK(!fernsdr::parse_frequency("", hz));
     CHECK(!fernsdr::parse_frequency("7.1X", hz));
+    CHECK(fernsdr::parse_frequency("14074 kHz", hz)); CHECK_NEAR(hz, 14074000.0, 1e-9);
+    CHECK(fernsdr::parse_frequency("1.2ghz", hz));    CHECK_NEAR(hz, 1.2e9, 1e-9);
+    // Anything after a unit's first letter was taken, and so were values no
+    // setting can hold.
+    for (const char* text : {"7.1MHzjunk", "7.1 Mega", "12kbps", "nan", "inf", "-inf", "1e400", "1e305G", "7.1M Hz"}) {
+        CHECK(!fernsdr::parse_frequency(text, hz));
+    }
 }
 
 TEST_CASE(config_booleans_accept_the_usual_spellings) {

@@ -7,6 +7,7 @@
 #include <unistd.h>
 
 #include <chrono>
+#include <cmath>
 #include <cstdio>
 #include <cstdlib>
 #include <fstream>
@@ -1012,11 +1013,13 @@ TEST_CASE(band_values_set_by_hand_are_refused_when_saved_and_replaced_at_a_start
     // fft_size 2, spectrum_bins not a power of two, a range past what the
     // input covers: the panel refuses each with the reason; a receiver that
     // starts with the same file runs the band on its defaults.
+    // A value that is not a number at all is refused too, not read as left out.
     const char* cases[] = {"fft_size = 2\n", "spectrum_bins = 100000\n", "low = 7000000\nhigh = 9000000\n",
-                           "low = 7200000\nhigh = 7100000\n"};
+                           "low = 7200000\nhigh = 7100000\n", "fft_size = nonsense\n", "spectrum_bins = 4k junk\n"};
     const char* reasons[] = {"fft_size is a power of two", "spectrum_bins is a power of two",
-                             "must lie in what the input covers", "must be below high"};
-    for (size_t i = 0; i < 4; i++) {
+                             "must lie in what the input covers", "must be below high", "fft_size is a power of two",
+                             "spectrum_bins is a power of two"};
+    for (size_t i = 0; i < 6; i++) {
         fernsdr::Config config;
         std::string error;
         CHECK(config.parse(std::string("[band:t]\nsource = test\nsample_rate = 192000\ncenter = 7100000\n") + cases[i],
@@ -1027,6 +1030,21 @@ TEST_CASE(band_values_set_by_hand_are_refused_when_saved_and_replaced_at_a_start
         fernsdr::Radio started;
         CHECK(started.configure(config, error));
     }
+}
+
+TEST_CASE(band_takes_its_defaults_for_values_that_are_not_numbers) {
+    // spectrum_rate = nan passed the clamp and reached a conversion to int.
+    ConfigSection section("band:t");
+    section.set("source", "test");
+    section.set("sample_rate", "192000");
+    section.set("center", "7100000");
+    section.set("fft_size", "8192");
+    section.set("spectrum_rate", "nan");
+    section.set("usable_fraction", "nan");
+    std::string error;
+    Band band("t", "t", make_source(section, error), section);
+    CHECK_EQ(band.spectrum_lines_per_second(), 25.0);
+    CHECK(std::isfinite(band.low_hz()) && std::isfinite(band.high_hz()) && band.low_hz() < band.high_hz());
 }
 
 TEST_CASE(band_range_is_judged_as_the_band_will_place_it) {

@@ -1,41 +1,20 @@
 #include "calibration.h"
 
-#include <cctype>
 #include <cstdio>
 #include <cstdlib>
+
+#include "../util/config.h"
 
 namespace fernsdr {
 
 namespace {
 
-/** Trims spaces and tabs from both ends. */
-std::string trim(const std::string& text) {
-    size_t start = 0;
-    size_t end = text.size();
-    while (start < end && std::isspace(static_cast<unsigned char>(text[start]))) start++;
-    while (end > start && std::isspace(static_cast<unsigned char>(text[end - 1]))) end--;
-    return text.substr(start, end - start);
-}
-
 /**
- * Reads a frequency, accepting the suffixes the rest of the configuration
- * does, so "14.1M" here means what it means everywhere else in the file.
+ * Reads a frequency the way the rest of the configuration does, so "14.1M"
+ * here means what it means everywhere else in the file.
  */
-bool parse_frequency(const std::string& text, double& out) {
-    if (text.empty()) return false;
-    char* end = nullptr;
-    const double value = std::strtod(text.c_str(), &end);
-    if (end == text.c_str()) return false;
-
-    std::string suffix = trim(std::string(end));
-    double scale = 1.0;
-    if (suffix == "k" || suffix == "K") scale = 1e3;
-    else if (suffix == "M" || suffix == "m") scale = 1e6;
-    else if (suffix == "G" || suffix == "g") scale = 1e9;
-    else if (!suffix.empty()) return false;
-
-    out = value * scale;
-    return out > 0.0;
+bool parse_point_frequency(const std::string& text, double& out) {
+    return parse_frequency(text, out) && out > 0.0;
 }
 
 }  // namespace
@@ -63,7 +42,7 @@ bool Calibration::parse(const std::string& text, std::string& error) {
                 return false;
             }
             CalibrationPoint point;
-            if (!parse_frequency(trim(item.substr(0, colon)), point.hz)) {
+            if (!parse_point_frequency(item.substr(0, colon), point.hz)) {
                 error = "\"" + item.substr(0, colon) + "\" is not a frequency";
                 return false;
             }
@@ -76,7 +55,9 @@ bool Calibration::parse(const std::string& text, std::string& error) {
             }
             // A correction of more than 120 dB is a typo, not a measurement,
             // and accepting it produces a meter that is confidently absurd.
-            if (point.offset_db < -120.0 || point.offset_db > 120.0) {
+            // Written so that NaN, which compares false with everything, is
+            // outside too.
+            if (!(point.offset_db >= -120.0 && point.offset_db <= 120.0)) {
                 error = "an offset of " + offset + " dB is outside anything real";
                 return false;
             }
