@@ -710,6 +710,7 @@ void Server::accept_pending() {
         event.events = EPOLLIN;
         event.data.fd = fd;
         epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &event);
+        connection->interest_ = EPOLLIN;
         connections_.emplace(fd, std::move(connection));
     }
 }
@@ -1100,8 +1101,10 @@ void Server::update_interest(Connection& connection) {
     // every listener's audio goes through. A hang-up is reported regardless.
     const bool reading = !connection.close_after_flush_ && connection.state_ != Connection::State::Closing;
     event.events = (reading ? EPOLLIN : 0u) | (connection.want_write_ ? EPOLLOUT : 0u);
+    if (event.events == connection.interest_) return;
     event.data.fd = connection.fd_;
     epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, connection.fd_, &event);
+    connection.interest_ = event.events;
 }
 
 void Server::drop(Connection& connection, const char* reason) {

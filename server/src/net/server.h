@@ -118,6 +118,11 @@ private:
     bool handshake_completed_ = false;
     bool disconnect_delivered_ = false;
     bool want_write_ = false;
+    // What epoll watches this connection for now, so that the interest is
+    // only changed when it changes: a listener's connection is written some
+    // seventy times a second, nearly always emptied at once, and setting the
+    // same interest again after each was as many system calls as the writes.
+    uint32_t interest_ = 0;
     bool close_after_flush_ = false;
     int64_t last_activity_ms_ = 0;
     int64_t last_pong_ms_ = 0;
