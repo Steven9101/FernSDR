@@ -42,7 +42,10 @@ void encode_frame(Opcode opcode, const uint8_t* payload, size_t length, std::vec
         out.push_back(static_cast<uint8_t>(length));
     } else {
         out.push_back(127);
-        for (int i = 7; i >= 0; i--) out.push_back(static_cast<uint8_t>(length >> (8 * i)));
+        // Widened first: size_t is 32 bits on armhf, where shifting it by 32
+        // or more is undefined.
+        const uint64_t wide = length;
+        for (int i = 7; i >= 0; i--) out.push_back(static_cast<uint8_t>(wide >> (8 * i)));
     }
 
     if (length) out.insert(out.end(), payload, payload + length);

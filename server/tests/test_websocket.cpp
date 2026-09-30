@@ -92,6 +92,9 @@ TEST_CASE(websocket_encodes_the_three_length_forms) {
     std::vector<uint8_t> large(70000, 0xCD);
     encode_frame(Opcode::Binary, large.data(), large.size(), out);
     CHECK_EQ(out[1], 127);
+    // All eight length bytes, big-endian: 70000 is 0x11170.
+    const uint8_t length[8] = {0, 0, 0, 0, 0, 0x01, 0x11, 0x70};
+    for (int i = 0; i < 8; i++) CHECK_EQ(out[2 + i], length[i]);
     CHECK_EQ(static_cast<long long>(out.size()), 10 + 70000);
 }
 
