@@ -9,6 +9,10 @@ listen. They pick a frequency, they hear what the antenna hears, and they see a
 picture of the radio spectrum scrolling past. Listeners tune independently;
 the server's CPU and uplink determine how many can listen at once.
 
+Listen to one now at [demo.fernsdr.org](https://demo.fernsdr.org), a
+recording of long and medium wave, or read more at
+[fernsdr.org](https://fernsdr.org).
+
 ![The listener's page: spectrum and waterfall of the medium wave band, the receiver tuned to 909 kHz AM, and the station's widgets beside it](docs/images/listener.webp)
 
 ## Measured
