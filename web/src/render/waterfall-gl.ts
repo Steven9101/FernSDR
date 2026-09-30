@@ -41,7 +41,6 @@ uniform float uFloorDb;
 uniform float uCeilingDb;
 uniform float uWriteRow;      // next row to be written
 uniform float uRowsVisible;
-uniform float uPixels;        // the canvas's width in device pixels
 uniform vec3  uEmptyColor;
 
 void main() {
@@ -82,28 +81,7 @@ void main() {
   // its texel centre is at i+0.5 - which is exactly u*n. Adding a half-texel on
   // top of that, as this did, shifted every row half a bin to the right.
   float texel = clamp(u * rowColumns, 0.5, rowColumns - 0.5);
-  // How many of the line's cells one pixel spans. A wide line arrives
-  // already reduced to about a cell a pixel by keeping each cell's peak, and
-  // interpolating those again between neighbours took up to 30 dB off a
-  // carrier one cell wide, depending only on where it fell. So a cell is
-  // read whole, or the strongest of those under the pixel, and the smooth
-  // blend is kept for zooming in, where a cell is several pixels wide.
-  float perPixel = rowColumns * uViewSpan / (rowSpan * uPixels);
-  float db;
-  if (perPixel < 0.3) {
-    db = texture(uLevels, vec2(texel / ${MAX_LINE_WIDTH}.0, rowV)).r;
-  } else {
-    // The cells under this pixel's footprint, [texel - perPixel / 2,
-    // texel + perPixel / 2) in cell units.
-    float first = floor(max(texel - 0.5 * perPixel, 0.0));
-    float last = max(floor(min(texel + 0.5 * perPixel, rowColumns) - 0.0001), first);
-    db = -1000.0;
-    for (int i = 0; i < 8; i++) {
-      float cell = min(first + float(i), rowColumns - 1.0);
-      db = max(db, texture(uLevels, vec2((cell + 0.5) / ${MAX_LINE_WIDTH}.0, rowV)).r);
-      if (cell >= last) break;
-    }
-  }
+  float db = texture(uLevels, vec2(texel / ${MAX_LINE_WIDTH}.0, rowV)).r;
   float level = clamp((db - uFloorDb) / max(uCeilingDb - uFloorDb, 1.0), 0.0, 1.0);
   fragColor = vec4(texture(uPalette, vec2(level, 0.5)).rgb, 1.0);
 }`;
@@ -159,7 +137,7 @@ export class WaterfallRenderer {
     gl.useProgram(this.program);
     for (const name of [
       'uLevels', 'uRowMeta', 'uPalette', 'uViewLow', 'uViewSpan', 'uFloorDb', 'uCeilingDb',
-      'uWriteRow', 'uRowsVisible', 'uPixels', 'uEmptyColor',
+      'uWriteRow', 'uRowsVisible', 'uEmptyColor',
     ]) {
       this.uniforms[name] = gl.getUniformLocation(this.program, name);
     }
@@ -332,7 +310,6 @@ export class WaterfallRenderer {
     gl.bindTexture(gl.TEXTURE_2D, this.paletteTexture);
 
     gl.uniform1f(this.uniforms.uViewLow, viewLowHz - this.referenceHz);
-    gl.uniform1f(this.uniforms.uPixels, width);
     gl.uniform1f(this.uniforms.uViewSpan, viewHighHz - viewLowHz);
     gl.uniform1f(this.uniforms.uFloorDb, this.floorDb);
     gl.uniform1f(this.uniforms.uCeilingDb, this.ceilingDb);
