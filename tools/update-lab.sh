@@ -48,8 +48,11 @@ in_lab() { docker exec "$NAME" "$@"; }
 # --- keys, certificates, builds ---------------------------------------------
 
 say "work directory: $WORK"
-TOOL=$REPO/server/build/fernsdr-release
-make -C "$REPO/server" -s release-tools
+# Built in a copy, as everything here is: the checkout stays as it was.
+mkdir -p "$WORK/tool"
+rsync -a --delete --exclude 'build' --exclude 'build-*' --exclude 'dist' "$REPO/server/" "$WORK/tool/server/"
+make -C "$WORK/tool/server" -s release-tools
+TOOL=$WORK/tool/server/build/fernsdr-release
 rm -f "$WORK/release.key"
 PUB=$("$TOOL" keygen "$WORK/release.key")
 KEY_BYTES=$(printf '%s' "$PUB" | sed 's/\(..\)/0x\1, /g; s/, $//')

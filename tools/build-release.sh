@@ -149,8 +149,13 @@ case "$STEP" in
         sign "$SECRET"
         ;;
     rehearsal)
-        make -C "$REPO/server" -s release-tools
-        key=$("$REPO/server/build/fernsdr-release" keygen "$WORK/rehearsal.key") || die "no key for the rehearsal"
+        # The tool that makes the key, from a copy of its own: the release's
+        # copy has to be made with the key already in it.
+        SRC=$WORK/keygen
+        copy_source
+        make -C "$SRC/server" -s release-tools
+        key=$("$SRC/server/build/fernsdr-release" keygen "$WORK/rehearsal.key") || die "no key for the rehearsal"
+        SRC=$WORK/src
         copy_source "$key"
         build
         sign "$WORK/rehearsal.key"

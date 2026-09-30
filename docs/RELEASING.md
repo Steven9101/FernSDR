@@ -79,7 +79,8 @@ signing one no receiver takes.
    Alpine, Void and Devuan with OpenRC, runit and SysV init; the second puts
    the updater through updates that work, fail and are interrupted
    (`LAB_INIT=sysv` for the same without systemd). Both sign with keys of
-   their own and change nothing on the machine but containers.
+   their own and change nothing on the machine but containers and a work
+   directory under /tmp; the checkout stays as it was.
    `make -C server docker` and `tools/docker-lab.sh` do the same for the
    container image.
 4. Start the Release workflow with *publish* and approve the `release`
