@@ -1,9 +1,11 @@
 #include "../src/dsp/agc.h"
 #include "test_util.h"
 
+#include <atomic>
 #include <cmath>
 #include <complex>
 #include <random>
+#include <thread>
 #include <vector>
 
 using fernsdr::cfloat;
@@ -242,4 +244,27 @@ TEST_CASE(blanker_reference_falls_at_a_wideband_rate) {
     block[block.size() / 2] = 0.25f;
     blanker.process_real(block.data(), block.size());
     CHECK(std::fabs(block[block.size() / 2]) < 0.25f);
+}
+
+TEST_CASE(blanker_fraction_can_be_read_while_the_band_runs) {
+    // The band's thread writes the fraction and the admin panel's reads it.
+    // Under TSan this is the check that the two do not race.
+    NoiseBlanker blanker;
+    blanker.configure(kRate);
+    blanker.set_strength(0.7f);
+    std::mt19937 rng(3);
+    const auto band = make_band(65536, 40000.0, 0.02f, 0.01f, 3.0f, 1000, 4, rng);
+    std::atomic<bool> done{false};
+    float seen = 0.0f;
+    std::thread reader([&] {
+        while (!done.load()) seen = std::max(seen, blanker.blanked_fraction());
+    });
+    for (int i = 0; i < 20; i++) {
+        auto copy = band;
+        blanker.process(copy.data(), copy.size());
+    }
+    done.store(true);
+    reader.join();
+    CHECK(seen >= 0.0f);
+    CHECK(blanker.blanked_fraction() > 0.0f);
 }

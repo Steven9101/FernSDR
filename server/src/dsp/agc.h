@@ -168,7 +168,7 @@ public:
 
     // Fraction of samples blanked recently, for the UI: a blanker that is
     // gating half the signal is misconfigured, and the operator should see it.
-    float blanked_fraction() const { return blanked_fraction_; }
+    float blanked_fraction() const { return blanked_fraction_.load(std::memory_order_relaxed); }
 
     void reset();
 
@@ -186,7 +186,9 @@ private:
     int blank_span_ = 2;
     size_t blanked_ = 0;
     size_t total_ = 0;
-    float blanked_fraction_ = 0.0f;
+    // Written by the band's thread, read by whoever asks for the band's
+    // information.
+    std::atomic<float> blanked_fraction_{0.0f};
 };
 
 }  // namespace fernsdr

@@ -319,7 +319,7 @@ void NoiseBlanker::reset() {
     reference_ = 0.0;
     blanked_ = 0;
     total_ = 0;
-    blanked_fraction_ = 0.0f;
+    blanked_fraction_.store(0.0f, std::memory_order_relaxed);
 }
 
 namespace {
@@ -514,7 +514,7 @@ void NoiseBlanker::process_real(float* samples, size_t count) {
 void NoiseBlanker::account(size_t count) {
     total_ += count;
     if (total_ >= 65536) {
-        blanked_fraction_ = static_cast<float>(blanked_) / static_cast<float>(total_);
+        blanked_fraction_.store(static_cast<float>(blanked_) / static_cast<float>(total_), std::memory_order_relaxed);
         blanked_ = 0;
         total_ = 0;
     }
