@@ -27,6 +27,10 @@ export const BAND_STARTS: number[] = (() => {
 })();
 
 const QUALITY_BITS = 6;
+// A coefficient this far outside normalised receiver audio is a corrupt frame,
+// not a loud signal; playing it would be a full-scale burst, and it would stay
+// in the overlap for the frame after. As in server/src/codec/nac_decoder.cpp.
+const MAX_COEFFICIENT = 1e7;
 const EXPONENT_REFERENCE = -40;
 
 /** NAC3 step indices are quarter octaves of log2(step). */
@@ -150,7 +154,12 @@ export class NacDecoder {
       const width = BAND_WIDTHS[b];
       const step = Math.pow(2, (this.exponents[b] - quality) * 0.25);
       for (let i = 0; i < width; i++) {
-        this.coefficients[start + i] = reader.signedRice(k) * step;
+        const value = reader.signedRice(k) * step;
+        if (!(Math.abs(value) <= MAX_COEFFICIENT)) {
+          this.conceal(out);
+          return false;
+        }
+        this.coefficients[start + i] = value;
       }
     }
 
@@ -262,9 +271,7 @@ export class NacDecoder {
       const k = this.rice[b];
       for (let i = 0; i < width; i++) {
         const value = reader.signedRice(k) * stepSize;
-        // A coefficient this far outside normalised receiver audio is a corrupt
-        // frame, not a loud signal; playing it would be a full-scale burst.
-        if (!(Math.abs(value) <= 1e7)) return false;
+        if (!(Math.abs(value) <= MAX_COEFFICIENT)) return false;
         this.coefficients[start + i] = value;
       }
     }

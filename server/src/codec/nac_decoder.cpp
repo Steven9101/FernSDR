@@ -7,6 +7,15 @@
 namespace fernsdr {
 namespace nac {
 
+namespace {
+
+// Receiver audio is normalised near unity. A coefficient this far outside it
+// is a corrupt or hostile frame, not a loud signal, and would otherwise reach
+// the speaker as a full-scale burst and stay in the overlap for the next.
+constexpr float kMaxCoefficient = 1.0e7f;
+
+}  // namespace
+
 Decoder::Decoder(int sample_rate)
     : sample_rate_(sample_rate),
       mdct_(kFrameHop),
@@ -78,7 +87,12 @@ bool Decoder::decode(const uint8_t* data, size_t size, float* out, bool compact)
         const int width = kBandWidths[b];
         const float step = std::exp2(static_cast<float>(exponents[b] - quality_index) * 0.25f);
         for (int i = 0; i < width; i++) {
-            coeffs_[start + i] = static_cast<float>(reader.get_signed_rice(k)) * step;
+            const float value = static_cast<float>(reader.get_signed_rice(k)) * step;
+            if (!(std::fabs(value) <= kMaxCoefficient)) {
+                conceal(out);
+                return false;
+            }
+            coeffs_[start + i] = value;
         }
     }
 
@@ -196,10 +210,7 @@ bool Decoder::decode_per_band(BitReader& reader, bool predicted, PacketReference
         const uint32_t k = static_cast<uint32_t>(rice[b]);
         for (int i = kBandStarts[b]; i < kBandStarts[b + 1]; i++) {
             const float value = static_cast<float>(reader.get_signed_rice(k)) * step_size;
-            // Receiver audio is normalised near unity. A coefficient this far
-            // outside it is a corrupt or hostile frame, not a loud signal, and
-            // would otherwise reach the speaker as a full-scale burst.
-            if (!(std::fabs(value) <= 1.0e7f)) return false;
+            if (!(std::fabs(value) <= kMaxCoefficient)) return false;
             coeffs_[i] = value;
         }
     }

@@ -169,6 +169,26 @@ TEST_CASE(nac_rejects_an_exponent_that_could_overflow_the_decoder) {
     for (float value : out) CHECK(std::isfinite(value));
 }
 
+TEST_CASE(nac_and_nac2_refuse_a_coefficient_far_outside_audio) {
+    // Quality 0, exponent 200 and an escaped 2^31 - 1: whole, well-formed
+    // frames whose one coefficient is some 10^22. Refused and concealed, as
+    // NAC3 does, and the frame after starts from silence, not from the
+    // overlap such a frame would have left behind.
+    using fernsdr::nac::Layout;
+    const std::vector<uint8_t> nac = {0x02, 0x00, 0x00, 0x01, 0xe1, 0xff, 0xff, 0xff, 0x7f, 0xff, 0xff, 0xff, 0x00};
+    const std::vector<uint8_t> nac2 = {0x02, 0x0e, 0x40, 0x7f, 0xff, 0xff, 0xbf, 0xff, 0xff, 0xff, 0x80};
+    for (const auto& [payload, layout] : {std::pair{nac, Layout::Original}, std::pair{nac2, Layout::Compact}}) {
+        Decoder decoder(12000);
+        std::vector<float> out(kFrameHop);
+        CHECK(!decoder.decode(payload.data(), payload.size(), out.data(), layout));
+        float peak = 0.0f;
+        for (float value : out) peak = std::max(peak, std::fabs(value));
+        decoder.decode(nullptr, 0, out.data(), layout);
+        for (float value : out) peak = std::max(peak, std::fabs(value));
+        CHECK(peak < 1.0f);
+    }
+}
+
 namespace {
 
 struct RoundTrip {

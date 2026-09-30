@@ -100,6 +100,25 @@ describe('NAC decoder', () => {
     for (const sample of out) expect(Number.isFinite(sample)).toBe(true);
   });
 
+  it('refuses a coefficient far outside audio and plays silence after it', () => {
+    // Quality 0, exponent 200 and an escaped 2^31 - 1: whole frames whose one
+    // coefficient is some 10^22. The same payloads as server/tests/test_nac.cpp.
+    const silence = new BitWriter();
+    silence.putBits(0, 6);
+    for (let b = 0; b < BAND_WIDTHS.length; b++) silence.putBit(0);
+    const quiet = silence.finish();
+    for (const [hex, compact] of [['02000001e1ffffff7fffffff00', false], ['020e407fffffbfffffff80', true]] as const) {
+      const decoder = new NacDecoder();
+      const out = new Float32Array(FRAME_HOP);
+      expect(decoder.decode(fromHex(hex), out, compact)).toBe(false);
+      let peak = 0;
+      for (const sample of out) peak = Math.max(peak, Math.abs(sample));
+      expect(decoder.decode(quiet, out, false)).toBe(true);
+      for (const sample of out) peak = Math.max(peak, Math.abs(sample));
+      expect(peak).toBeLessThan(1);
+    }
+  });
+
   it('produces exactly one hop per frame, lost or not', () => {
     // The property digital modes depend on: no stretching, no skipping.
     const decoder = new NacDecoder();
