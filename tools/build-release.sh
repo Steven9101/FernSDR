@@ -120,9 +120,10 @@ build() {
         make -C "$SRC/server" -s -j"$(nproc)" release ARCH="$arch" WEB_DIST="$WEB"
         cp "$SRC/server/dist/fernsdr-$VERSION-linux-$arch.tar" "$OUT/"
     done
-    # shellcheck disable=SC2046 # one argument per archive
-    "$SRC/server/build/fernsdr-release" manifest "$OUT/$MANIFEST" "$VERSION" "$DATE" stable "$WORK/notes" \
-        $(for arch in $ARCHES; do printf '%s ' "$OUT/fernsdr-$VERSION-linux-$arch.tar"; done)
+    # One argument per archive, however many spaces OUT has.
+    set --
+    for arch in $ARCHES; do set -- "$@" "$OUT/fernsdr-$VERSION-linux-$arch.tar"; done
+    "$SRC/server/build/fernsdr-release" manifest "$OUT/$MANIFEST" "$VERSION" "$DATE" stable "$WORK/notes" "$@"
     # The same key list as the programs, from the same copy of the source.
     make -C "$SRC/server" -s installer
     cp "$SRC/server/dist/install.sh" "$OUT/install.sh"
