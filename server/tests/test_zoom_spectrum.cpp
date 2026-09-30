@@ -411,11 +411,14 @@ std::vector<std::vector<float>> last_rows(fernsdr::DspWorkers* workers, const st
 }  // namespace
 
 TEST_CASE(zoom_spectra_spread_over_the_workers_give_the_rows_they_give_alone) {
-    // Five views of the two carriers, each placed differently, enough to go
-    // to the workers: each resolves the pair, and every page is sent the
-    // same row it is sent when the band runs the zooms itself.
+    // Seventy views, each placed differently: the pool runs fewer than 64
+    // items on the caller alone, so it takes that many for the workers to
+    // share the batch at all. Every page is sent the same row it is sent
+    // when the band runs the zooms itself, and the views on the two carriers
+    // each resolve the pair.
     // 400 Hz apart, more than a channel's grid step, so each has its own.
-    const std::vector<double> lows = {7.1e6 + 8100.0, 7.1e6 + 8500.0, 7.1e6 + 8900.0, 7.1e6 + 9300.0, 7.1e6 + 9700.0};
+    std::vector<double> lows;
+    for (int i = 0; i < 70; i++) lows.push_back(7.1e6 - 18300.0 + 400.0 * i);
     fernsdr::DspWorkers workers(3, 4);
     const auto spread = last_rows(&workers, lows, 2.5);
     const auto alone = last_rows(nullptr, lows, 2.5);
@@ -423,6 +426,7 @@ TEST_CASE(zoom_spectra_spread_over_the_workers_give_the_rows_they_give_alone) {
         CHECK_EQ(spread[i].size(), 1000u);
         if (spread[i].size() != 1000u) continue;
         CHECK(spread[i] == alone[i]);
+        if (lows[i] < 7.1e6 + 8000.0 || lows[i] > 7.1e6 + 9800.0) continue;
         // Pixels are 2 Hz from the view's low edge.
         const size_t first = static_cast<size_t>((7.1e6 + 10000.0 - lows[i]) / 2.0);
         const float a = *std::max_element(spread[i].begin() + first - 3, spread[i].begin() + first + 3);
