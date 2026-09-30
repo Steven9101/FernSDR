@@ -96,6 +96,26 @@ TEST_CASE(widgets_are_a_closed_set) {
     CHECK(!accepted(R"json({"widgets":"chat"})json"));
 }
 
+// Back to the built-in look resets how the page looks, not what the operator
+// put on it: the widgets stay.
+TEST_CASE(resetting_the_look_keeps_the_widgets) {
+    fernsdr::ThemeStore store;
+    store.load("");
+    fernsdr::Json theme;
+    CHECK(fernsdr::Json::parse(
+        R"json({"colors":{},"palette":"viridis","widgets":[{"type":"notice","title":"About","text":"Hello"}]})json", theme));
+    std::string error;
+    fernsdr::Json merged = store.snapshot();
+    merged.set("palette", theme["palette"]);
+    merged.set("widgets", theme["widgets"]);
+    CHECK(store.replace(merged, error));
+    CHECK(store.reset(error));
+    const fernsdr::Json after = store.snapshot();
+    CHECK_EQ(after["widgets"].size(), 1);
+    CHECK_EQ_STR(after["widgets"][0]["text"].string(), "Hello");
+    CHECK_EQ_STR(after["palette"].string(), "classic");
+}
+
 // A link opens in the listener's page: only web pages and pages on this
 // receiver, never a script or data address.
 TEST_CASE(a_links_widget_opens_only_web_pages) {

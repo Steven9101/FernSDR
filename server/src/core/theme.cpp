@@ -254,7 +254,12 @@ bool ThemeStore::replace(const Json& theme, std::string& error) {
 
 bool ThemeStore::reset(std::string& error) {
     std::lock_guard<std::mutex> lock(mutex_);
+    // The built-in look, not the built-in page: the widgets are the
+    // operator's content, a notice, links, the chat, and a reset of colours
+    // must not take them away.
+    Json widgets = theme_.has("widgets") ? theme_["widgets"] : Json::make_array();
     theme_ = default_theme();
+    theme_.set("widgets", widgets);
     version_++;
     return write(error);
 }
