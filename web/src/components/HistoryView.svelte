@@ -200,7 +200,11 @@
   const labels = $derived(expanded ? Math.max(3, Math.min(9, Math.floor(canvasWidth / 110) + 1)) : 3);
   const between = (from: number, to: number, count: number) =>
     Array.from({ length: count }, (_, i) => from + ((to - from) * i) / (count - 1));
-  const ticks = $derived(timeTicks(first, last, tall ? hours * PX_PER_HOUR : canvasHeight, zone));
+  // Tall, the picture is as long as what is recorded, not as the span asked
+  // for: a young archive fills only part of it, and the side must be
+  // scaled like the pieces or its times sit beside the wrong rows.
+  const tallHeight = $derived(((last - first) / 3_600_000) * PX_PER_HOUR);
+  const ticks = $derived(timeTicks(first, last, tall ? tallHeight : canvasHeight, zone));
 
   // Where the tall picture is scrolled to, so only the pieces near the view
   // are fetched.
@@ -287,7 +291,7 @@
       <p class="history__note" role="alert">{problem}</p>
     {:else if archive && archive.times.length > 0}
       {#if first > windowRange.from}<p class="history__note">Available since {new Date(first).toLocaleString()}.</p>{/if}
-      <div class="history__plot{tall ? ' history__plot--tall' : ''}" style:--plot-height={tall ? `${hours * PX_PER_HOUR}px` : undefined}
+      <div class="history__plot{tall ? ' history__plot--tall' : ''}" style:--plot-height={tall ? `${tallHeight}px` : undefined}
         bind:this={plot} bind:clientHeight={viewHeight} onscroll={() => (scrollTop = plot?.scrollTop ?? 0)}>
         <div class="history__frequency" aria-label="Frequency in MHz">
           {#each between(archive.lowHz, archive.highHz, labels) as hz (hz)}
