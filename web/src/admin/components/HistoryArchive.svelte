@@ -36,7 +36,7 @@
 	title="Waterfall history"
 	footer={access === 'off'
 		? 'Nothing is recorded.'
-		: `The file is ${bytes(sizeFor(hours))} and is made at that size straight away, so it can never fill the disk. Changing how long it keeps starts the record again.${access === 'public' ? ' Anyone with the link can read it.' : ''}`}
+		: `The file takes up to ${bytes(sizeFor(hours))} and never grows past it: the newest lines take the place of the oldest. Changing how long it keeps starts the record again.${access === 'public' ? ' Anyone with the link can read it.' : ''}`}
 >
 	<SettingsRow label="Who can look back" value={accessNames[access]} onclick={() => (choosingAccess = true)} />
 	{#if access !== 'off'}
