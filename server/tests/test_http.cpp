@@ -213,6 +213,22 @@ TEST_CASE(http_static_serves_a_precompressed_sidecar_when_offered) {
     CHECK(response.find("not really gzip") != std::string::npos);
 }
 
+TEST_CASE(http_static_keeps_a_sidecar_inside_the_root) {
+    // The file asked for is inside; a sidecar that links outside is not
+    // served in its place, and the file itself is, uncompressed.
+    Sandbox sandbox;
+    CHECK(symlink(sandbox.outside.c_str(), (sandbox.root + "/assets/app.js.gz").c_str()) == 0);
+    StaticFiles files(sandbox.root);
+    HttpRequest compressed;
+    CHECK(parse("GET /assets/app.js HTTP/1.1\r\nHost: x\r\nAccept-Encoding: gzip\r\n\r\n", compressed) ==
+          HttpParse::Ok);
+    std::string response;
+    CHECK(files.serve(compressed, response));
+    CHECK(response.find("top secret") == std::string::npos);
+    CHECK(response.find("Content-Encoding") == std::string::npos);
+    CHECK(response.find("console.log(1)") != std::string::npos);
+}
+
 TEST_CASE(http_static_answers_conditional_requests) {
     Sandbox sandbox;
     StaticFiles files(sandbox.root);

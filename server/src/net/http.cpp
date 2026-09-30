@@ -402,7 +402,9 @@ bool StaticFiles::serve(const HttpRequest& request, std::string& response) const
     if (request.header_contains("accept-encoding", "gzip")) {
         struct stat gz;
         const std::string gz_path = absolute + ".gz";
-        if (stat(gz_path.c_str(), &gz) == 0 && S_ISREG(gz.st_mode)) {
+        // Held inside the root like the file itself: stat() follows a link,
+        // and a sidecar linked elsewhere would be served in the file's place.
+        if (stat(gz_path.c_str(), &gz) == 0 && S_ISREG(gz.st_mode) && contains(gz_path)) {
             source = gz_path;
             info = gz;
             headers.emplace_back("Content-Encoding", "gzip");
