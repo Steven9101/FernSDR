@@ -354,8 +354,7 @@ void Session::handle_chat(const Json& message) {
         queue_text(out.serialize());
         return;
     }
-    pending_chat_ = posted;
-    has_pending_chat_ = true;
+    pending_chats_.push_back(posted);
 }
 
 void Session::handle_audio(const Json& message) {

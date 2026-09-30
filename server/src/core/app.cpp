@@ -309,7 +309,7 @@ void Application::on_tick() {
         Session* session = session_for(connection);
         if (!session) return;
         ChatMessage message;
-        if (session->take_chat(message)) posted.push_back(message);
+        while (session->take_chat(message)) posted.push_back(message);
         session->tick();
         pump(connection);
         if (session->check_inactivity(timeout_minutes * 60000LL, steady_now) == Session::Inactivity::Expired) {

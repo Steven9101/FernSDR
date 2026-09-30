@@ -86,11 +86,11 @@ public:
     static constexpr int64_t kInactivityWarningMs = 60000;
     Inactivity check_inactivity(int64_t limit_ms, int64_t now_ms);
 
-    /** Takes a chat line this session posted, if any, for the app to broadcast. */
+    /** Takes the oldest chat line this session posted and the app has not yet broadcast. */
     bool take_chat(ChatMessage& out) {
-        if (!has_pending_chat_) return false;
-        out = pending_chat_;
-        has_pending_chat_ = false;
+        if (pending_chats_.empty()) return false;
+        out = std::move(pending_chats_.front());
+        pending_chats_.erase(pending_chats_.begin());
         return true;
     }
 
@@ -127,10 +127,12 @@ private:
 
     int64_t connected_at_ms_ = 0;
     std::string chat_name_;
-    // Set when this session posted a chat line; the application picks it up
-    // and fans it out, because a session may not reach into other sessions.
-    ChatMessage pending_chat_;
-    bool has_pending_chat_ = false;
+    // Chat lines this session posted since the last tick; the application
+    // picks them up and fans them out, because a session may not reach into
+    // other sessions. More than one can arrive within a tick, and each was
+    // accepted into the history, so each is delivered. The chat's rate limit
+    // keeps this short.
+    std::vector<ChatMessage> pending_chats_;
     // Whether the listener has picked a bitrate, as opposed to inheriting the
     // band's default.
     bool bitrate_chosen_ = false;

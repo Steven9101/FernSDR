@@ -2425,6 +2425,23 @@ TEST_CASE(session_answers_a_chat_backlog_request_once_in_a_while) {
     CHECK_EQ(backlogs(), 1);
 }
 
+// Two lines posted within one tick are both accepted into the history, so
+// both must reach the listeners live, in order.
+TEST_CASE(session_hands_over_every_chat_line_posted_between_ticks) {
+    fernsdr::Radio radio;
+    fernsdr::Session session(1, radio);
+    session.handle_text(R"({"type":"chat","name":"Ann","text":"first"})");
+    session.handle_text(R"({"type":"chat","text":"second"})");
+    fernsdr::ChatMessage taken;
+    std::vector<std::string> texts;
+    while (session.take_chat(taken)) texts.push_back(taken.text);
+    CHECK_EQ(texts.size(), 2);
+    if (texts.size() == 2) {
+        CHECK_EQ_STR(texts[0], "first");
+        CHECK_EQ_STR(texts[1], "second");
+    }
+}
+
 TEST_CASE(session_counts_what_a_person_does_not_what_the_page_does) {
     fernsdr::Radio radio;
     fernsdr::Session session(1, radio);
