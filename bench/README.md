@@ -28,6 +28,28 @@ Run it as root on a machine you can spare: it builds containers, creates
 network namespaces and a bridge, and puts load on two cores. It refuses to
 start without 1.5 GB of free memory and 20 GB of free disk.
 
+A fresh clone needs more than the commands below, which assume a machine
+that has run the lab before:
+
+- **Paths.** The scenes and `digital/assets/manifest.json` name their audio
+  files by absolute path under `/root/develop/websdr`. In a checkout
+  elsewhere, point them at it:
+  `sed -i "s#/root/develop/websdr#$PWD#" bench/scenes/*.scene bench/digital/assets/manifest.json`.
+- **Reference audio.** The WAV files are not in the repository.
+  `python3 bench/digital/digital.py assets` writes them and
+  `scenes/digital.scene`; it needs WSJT-X's `ft8sim` and `wsprsim` and
+  `minimodem` on the PATH. The digital report decodes with `jt9`, `wsprd`
+  and `minimodem`.
+- **Receiver images.** The harness runs the image each
+  `receivers/<id>/receiver.json` names and does not build it. Build each
+  from its `Dockerfile`; FernSDR's Dockerfile says in its header how its
+  build context is made.
+- **Real-input loop.** ka9q-web and UberSDR read a 30 s loop of the real
+  band's signals from `/dev/shm/fernbench/all-real-30s.s16`:
+  `mkdir -p /dev/shm/fernbench && python3 bench/source/scene.py bench/scenes/all-real-signals.scene --format s16 --seconds 30 --out /dev/shm/fernbench/all-real-30s.s16`.
+- **Browser.** `npm ci --prefix bench/browser` installs Playwright; its
+  Chromium comes with `(cd bench/browser && npx playwright install chromium)`.
+
 ```sh
 make -C bench/source && make -C bench/source test
 npm ci --prefix bench/browser && npm ci --prefix bench/load
