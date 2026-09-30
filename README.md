@@ -11,7 +11,8 @@ the server's CPU and uplink determine how many can listen at once.
 
 Listen to one now at [demo.fernsdr.org](https://demo.fernsdr.org), a
 recording of long and medium wave, or read more at
-[fernsdr.org](https://fernsdr.org).
+[fernsdr.org](https://fernsdr.org). If FernSDR is useful to you, you can
+[support it through PayPal](https://www.paypal.com/paypalme/magicint1337).
 
 ![The listener's page: spectrum and waterfall of the medium wave band, the receiver tuned to 909 kHz AM, and the station's widgets beside it](docs/images/listener.webp)
 
