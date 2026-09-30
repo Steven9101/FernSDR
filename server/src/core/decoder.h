@@ -13,6 +13,7 @@
 #include <condition_variable>
 #include <deque>
 #include <functional>
+#include <cstdint>
 #include <map>
 #include <memory>
 #include <mutex>
@@ -119,8 +120,10 @@ private:
     std::vector<bool> lost_since_;
     size_t pending_samples_ = 0;
     size_t max_pending_samples_ = 0;
-    // Decodes a channel reported for one slot, for the limit of 200.
+    // Decodes a channel reported in one second of slot time, for the limit
+    // of 200, over the ten minutes behind the newest second reported.
     std::map<std::pair<size_t, int64_t>, int> per_slot_;
+    int64_t newest_second_ = INT64_MIN;
 
     mutable std::mutex status_mutex_;
     std::string state_ = "stopped";

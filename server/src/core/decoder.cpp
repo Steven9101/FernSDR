@@ -18,6 +18,9 @@ namespace {
 constexpr size_t kMaxLine = 64 * 1024;
 constexpr size_t kFrameHeader = 32;
 constexpr int kDecodesPerSlot = 200;
+// Seconds of slot time counted at once, across a decoder's channels: ten
+// minutes of every second on several channels, and no more.
+constexpr size_t kSlotsKept = 4096;
 
 void put16(std::string& out, uint16_t value) {
     out.push_back(static_cast<char>(value & 0xff));
@@ -210,6 +213,7 @@ bool Decoder::session(std::string& why) {
     based_.assign(taps_.size(), false);
     lost_since_.assign(taps_.size(), false);
     per_slot_.clear();
+    newest_second_ = INT64_MIN;
     {
         std::lock_guard<std::mutex> lock(status_mutex_);
         hello_version_.clear();
@@ -364,18 +368,36 @@ void Decoder::handle_event(const Json& event, bool& ready, std::string& why) {
         }
         const size_t index = static_cast<size_t>(std::find_if(channels_.begin(), channels_.end(),
             [&](const DecodeChannel& c) { return c.id == decode.channel; }) - channels_.begin());
-        int& count = per_slot_[{index, decode.time_ms}];
-        if (++count > kDecodesPerSlot) {
+        // Counted by the second, not the millisecond: a decoder that moved
+        // each decode's time by a millisecond would otherwise get a new slot,
+        // and a new entry, every time. The ten minutes kept are measured from
+        // the newest second seen, never from the decode at hand, so times
+        // that step backwards cannot keep old entries alive either; and the
+        // table has a ceiling whatever the times say.
+        const int64_t second = decode.time_ms / 1000;
+        const char* refused = nullptr;
+        if (newest_second_ != INT64_MIN && second < newest_second_ - 600) {
+            refused = "a time more than ten minutes behind its newest";
+        } else {
+            if (second > newest_second_) {
+                newest_second_ = second;
+                for (auto it = per_slot_.begin(); it != per_slot_.end();) {
+                    if (it->first.second < newest_second_ - 600) it = per_slot_.erase(it);
+                    else ++it;
+                }
+            }
+            const auto key = std::make_pair(index, second);
+            if (per_slot_.size() >= kSlotsKept && per_slot_.find(key) == per_slot_.end()) {
+                refused = "too many slots at once";
+            } else if (++per_slot_[key] > kDecodesPerSlot) {
+                refused = "more than 200 decodes in one slot";
+            }
+        }
+        if (refused) {
             std::lock_guard<std::mutex> lock(status_mutex_);
             rejected_++;
-            last_rejection_ = "more than 200 decodes in one slot";
+            last_rejection_ = refused;
             return;
-        }
-        // Forget slots older than ten minutes, so the counts stay small.
-        const int64_t horizon = decode.time_ms - 600000;
-        for (auto it = per_slot_.begin(); it != per_slot_.end();) {
-            if (it->first.second < horizon) it = per_slot_.erase(it);
-            else ++it;
         }
         decode.decoder = config_.id;
         store_.add(std::move(decode), now_ms());

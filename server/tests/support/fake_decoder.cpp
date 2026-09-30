@@ -5,6 +5,7 @@
 //           channel 0 and its frame and gap counts as stats
 //   bad     reports decodes the receiver must refuse
 //   flood   reports 300 decodes for one slot
+//   wander  moves decode times by the millisecond, then steps them back
 //   crash   exits right after `ready`
 //   slow    stops reading samples for 6 seconds, then reads again and reports
 //           how many frames said samples were lost
@@ -95,6 +96,20 @@ int main(int argc, char** argv) {
         for (int i = 0; i < 300; i++) {
             event("{\"type\":\"decode\",\"channel\":\"" + channel + "\",\"time\":1790000000000,\"freq\":" +
                   std::to_string(static_cast<int>(offset)) + ",\"snr\":-10,\"dt\":0.1,\"message\":\"CQ N" + std::to_string(i) + "\"}");
+        }
+    }
+    if (behaviour == "wander") {
+        // 300 decodes a millisecond apart, all in one slot's second; then
+        // 5000 more, each a second before the last.
+        for (int i = 0; i < 300; i++) {
+            event("{\"type\":\"decode\",\"channel\":\"" + channel + "\",\"time\":" + std::to_string(1790000000000LL + i) +
+                  ",\"freq\":" + std::to_string(static_cast<int>(offset)) + ",\"snr\":-10,\"dt\":0.1,\"message\":\"CQ W" +
+                  std::to_string(i) + "\"}");
+        }
+        for (int i = 1; i <= 5000; i++) {
+            event("{\"type\":\"decode\",\"channel\":\"" + channel + "\",\"time\":" +
+                  std::to_string(1790000000000LL - 1000LL * i) + ",\"freq\":" + std::to_string(static_cast<int>(offset)) +
+                  ",\"snr\":-10,\"dt\":0.1,\"message\":\"CQ B" + std::to_string(i) + "\"}");
         }
     }
     if (behaviour == "slow") std::this_thread::sleep_for(std::chrono::seconds(6));

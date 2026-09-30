@@ -118,6 +118,14 @@ TEST_CASE(a_decoder_gets_at_most_two_hundred_decodes_a_slot) {
     CHECK_EQ(rig.store.size(), 200u);
 }
 
+TEST_CASE(a_decoder_cannot_widen_its_limits_by_moving_decode_times) {
+    // Times a millisecond apart share one slot's 200; times stepping back a
+    // second at a time are kept only for ten minutes behind the newest.
+    Rig rig("wander");
+    CHECK(rig.wait([&] { return rig.decoder->status()["rejected"].number() >= 100 + 4400; }, 6000ms));
+    CHECK_EQ(rig.store.size(), 200u + 600u);
+}
+
 TEST_CASE(a_decoder_that_crashes_is_started_again) {
     Rig rig("crash");
     CHECK(rig.wait([&] { return rig.decoder->status()["restarts"].number() >= 1; }, 6000ms));
