@@ -1669,6 +1669,10 @@ a {
 
 .status__state {
   color: var(--muted-foreground);
+  min-width: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .status__site,
@@ -1698,6 +1702,13 @@ a {
 }
 
 .status__about:hover { color: var(--foreground); }
+
+/* On the narrowest phones the row cannot hold every figure: the stream rate
+   and the buffer, which only someone chasing a problem reads, give way so the
+   state, the listeners and the credit stay on the screen, not past its edge. */
+@media (max-width: 379px) {
+  .status__stat--technical { display: none; }
+}
 
 .about {
   width: min(480px, calc(100vw - 2 * var(--space-4)));

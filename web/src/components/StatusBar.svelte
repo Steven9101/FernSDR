@@ -45,10 +45,10 @@
   <span class="status__spacer"></span>
 
   {#if stats}
-    <span class="status__stat" title="Received stream including status and WebSocket framing">
+    <span class="status__stat status__stat--technical" title="Received stream including status and WebSocket framing">
       {streamTraffic.value ? formatBitrate(streamTraffic.value.totalBps) : '--'}
     </span>
-    <span class="status__stat" title="Audio buffered ahead of the play head">
+    <span class="status__stat status__stat--technical" title="Audio buffered ahead of the play head">
       {audioLatencyMs.value} ms
     </span>
     <span class="status__stat" title="People listening to this receiver">
