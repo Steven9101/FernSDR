@@ -1,7 +1,9 @@
 # Codec quality baseline
 
-Taken with `make quality`, which runs `audio-quality --sweep`. These are the
-numbers a codec change has to be compared against. Regenerate with:
+Taken with `audio-quality --sweep` for each mode; `make quality` runs
+`audio-quality` for USB at 48 kbit/s only, without the codec row at each
+bitrate that `--sweep` adds. These are the numbers a codec change has to be compared
+against. Regenerate with:
 
 ```sh
 for m in usb cw am nfm; do server/build/audio-quality --mode $m --sweep; done

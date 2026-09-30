@@ -78,6 +78,8 @@ load test against a private receiver, leaving capacity for HTTP requests:
 ```ini
 [site]
 max_users = 1100
+# Every load-test client comes from 127.0.0.1; the default admits 16.
+max_users_per_address = 0
 [server]
 max_connections = 1200
 ```
