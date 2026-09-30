@@ -7,8 +7,13 @@
  * Accepts what people actually type. A bare number is megahertz if it looks
  * like megahertz and kilohertz if it looks like kilohertz, because "7100" and
  * "7.1" obviously mean the same thing to the person typing them.
+ *
+ * From 100 up to a million a bare number could be either: "145.5" is 2 m to
+ * someone on a VHF receiver and a longwave beacon to someone else. `receives`
+ * settles it where it can: kilohertz unless only megahertz lands on a
+ * frequency the receiver has.
  */
-export function parseFrequency(text: string): number | null {
+export function parseFrequency(text: string, receives?: (hz: number) => boolean): number | null {
   const trimmed = text.trim().toLowerCase().replace(/\s+/g, '');
   if (!trimmed) return null;
 
@@ -32,7 +37,10 @@ export function parseFrequency(text: string): number | null {
   // No unit. Below 100 is megahertz (7.1, 14.074); 100 up to a million is
   // kilohertz (7100, 14074); above that, hertz.
   if (value < 100) return value * 1e6;
-  if (value < 1e6) return value * 1e3;
+  if (value < 1e6) {
+    if (receives && !receives(value * 1e3) && receives(value * 1e6)) return value * 1e6;
+    return value * 1e3;
+  }
   return value;
 }
 

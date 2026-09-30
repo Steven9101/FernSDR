@@ -18,6 +18,16 @@ describe('parseFrequency', () => {
     expect(parseFrequency('14.074')).toBe(parseFrequency('14074'));
   });
 
+  it('reads a bare number from 100 up as the unit the receiver has', () => {
+    const vhf = (hz: number) => hz >= 144e6 && hz <= 146e6;
+    expect(parseFrequency('144.3', vhf)).toBe(144_300_000);
+    expect(parseFrequency('145', vhf)).toBe(145_000_000);
+    const hf = (hz: number) => hz >= 0 && hz <= 30e6;
+    expect(parseFrequency('7100', hf)).toBe(7_100_000);
+    expect(parseFrequency('144.3', hf)).toBe(144_300);
+    expect(parseFrequency('144.3')).toBe(144_300);
+  });
+
   it('rejects nonsense rather than tuning somewhere surprising', () => {
     expect(parseFrequency('')).toBeNull();
     expect(parseFrequency('abc')).toBeNull();

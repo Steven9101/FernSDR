@@ -11,7 +11,7 @@
    * Typing works too: click the readout, type a frequency in almost any form
    * (14074, 14.074, 7.1M, 3690 kHz) and press Enter.
    */
-  import { controller, currentBand, frequencyEntry, rds, signalFreq, site, tuning } from '../state/store';
+  import { bands, controller, currentBand, frequencyEntry, rds, signalFreq, site, tuning } from '../state/store';
   import { describeFrequency, planFor } from '../state/bandplan';
   import { programmeType, stationName } from '../util/rds';
   import { layout, setLayout } from '../state/layout';
@@ -106,7 +106,7 @@
   // Without that, Escape tuned to whatever had been typed.
   function commit() {
     if (!editing) return;
-    const parsed = parseFrequency(draft);
+    const parsed = parseFrequency(draft, (hz) => bands.value.some((b) => hz >= b.low && hz <= b.high));
     editing = false;
     if (parsed !== null) controller.tune(Math.round(parsed));
   }
@@ -138,7 +138,7 @@
       {#each places as place, index}
         <!-- Group as MHz.kHz.Hz by the place itself, not by a fixed index:
              the index version broke the moment a digit was added. -->
-        {#if place === 1e5 || place === 1e2}<span class="frequency__separator">.</span>{/if}
+        {#if place === 1e8 || place === 1e5 || place === 1e2}{#if index > 0}<span class="frequency__separator">.</span>{/if}{/if}
         <button
           type="button"
           class="frequency__digit{isLeadingZero(digits, places, index) ? ' frequency__digit--dim' : ''}"
