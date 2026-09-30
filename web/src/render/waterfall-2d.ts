@@ -32,6 +32,8 @@ export class WaterfallFallbackRenderer {
   private lows = new Float64Array(HISTORY_ROWS);
   private highs = new Float64Array(HISTORY_ROWS);
   private pixelRatio = 1;
+  /** The span of the view last drawn, Hz; 0 before the first frame. */
+  private viewSpanHz = 0;
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const context = canvas.getContext('2d', { alpha: false });
@@ -89,10 +91,34 @@ export class WaterfallFallbackRenderer {
 
     const data = this.rowImage.data;
     const range = Math.max(this.ceilingDb - this.floorDb, 1);
+    const cells = line.width;
+    const levels = line.levels;
+    const cellsPerColumn = cells / TEXTURE_WIDTH;
+    // How many of the line's cells one pixel of the canvas spans, as the
+    // WebGL renderer works it out. A wide line arrives already reduced to
+    // about a cell a pixel by keeping each cell's peak; blending those again
+    // between neighbours, and the blit then picking one column of the buffer
+    // per pixel, took a carrier one cell wide down by up to tens of dB
+    // depending only on where it fell. So each column keeps the strongest
+    // cell under the pixel it will be drawn into, and the smooth blend is
+    // kept for zooming in, where a cell is several pixels wide.
+    const lineSpan = Math.max(line.highHz - line.lowHz, 1);
+    const pixels = Math.max(this.canvas.width, 1) * (this.viewSpanHz > 0 ? lineSpan / this.viewSpanHz : 1);
+    const perPixel = cells / pixels;
+    const half = 0.5 * Math.max(perPixel, cellsPerColumn);
     // Stretch the line across the full buffer width so the blit needs no
     // horizontal scaling per row.
     for (let x = 0; x < TEXTURE_WIDTH; x++) {
-      const db = interpolateLevel(line.levels, (x + 0.5) * line.width / TEXTURE_WIDTH - 0.5);
+      const centre = (x + 0.5) * cellsPerColumn;
+      let db: number;
+      if (perPixel < 0.3) {
+        db = interpolateLevel(levels, centre - 0.5);
+      } else {
+        const first = Math.floor(Math.max(centre - half, 0));
+        const last = Math.min(Math.max(Math.floor(Math.min(centre + half, cells) - 1e-4), first), cells - 1);
+        db = levels[first];
+        for (let cell = first + 1; cell <= last; cell++) if (levels[cell] > db) db = levels[cell];
+      }
       const level = Math.max(0, Math.min(1, (db - this.floorDb) / range));
       const index = Math.round(level * 255) * 4;
       const offset = x * 4;
@@ -116,6 +142,7 @@ export class WaterfallFallbackRenderer {
 
     const span = viewHighHz - viewLowHz;
     if (span <= 0) return;
+    this.viewSpanHz = span;
     const rows = Math.min(this.count, Math.ceil(Math.max(0, height - top) / this.pixelRatio));
     this.context.save();
     this.context.translate(0, height);
