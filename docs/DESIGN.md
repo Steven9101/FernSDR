@@ -89,19 +89,6 @@ one asked for if it had to flip.
 every duration, which also removed the fades that explain where a dialog came
 from. Now the fades stay and only movement goes.
 
-The earlier summary of this, from the article alone:
-
-- **Every animation states its purpose or it does not exist.** There are three
-  in the whole client: the dialog entrance, the sheet's snap, and the pulsing
-  dot on "waiting for history" - which is there to say the receiver is working
-  while the screen is still empty.
-- **Nothing over 300ms.** Hovers are 100ms, entrances 220ms.
-- **Nothing keyboard-initiated animates.** Tuning with the arrow keys fires
-  hundreds of times a session; a readout that eased between values would make
-  the receiver feel like it was thinking about it. The frequency digits have no
-  transition at all, deliberately.
-- `prefers-reduced-motion` zeroes both durations and stops every keyframe.
-
 ## Layout
 
 The readout, the S-meter and the volume control are a HUD *over* the display,
@@ -239,23 +226,20 @@ itself. The harness was slower than the thing it was measuring.
 
 ## The registries, inspected
 
-The `npx shadcn add` route does not work from this environment - it fetches
-`ui.shadcn.com/r/registries.json`, which the egress proxy refuses - but the
-registries are public git repositories, and those clone fine. So they were read
-rather than guessed at.
+The listener takes interaction patterns from these registries and writes them
+in Svelte; it imports none of their components.
 
 **Rare UI** (`swamimalode07/rare-ui`), 16 components. Two are relevant to a
-receiver and fourteen are not, which is the honest answer to "pick what fits":
+receiver and fourteen are not:
 
 - `family-drawer` - a bottom drawer that morphs between stacked views. The
   technique worth taking is that its crossfade duration *scales with how much
-  the height changed*, clamped to 0.15-0.27s. Our control sheet switches
-  between panels of very different heights and would benefit from the same.
+  the height changed*, clamped to 0.15-0.27s. The control sheet switches
+  between panels of very different heights and does the same
+  (`MorphPanel.svelte`, 150 to 270 ms).
 - `bounce-sidebar` - a spring-animated active indicator for a vertical nav.
 - The rest - a WebGL fluid orb, gravity letters, emoji reactions, a
-  contribution heatmap, a notification bell - are for marketing pages. A
-  ChatGPT-style voice orb in an SDR is exactly the thing this interface was
-  being accused of.
+  contribution heatmap, a notification bell - are for marketing pages.
 
 Every component in these registries is React, Tailwind and Motion. Installing
 them would mean adding all three to a client that ships in 63 kB over the
