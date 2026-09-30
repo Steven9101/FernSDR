@@ -58,7 +58,8 @@ The first release.
 
 ### Listener page
 
-- Drawn like the admin panel: Inter (48 KB, fetched once, the system's font
+- Drawn like the admin panel: Inter (22 KB, cut to the characters the page
+  prints and fetched once the stream has room, the system's font
   until it arrives), its greys in both themes, controls grouped on filled
   surfaces under a quiet heading, the panels' tabs and every choice as one
   well with the chosen option raised, and switches and sliders as there.
