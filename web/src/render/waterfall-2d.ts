@@ -8,6 +8,11 @@
  * Adjacent rows with the same frequency range are drawn together. A settled
  * view needs at most two blits, while panning keeps old rows at the frequency
  * where they were received instead of clearing the display on every update.
+ *
+ * The buffer holds colours, so each row's levels are kept beside it: a new
+ * palette, or new floor and ceiling (which automatic levels move all the
+ * time), recolours the rows on screen rather than only those still to come,
+ * and the same signal keeps one colour down the whole waterfall.
  */
 import { buildPaletteTexture, type PaletteId } from './palettes';
 import type { WaterfallLine } from './waterfall-gl';
@@ -15,6 +20,15 @@ import { interpolateLevel } from '../util/spectrum-samples';
 
 const HISTORY_ROWS = 1024;
 const TEXTURE_WIDTH = 2048;
+/** Levels are kept in hundredths of a dB: 4 MB for the whole history. */
+const STORED_PER_DB = 100;
+/**
+ * How far the floor or ceiling moves before the rows are recoloured. Under a
+ * colour step of the palette on any usual range, and automatic levels creep
+ * by less than this a row, so they recolour every few seconds at most rather
+ * than on every line.
+ */
+const RECOLOUR_AFTER_DB = 0.5;
 
 export class WaterfallFallbackRenderer {
   private readonly buffer: HTMLCanvasElement;
@@ -34,6 +48,11 @@ export class WaterfallFallbackRenderer {
   private pixelRatio = 1;
   /** The span of the view last drawn, Hz; 0 before the first frame. */
   private viewSpanHz = 0;
+  /** Each row's levels as drawn into the buffer, row after row. */
+  private readonly stored = new Int16Array(HISTORY_ROWS * TEXTURE_WIDTH);
+  /** Counts palette and level changes; each row notes the one it is coloured in. */
+  private mapping = 1;
+  private readonly rowMapping = new Uint32Array(HISTORY_ROWS);
 
   constructor(private readonly canvas: HTMLCanvasElement) {
     const context = canvas.getContext('2d', { alpha: false });
@@ -56,11 +75,14 @@ export class WaterfallFallbackRenderer {
     if (id === this.paletteId) return;
     this.paletteId = id;
     this.palette = buildPaletteTexture(id);
+    this.mapping++;
   }
 
   setLevels(floorDb: number, ceilingDb: number): void {
+    if (Math.abs(floorDb - this.floorDb) < RECOLOUR_AFTER_DB && Math.abs(ceilingDb - this.ceilingDb) < RECOLOUR_AFTER_DB) return;
     this.floorDb = floorDb;
     this.ceilingDb = ceilingDb;
+    this.mapping++;
   }
 
   setPixelRatio(ratio: number): void {
@@ -89,8 +111,8 @@ export class WaterfallFallbackRenderer {
     this.highs[this.writeRow] = line.highHz;
     this.count = Math.min(HISTORY_ROWS, this.count + 1);
 
-    const data = this.rowImage.data;
-    const range = Math.max(this.ceilingDb - this.floorDb, 1);
+    const stored = this.stored;
+    const start = this.writeRow * TEXTURE_WIDTH;
     const cells = line.width;
     const levels = line.levels;
     const cellsPerColumn = cells / TEXTURE_WIDTH;
@@ -119,16 +141,30 @@ export class WaterfallFallbackRenderer {
         db = levels[first];
         for (let cell = first + 1; cell <= last; cell++) if (levels[cell] > db) db = levels[cell];
       }
-      const level = Math.max(0, Math.min(1, (db - this.floorDb) / range));
-      const index = Math.round(level * 255) * 4;
+      stored[start + x] = Math.max(-32768, Math.min(32767, Math.round(db * STORED_PER_DB)));
+    }
+    this.colourRow(this.writeRow);
+    this.writeRow = (this.writeRow + 1) % HISTORY_ROWS;
+  }
+
+  /** Colours a row of the buffer from its kept levels, in the palette and levels now in use. */
+  private colourRow(row: number): void {
+    const data = this.rowImage.data;
+    const stored = this.stored;
+    const start = row * TEXTURE_WIDTH;
+    const floor = this.floorDb * STORED_PER_DB;
+    const scale = 255 / (Math.max(this.ceilingDb - this.floorDb, 1) * STORED_PER_DB);
+    const palette = this.palette;
+    for (let x = 0; x < TEXTURE_WIDTH; x++) {
+      const index = Math.round(Math.max(0, Math.min(255, (stored[start + x] - floor) * scale))) * 4;
       const offset = x * 4;
-      data[offset] = this.palette[index];
-      data[offset + 1] = this.palette[index + 1];
-      data[offset + 2] = this.palette[index + 2];
+      data[offset] = palette[index];
+      data[offset + 1] = palette[index + 1];
+      data[offset + 2] = palette[index + 2];
       data[offset + 3] = 255;
     }
-    this.bufferContext.putImageData(this.rowImage, 0, this.writeRow);
-    this.writeRow = (this.writeRow + 1) % HISTORY_ROWS;
+    this.bufferContext.putImageData(this.rowImage, 0, row);
+    this.rowMapping[row] = this.mapping;
   }
 
   render(viewLowHz: number, viewHighHz: number, top = 0): void {
@@ -144,6 +180,10 @@ export class WaterfallFallbackRenderer {
     if (span <= 0) return;
     this.viewSpanHz = span;
     const rows = Math.min(this.count, Math.ceil(Math.max(0, height - top) / this.pixelRatio));
+    for (let age = 0; age < rows; age++) {
+      const row = (this.writeRow - 1 - age + HISTORY_ROWS) % HISTORY_ROWS;
+      if (this.rowMapping[row] !== this.mapping) this.colourRow(row);
+    }
     this.context.save();
     this.context.translate(0, height);
     this.context.scale(1, -1);

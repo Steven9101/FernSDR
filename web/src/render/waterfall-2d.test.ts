@@ -80,6 +80,37 @@ describe('Canvas2D waterfall', () => {
     expect(weakest).toBe(-60);
   });
 
+  it('recolours the rows on screen when the levels or the palette change', () => {
+    const draw = renderer(1000, 400);
+    draw.render(14_000_000, 14_992_000);
+    const line = { lowHz: 14_000_000, highHz: 14_992_000, width: 992, levels: new Float32Array(992).fill(-75) };
+    draw.pushLine(line);
+    const first = () => [...buffer.rows.get(0)!.slice(0, 3)];
+    expect(first()).toEqual(colourOf(-75));
+
+    draw.setLevels(-100, -40);
+    draw.render(14_000_000, 14_992_000);
+    expect(first()).toEqual(colourOf(-75, -100, -40));
+    // A row received now is coloured the same as the one before it.
+    draw.pushLine(line);
+    expect([...buffer.rows.get(1)!.slice(0, 3)]).toEqual(first());
+
+    draw.setPalette('ember');
+    draw.render(14_000_000, 14_992_000);
+    expect(first()).toEqual(colourOf(-75, -100, -40, buildPaletteTexture('ember')));
+  });
+
+  it('leaves the rows alone while automatic levels only creep', () => {
+    const draw = renderer(1000, 400);
+    draw.render(14_000_000, 14_992_000);
+    draw.pushLine({ lowHz: 14_000_000, highHz: 14_992_000, width: 992, levels: new Float32Array(992).fill(-75) });
+    const puts = () => buffer.rows.size;
+    buffer.rows.clear();
+    draw.setLevels(-114.8, -35.1);
+    draw.render(14_000_000, 14_992_000);
+    expect(puts()).toBe(0);
+  });
+
   it('still blends between cells zoomed in, where one cell spans several pixels', () => {
     const draw = renderer(1000);
     draw.render(14_000_000, 14_100_000);
