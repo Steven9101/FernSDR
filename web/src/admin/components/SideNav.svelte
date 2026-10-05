@@ -1,5 +1,6 @@
 <script lang="ts">
 	import LogOut from '@lucide/svelte/icons/log-out';
+	import { untrack } from 'svelte';
 	import { live } from '../lib/live.svelte';
 	import { href, router, sections } from '../lib/router.svelte';
 	import AppearanceToggle from './AppearanceToggle.svelte';
@@ -17,7 +18,10 @@
 		const element = list?.querySelector<HTMLElement>(`[data-section="${active}"]`);
 		if (element) indicator = { top: element.offsetTop, height: element.offsetHeight, ready: true };
 		// A page outside the navigation, such as the setup flow, marks nothing.
-		else indicator = { ...indicator, height: 0 };
+		// The old position is read untracked: read here, it made this effect
+		// depend on what it writes, and it ran again on every write until
+		// Svelte stopped it.
+		else indicator = { ...untrack(() => indicator), height: 0 };
 	});
 
 </script>
