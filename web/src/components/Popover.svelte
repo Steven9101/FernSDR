@@ -18,9 +18,14 @@
     anchor: HTMLElement | null;
     onClose: () => void;
     children: Snippet;
+    /** Where it opens from the button: above it unless there is no room, as the tools' do. */
+    side?: 'top' | 'bottom';
+    align?: 'start' | 'end';
+    /** A class beside .popover, for a panel that is not a tool's. */
+    class?: string;
   }
 
-  let { label, open, anchor, onClose, children }: Props = $props();
+  let { label, open, anchor, onClose, children, side = 'top', align = 'start', class: className = '' }: Props = $props();
   let panel = $state<HTMLDivElement | null>(null);
 
   function portal(node: HTMLElement) {
@@ -37,9 +42,9 @@
       const { x, y } = place(
         button.getBoundingClientRect(),
         { width: element.offsetWidth, height: element.offsetHeight },
-        'top',
+        side,
         { width: window.innerWidth, height: window.innerHeight },
-        { gap: 8, align: 'start' },
+        { gap: 8, align },
       );
       if (`${x} ${y}` === placed) return;
       placed = `${x} ${y}`;
@@ -88,7 +93,7 @@
 </script>
 
 {#if open}
-  <div bind:this={panel} use:portal class="popover" role="dialog" aria-label={label}>
+  <div bind:this={panel} use:portal class="popover {className}" role="dialog" aria-label={label}>
     {@render children()}
   </div>
 {/if}

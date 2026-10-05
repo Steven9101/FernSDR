@@ -115,9 +115,12 @@ async function desktop() {
     site: document.querySelector('.status__site')?.textContent,
     antennaTitle: document.querySelector('.status__antenna')?.getAttribute('title'),
     tabs: [...document.querySelectorAll('[role="tab"]')].map((tab) => tab.textContent),
+    more: document.querySelector('.sidebar__more')?.getAttribute('aria-label'),
   }));
   assert.equal(seen.identity.operator, 'Test operator');
-  assert.deepEqual(seen.identity.tabs, ['Receive', 'Display', 'Stream', 'History', 'Station']);
+  // Four tabs at most; the operator's waits behind More.
+  assert.deepEqual(seen.identity.tabs, ['Receive', 'Display', 'Stream', 'History']);
+  assert.equal(seen.identity.more, 'More: Station');
 
   seen.notice = await bannerGeometry(page);
   assert.equal(seen.notice.text, 'Maintenance tonight at 22 UTC');
@@ -413,7 +416,10 @@ async function desktop() {
   assert.deepEqual(seen.historyAfterClose, { pressed: '6 h', focus: 'Enlarge' });
 
   // Station: five widgets, the chat among them.
-  await page.locator('#control-tab-station').click();
+  // Past four tabs the operator's waits behind More.
+  await page.locator('.sidebar__more').click();
+  await page.locator('.tabs-more__item[data-tab="station"]').click();
+  await page.locator('#control-tab-station[aria-selected="true"]').waitFor();
   await page.locator('.widgets').waitFor();
   seen.widgets = await page.locator('.widget__head').allTextContents();
   assert.deepEqual(seen.widgets, ['Chat', 'Time', 'About', 'Links', 'Bands']);

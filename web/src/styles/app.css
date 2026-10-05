@@ -1061,18 +1061,20 @@ a {
   flex-shrink: 0;
 }
 
-/* Columns share the row as the admin's segmented control does, but each
-   is at least as wide as its own label: with History, Decodes and the
-   operator's tab beside the usual three, equal columns cut "Decodes" short
-   on a desktop's side column. The ::after keeps the bold label's width, so
-   the row does not shift when a tab becomes the active one. */
+.sidebar__tablist,
+.sheet__tablist {
+  display: flex;
+  flex: 1 1 auto;
+  gap: 2px;
+  min-width: 0;
+}
+
+/* Equal columns, as the admin's segmented control has. Four at most: more
+   go behind the bar's "More" button (ControlTabs), as five or six labels
+   in this column read cramped even where they fit. */
 .sidebar__tab,
 .sheet__tab {
-  display: inline-flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  flex: 1 1 auto;
+  flex: 1 1 0;
   min-width: 0;
   padding: 0 2px;
   white-space: nowrap;
@@ -1086,19 +1088,39 @@ a {
   transition: color var(--duration-hover) linear, background var(--duration-hover) linear;
 }
 
-.sidebar__tab::after,
-.sheet__tab::after {
-  content: attr(data-label);
-  font-weight: 600;
-  height: 0;
-  visibility: hidden;
-  overflow: hidden;
-}
-
 .sidebar__tab:hover,
 .sheet__tab:hover {
   color: var(--foreground);
 }
+
+.sidebar__more,
+.sheet__more {
+  flex: 0 0 34px;
+  font-size: var(--text-sm);
+  letter-spacing: 0.08em;
+}
+
+.popover.popover--menu { width: auto; min-width: 9rem; }
+
+.tabs-more {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 9rem;
+  padding: 4px;
+}
+
+.tabs-more__item {
+  height: 34px;
+  padding: 0 var(--space-3);
+  border-radius: calc(var(--radius) * 0.9);
+  text-align: left;
+  font-size: var(--text-sm);
+  color: var(--foreground);
+}
+
+.tabs-more__item:hover,
+.tabs-more__item:focus-visible { background: var(--well); }
 
 .sidebar__tab.is-active,
 .sheet__tab.is-active {

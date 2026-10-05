@@ -18,6 +18,11 @@ describe('place', () => {
     expect(place({ left: 390, top: 100, width: 10, height: 20 }, box, 'bottom', viewport).x).toBe(292);
   });
 
+  it('aligns to the end for a menu under a button at the right', () => {
+    expect(place({ left: 300, top: 100, width: 34, height: 34 }, { width: 120, height: 80 }, 'bottom', viewport, { gap: 8, align: 'end' }))
+      .toEqual({ x: 214, y: 142, side: 'bottom' });
+  });
+
   it('aligns to the start for panels, and sits beside for left and right', () => {
     expect(place({ left: 50, top: 200, width: 40, height: 20 }, box, 'top', viewport, { gap: 8, align: 'start' })).toEqual({ x: 50, y: 162, side: 'top' });
     expect(place({ left: 380, top: 100, width: 10, height: 20 }, box, 'right', viewport).side).toBe('left');

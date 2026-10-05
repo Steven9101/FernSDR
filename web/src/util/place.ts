@@ -20,7 +20,7 @@ export function place(
   box: { width: number; height: number },
   side: Side,
   viewport: { width: number; height: number },
-  options: { gap?: number; padding?: number; align?: 'center' | 'start' } = {},
+  options: { gap?: number; padding?: number; align?: 'center' | 'start' | 'end' } = {},
 ): Placement {
   const gap = options.gap ?? 6;
   const padding = options.padding ?? 8;
@@ -35,10 +35,14 @@ export function place(
   let x: number;
   let y: number;
   if (chosen === 'top' || chosen === 'bottom') {
-    x = options.align === 'start' ? anchor.left : anchor.left + (anchor.width - box.width) / 2;
+    x = options.align === 'start' ? anchor.left
+      : options.align === 'end' ? anchor.left + anchor.width - box.width
+        : anchor.left + (anchor.width - box.width) / 2;
     y = chosen === 'top' ? anchor.top - gap - box.height : anchor.top + anchor.height + gap;
   } else {
-    y = options.align === 'start' ? anchor.top : anchor.top + (anchor.height - box.height) / 2;
+    y = options.align === 'start' ? anchor.top
+      : options.align === 'end' ? anchor.top + anchor.height - box.height
+        : anchor.top + (anchor.height - box.height) / 2;
     x = chosen === 'left' ? anchor.left - gap - box.width : anchor.left + anchor.width + gap;
   }
   // Kept inside the viewport along the side it sits on, as far as it fits.
