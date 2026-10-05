@@ -39,8 +39,8 @@ export interface Suggestion {
   whole: boolean;
 }
 
-/** The share of the sample rate a band shows; the receiver's usable_fraction. */
-export const USABLE = 0.8;
+/** The share of the sample rate an IQ band shows; the receiver's usable_fraction. */
+export const USABLE = 1;
 
 /** A band id from a name: "40 m" becomes "40m", "Airband (AM)" "airband-am". */
 export function bandId(name: string): string {
@@ -109,11 +109,9 @@ export function everything(tuning: Tuning): Suggestion[] {
 /**
  * What an IQ radio that tunes to the bottom of the dial and takes a wide rate
  * offers besides single bands: shortwave from 0 Hz up in one band, as an
- * SDRplay shows 0 to 10 MHz at 10 Msps. The centre sits just above half the
- * rate, so that the radio's spike at its centre misses the time signals on
- * 5 and 10 MHz and the band starts a few kHz above 0 Hz, below which an IQ
- * input shows only a mirror. The top end keeps clear of the last few percent,
- * where the radio's own filter takes the signal away.
+ * SDRplay shows 0 to 10 MHz at 10 Msps. The centre sits 25 kHz above half
+ * the rate, so that the radio's spike at its centre misses the time signal
+ * on 5 MHz; the receiver stops the band at 0 Hz by itself.
  */
 function shortwave(tuning: Tuning): Suggestion[] {
   const bottom = Math.min(...tuning.ranges.map(([low]) => low));
@@ -124,9 +122,8 @@ function shortwave(tuning: Tuning): Suggestion[] {
     .flatMap((rate) => {
       const center = rate / 2 + 25_000;
       if (!tuning.ranges.some(([low, high]) => center >= low && center <= high)) return [];
-      const high = Math.floor((center + (rate * 0.95) / 2) / 100_000) * 100_000;
-      const name = `Shortwave, 0 to ${high / MHZ} MHz`;
-      return [{ id: bandId(name), name, group: 'everything' as const, center, rate, signal: 'iq' as const, low: center - rate / 2, high, whole: true }];
+      const name = `Shortwave, 0 to ${Math.floor(rate / 100_000) / 10} MHz`;
+      return [{ id: bandId(name), name, group: 'everything' as const, center, rate, signal: 'iq' as const, low: center - rate / 2, high: center + rate / 2, whole: true }];
     });
 }
 
@@ -197,8 +194,8 @@ export function bandSection(
     ['center', String(suggestion.center)],
     ['signal', suggestion.signal],
   ]);
-  if (suggestion.group === 'everything') {
-    values.set('low', String(suggestion.low));
+  if (suggestion.signal === 'real') {
+    values.set('low', '0');
     values.set('high', String(suggestion.high));
   }
   if (device) values.set('module.device', device);

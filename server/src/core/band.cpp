@@ -31,13 +31,23 @@ struct Coverage {
     double tolerance = 1.0;                 // hertz a stated edge may lie outside
 };
 
+// How much of the sample rate a band shows unless told otherwise. An IQ
+// input shows all of it, as other web receivers do: the outer few percent
+// are a few dB darker where the radio's own filter rolls off, and a very
+// strong station just outside can show there as a faint mirror, but cutting
+// a fifth off every radio to hide that cost more than it saved (an SDRplay
+// at 10 Msps showed 1 to 9 MHz). usable_fraction, low and high narrow it.
+// A real input's own filter sits just under half the rate, so its last
+// percent above 0.94 is alias rather than signal.
+double default_usable_fraction(SignalKind kind) { return kind == SignalKind::Real ? 0.94 : 1.0; }
+
 Coverage coverage_of(const ConfigSection& section, double sample_rate, SignalKind kind, double source_center_hz) {
     const double offset = section.get_double("frequency_offset", 0.0);
     const double ppm = section.get_double("ppm", 0.0);
     const double scale = 1.0 + (std::isfinite(ppm) ? std::clamp(ppm, -500.0, 500.0) : 0.0) * 1e-6;
     const double rate = sample_rate * scale;
     const double usable =
-        std::clamp(section.get_double("usable_fraction", kind == SignalKind::Real ? 0.94 : 0.8), 0.1, 1.0);
+        std::clamp(section.get_double("usable_fraction", default_usable_fraction(kind)), 0.1, 1.0);
     Coverage c;
     const double centre = kind == SignalKind::Real ? offset + rate / 4.0 : source_center_hz * scale + offset;
     if (kind == SignalKind::Real) {
@@ -123,10 +133,7 @@ Band::Band(std::string id, std::string name, std::unique_ptr<Source> source, con
     if (fft_size_ < 1024 || fft_size_ > (1u << 20) || (fft_size_ & (fft_size_ - 1)) != 0)
         fft_size_ = choose_fft_size(sample_rate_);
 
-    // A real front end's anti-alias filter usually sits close to Nyquist, so
-    // more of the range is genuinely usable than with a typical IQ tuner.
-    const double default_usable = signal_kind_ == SignalKind::Real ? 0.94 : 0.8;
-    usable_fraction_ = std::clamp(section.get_double("usable_fraction", default_usable), 0.1, 1.0);
+    usable_fraction_ = std::clamp(section.get_double("usable_fraction", default_usable_fraction(signal_kind_)), 0.1, 1.0);
 
     // An upconverter or transverter shifts everything; the operator states the
     // offset and the whole band plan lines up again.

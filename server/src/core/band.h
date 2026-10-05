@@ -418,10 +418,9 @@ private:
     double frequency_offset_hz_ = 0.0;
     double center_hz_ = 0.0;
     size_t fft_size_ = 0;
-    // Fraction of the sample rate that is actually usable; the outer edges of
-    // any SDR's passband are past the anti-alias filter's corner and are not
-    // worth showing as if they were real spectrum.
-    double usable_fraction_ = 0.8;
+    // Fraction of the sample rate the band shows; see default_usable_fraction()
+    // in band.cpp for why an IQ input shows all of it.
+    double usable_fraction_ = 1.0;
     double low_hz_ = 0.0;
     double high_hz_ = 0.0;
     SignalKind signal_kind_ = SignalKind::Iq;

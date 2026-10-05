@@ -927,11 +927,21 @@ TEST_CASE(integration_an_iq_band_stops_at_zero_hertz) {
         }
     }
     {
+        // The tester's SDRplay band, as written by hand: all of 0 to 10 MHz.
+        fernsdr::Config config;
+        auto band = make_iq_band("center = 5M\n", config);
+        CHECK(band != nullptr);
+        if (band) {
+            CHECK_NEAR(band->low_hz(), 0.0, 1.0);
+            CHECK_NEAR(band->high_hz(), 10e6, 1.0);
+        }
+    }
+    {
         // Well above 0 Hz nothing changes.
         fernsdr::Config config;
         auto band = make_iq_band("center = 14200k\n", config);
         CHECK(band != nullptr);
-        if (band) CHECK_NEAR(band->low_hz(), 14.2e6 - 4e6, 1.0);
+        if (band) CHECK_NEAR(band->low_hz(), 14.2e6 - 5e6, 1.0);
     }
 }
 

@@ -1077,6 +1077,6 @@ TEST_CASE(band_range_is_judged_as_the_band_will_place_it) {
     };
     std::string error;
     CHECK(verdict("ppm = 1\nlow = 7004000\nhigh = 7196000\n", error));
-    CHECK(!verdict("high = 7020000\n", error));
+    CHECK(!verdict("high = 7002000\n", error));
     CHECK(error.find("must be below high") != std::string::npos);
 }

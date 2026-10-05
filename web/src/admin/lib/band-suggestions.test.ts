@@ -18,18 +18,18 @@ describe('band suggestions', () => {
     // 40 m in Region 1 is 200 kHz: the smallest rate, centred.
     const forty = fit(rtl, { name: '40 m', group: 'amateur', low: 7000000, high: 7200000 })!;
     expect(forty).toMatchObject({ id: '40m', rate: 1024000, center: 7100000, whole: true, low: 7000000, high: 7200000 });
-    // 10 m is 1.7 MHz: 2.4 Msps shows 1.92 MHz of it, all of it.
+    // 10 m is 1.7 MHz: 2.048 Msps shows all of it.
     const ten = fit(rtl, { name: '10 m', group: 'amateur', low: 28000000, high: 29700000 })!;
-    expect(ten).toMatchObject({ rate: 2400000, whole: true });
+    expect(ten).toMatchObject({ rate: 2048000, whole: true });
   });
 
   it('shows the bottom of a band too wide for the radio', () => {
-    // 2 m in Region 2 is 4 MHz: an RTL-SDR shows the first 1.92 MHz, from 144.
+    // 2 m in Region 2 is 4 MHz: an RTL-SDR shows the first 2.4 MHz, from 144.
     const two = fit(rtl, { name: '2 m', group: 'amateur', low: 144000000, high: 148000000 })!;
     expect(two.whole).toBe(false);
     expect(two.rate).toBe(2400000);
     expect(two.low).toBe(144000000);
-    expect(two.center).toBe(144960000);
+    expect(two.center).toBe(145200000);
     // An RSP at 6 Msps takes all of it.
     expect(fit(sdrplay, { name: '2 m', group: 'amateur', low: 144000000, high: 148000000 })).toMatchObject({ rate: 6000000, whole: true });
   });
@@ -48,12 +48,12 @@ describe('band suggestions', () => {
 
   it('offers a wide IQ radio shortwave from 0 Hz in one band', () => {
     const all = everything(sdrplay);
-    expect(all.map((s) => s.name)).toEqual(['Shortwave, 0 to 5.8 MHz', 'Shortwave, 0 to 9.7 MHz']);
-    // The centre misses WWV on 5 MHz, and the band starts where the input does.
-    expect(all[1]).toMatchObject({ rate: 10000000, center: 5025000, signal: 'iq', low: 25000, high: 9700000 });
+    expect(all.map((s) => s.name)).toEqual(['Shortwave, 0 to 6 MHz', 'Shortwave, 0 to 10 MHz']);
+    // The centre misses WWV on 5 MHz; the receiver stops the band at 0 Hz.
+    expect(all[1]).toMatchObject({ rate: 10000000, center: 5025000, signal: 'iq', low: 25000, high: 10025000 });
     const section = bandSection(all[1], 'sdrplay', '');
-    expect(section.get('low')).toBe('25000');
-    expect(section.get('high')).toBe('9700000');
+    expect(section.get('center')).toBe('5025000');
+    expect(section.has('low')).toBe(false);
     // An RTL-SDR does not tune that low, and 2.4 Msps is no shortwave band.
     expect(everything(rtl)).toEqual([]);
   });
