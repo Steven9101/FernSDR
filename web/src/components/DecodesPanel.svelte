@@ -15,6 +15,10 @@
   import { tick } from 'svelte';
   import Panel from './Panel.svelte';
 
+  // The channel the listener is tuned to, when the tab opened for it: the
+  // list starts filtered to what they are hearing.
+  let { follow = '' }: { follow?: string } = $props();
+
   let expanded = $state(false);
   let dialog = $state<HTMLDialogElement | null>(null);
   $effect(() => {
@@ -25,6 +29,9 @@
   // create the view again, and neither should change what it shows, nor lose
   // the button focus returns to.
   let channel = $state('');
+  $effect(() => {
+    if (follow) channel = follow;
+  });
   let cqOnly = $state(false);
   let search = $state('');
   let holder = $state<HTMLDivElement | null>(null);

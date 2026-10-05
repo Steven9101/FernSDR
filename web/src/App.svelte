@@ -17,7 +17,7 @@
    * quietly rot into a second-class version of the desktop one, which is how
    * most web receivers end up painful on a phone.
    */
-  import { onMount } from 'svelte';
+  import { onMount, untrack } from 'svelte';
   import { MediaQuery } from 'svelte/reactivity';
   import Check from '@lucide/svelte/icons/check';
   import Keyboard from '@lucide/svelte/icons/keyboard';
@@ -49,6 +49,7 @@
   import { editingLayout, layout, loadLayout, setLayout } from './state/layout';
   import Editable from './components/Editable.svelte';
   import { signalForCarrier } from './util/cw';
+  import { channelAt, DecodesFollower } from './util/decode-follow';
 
   const MODE_KEYS = ['usb', 'lsb', 'cw', 'cwl', 'am', 'sam', 'nfm', 'dsb', 'wfm'];
 
@@ -288,7 +289,28 @@
     return 'Station';
   }
 
-  const setTab = (id: string) => (tab = id);
+  // Settling on a decoded frequency opens its decodes; leaving puts back the
+  // tab the listener had. Only once they rest there: dragging across 14.074
+  // on the way somewhere else should not flip the panel twice.
+  const follower = new DecodesFollower();
+  let followed = $state('');
+  const decodeChannels = $derived(decoders.value.flatMap((decoder) => decoder.channels));
+  const tunedChannel = $derived(channelAt(decodeChannels, tuning.value.band, tuning.value.freq)?.id ?? null);
+  $effect(() => {
+    const channel = tunedChannel;
+    const available = hasDecodes;
+    const timer = window.setTimeout(() => {
+      const next = follower.settled(channel, untrack(() => tab), available);
+      if (channel) followed = channel;
+      if (next) tab = next;
+    }, 700);
+    return () => window.clearTimeout(timer);
+  });
+
+  const setTab = (id: string) => {
+    follower.chose();
+    tab = id;
+  };
 </script>
 
 {#snippet controls()}
@@ -298,7 +320,7 @@
     {#if tab === 'display'}<DisplayPanel />{/if}
     {#if tab === 'connection'}<ConnectionPanel />{/if}
     {#if tab === 'history'}<HistoryPanel />{/if}
-    {#if tab === 'decodes'}<DecodesPanel />{/if}
+    {#if tab === 'decodes'}<DecodesPanel follow={followed} />{/if}
     {#if tab === 'bands'}<BandSelector variant="list" />{/if}
     {#if tab === 'station'}
       {#await loadWidgetPanel()}
