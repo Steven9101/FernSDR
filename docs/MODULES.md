@@ -295,6 +295,18 @@ starts, and says in `requires` what the operator installs first:
 `requires` is optional: up to 4 lines of up to 200 characters, shown on the
 admin panel's Modules page. Receivers from before it ignore the key.
 
+A decoder module that decodes more than one mode lists them in `modes`, as its
+`hello` does:
+
+```json
+"modes":["ft8","ft4"]
+```
+
+Each is a name a `[decoder:<id>]` section's `mode` may take, up to 8 lowercase
+letters and digits. The Decoders page offers a choice among them for a new
+decoder, and FT4 by itself once FT8 runs and the module lists it. Without
+`modes`, a decoder is taken to decode the one mode its id names.
+
 A module release on GitHub carries one `.fernmod` per platform, named
 `<id>-<version>-<platform>.fernmod`. FernSDR refuses a package whose manifest
 does not match the name it was published under.
