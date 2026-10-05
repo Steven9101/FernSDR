@@ -209,6 +209,24 @@ TEST_CASE(module_package_round_trips_and_rejects_damage) {
         CHECK(!parse_module_manifest(base + R"(,"requires":)" + needs + "}", parsed, error));
     }
 
+    // The modes a decoder decodes, for the panel's choices; an input module has none.
+    {
+        std::string decoder = base;
+        const std::string input = R"("kind":"input","api":1)";
+        decoder.replace(decoder.find(input), input.size(), R"("kind":"decoder","api":2)");
+        CHECK(parse_module_manifest(decoder + R"(,"modes":["ft8","ft4"]})", parsed, error));
+        CHECK_EQ(parsed.modes.size(), 2u);
+        CHECK_EQ_STR(parsed.to_json()["modes"][1].string(), "ft4");
+        CHECK(parse_module_manifest(decoder + "}", parsed, error));
+        CHECK(parsed.modes.empty());
+        CHECK(!parsed.to_json().has("modes"));
+        for (const std::string& modes : {std::string(R"([])"), std::string(R"("ft8")"), std::string(R"(["FT8"])"),
+                                         std::string(R"(["ft8","ft8"])"), std::string(R"(["ninechars"])"), std::string(R"([8])")}) {
+            CHECK(!parse_module_manifest(decoder + R"(,"modes":)" + modes + "}", parsed, error));
+        }
+        CHECK(!parse_module_manifest(base + R"(,"modes":["ft8"]})", parsed, error));
+    }
+
     // What the radio can be set to, for the panel's suggestions.
     CHECK(parse_module_manifest(base + R"(,"tuning":{"ranges":[[500000,1766000000]],"rates":[2400000,2048000],"signal":"iq"}})",
                                 parsed, error));

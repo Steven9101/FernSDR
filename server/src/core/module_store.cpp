@@ -354,6 +354,11 @@ Json ModuleManifest::to_json() const {
         list.push_back(entry);
     }
     out.set("settings", list);
+    if (!modes.empty()) {
+        Json list = Json::make_array();
+        for (const std::string& mode : modes) list.push_back(mode);
+        out.set("modes", list);
+    }
     if (!requires_.empty()) {
         Json needs = Json::make_array();
         for (const std::string& need : requires_) needs.push_back(need);
@@ -459,6 +464,26 @@ bool parse_module_manifest(const std::string& text, ModuleManifest& out, std::st
                 return false;
             }
             out.requires_.push_back(text);
+        }
+    }
+    if (json.has("modes")) {
+        // Names as a decoder section's mode takes them: up to 8 lowercase
+        // letters and digits.
+        const Json& modes = json["modes"];
+        if (out.kind != "decoder" || !modes.is_array() || modes.size() == 0 || modes.size() > 16) {
+            error = "the manifest's modes is not a list of 1 to 16 modes of a decoder module";
+            return false;
+        }
+        for (const Json& mode : modes.elements()) {
+            const std::string name = mode.string();
+            const bool plain = mode.is_string() && !name.empty() && name.size() <= 8 &&
+                               std::all_of(name.begin(), name.end(),
+                                           [](unsigned char c) { return std::islower(c) || std::isdigit(c); });
+            if (!plain || std::find(out.modes.begin(), out.modes.end(), name) != out.modes.end()) {
+                error = "the manifest's modes holds something other than distinct short lowercase names";
+                return false;
+            }
+            out.modes.push_back(name);
         }
     }
     if (json.has("tuning")) {

@@ -50,6 +50,11 @@ struct ModuleManifest {
     // in words, such as a vendor's API and its service. Shown before a band
     // is set up with it. Optional; receivers from before it ignore it.
     std::vector<std::string> requires_;
+    // For a decoder module, the modes it decodes, such as ft8 and ft4, each a
+    // name a [decoder:...] section's mode may take, so that the admin panel
+    // offers only those. Optional; a decoder without it is taken to decode
+    // the one mode its id names.
+    std::vector<std::string> modes;
     // For an input module, what its radio can be set to, so that the admin
     // panel can offer bands that fit instead of asking for numbers: the
     // centre frequencies it tunes (ranges in Hz), the sample rates worth
