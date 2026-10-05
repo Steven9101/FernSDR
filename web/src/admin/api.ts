@@ -383,10 +383,28 @@ export interface DecoderStatus {
   log: string[];
 }
 
+/** CPU and memory, sampled every couple of seconds; absent until two samples are apart. */
+export interface MachineState {
+  /** FernSDR's own use, percent of one core: 250 is two and a half cores' worth. */
+  process_cpu: number;
+  /** Every program together, percent of all cores, 0 to 100. */
+  system_cpu: number;
+  /** The CPUs FernSDR may run on. */
+  cores: number;
+  /** A container's or service's CPU quota, in cores. */
+  cpu_limit?: number;
+  process_memory: number;
+  memory_total: number;
+  memory_available: number;
+  /** The memory figures are a container's or service's limit rather than the machine's. */
+  memory_limited?: boolean;
+}
+
 export interface AdminState {
   site: string;
   users: number;
   max_users: number;
+  machine?: MachineState;
   bands: BandState[];
   listeners: ListenerState[];
   muted?: MutedAddress[];

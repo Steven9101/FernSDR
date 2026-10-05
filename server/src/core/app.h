@@ -9,6 +9,7 @@
 #include "../net/server.h"
 #include "../update/service.h"
 #include "../update/updater.h"
+#include "../util/machine.h"
 #include "admin.h"
 #include "directory.h"
 #include "space_weather.h"
@@ -121,6 +122,8 @@ private:
     // The Updates page: absent when the configuration has no directory.
     std::unique_ptr<UpdateService> updates_;
     std::string listing_problem_;
+    // CPU and memory for the panel's overview, sampled on the tick.
+    MachineSampler machine_;
 
     Radio& radio_;
     /** Frames not sent because the socket was too far behind to want them. */

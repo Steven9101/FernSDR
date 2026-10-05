@@ -256,6 +256,7 @@ void Application::on_tick() {
     }
     directory_.set_enabled(site.sdr_list && problem.empty(), now, listing_delay_ms_);
     directory_.tick(now, [this] { return directory_report_json(listing_report()); });
+    machine_.tick(now);
     if (now - last_band_status_ms_ >= 1000) {
         last_band_status_ms_ = now;
         follow_schedule();
@@ -1853,6 +1854,19 @@ std::string Application::admin_state_json() const {
     out.set("users", session_count());
     out.set("max_users", max_users_);
     if (restored_) out.set("restored", true);
+    const MachineFigures& machine = machine_.figures();
+    if (machine.known) {
+        Json figures = Json::make_object();
+        figures.set("process_cpu", std::round(machine.process_cpu * 10.0) / 10.0);
+        figures.set("system_cpu", std::round(machine.system_cpu * 10.0) / 10.0);
+        figures.set("cores", machine.cores);
+        if (machine.cpu_limit > 0) figures.set("cpu_limit", std::round(machine.cpu_limit * 100.0) / 100.0);
+        figures.set("process_memory", static_cast<double>(machine.process_memory_bytes));
+        figures.set("memory_total", static_cast<double>(machine.memory_total_bytes));
+        figures.set("memory_available", static_cast<double>(machine.memory_available_bytes));
+        if (machine.memory_limited) figures.set("memory_limited", true);
+        out.set("machine", figures);
+    }
 
     Json bands = Json::make_array();
     for (const auto& band : radio_.bands()) {

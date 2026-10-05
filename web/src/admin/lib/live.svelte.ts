@@ -7,6 +7,7 @@ of starting empty. The history is kept here, in the browser, because only an ope
 looks at it and the receiver should not spend memory on it.
 */
 import { api, ApiError, type AdminState } from '../api';
+import { processorShare } from './machine';
 
 const POLL_MS = 3000;
 const HISTORY = 60;
@@ -25,6 +26,9 @@ class Live {
   unauthorised = $state(false);
   listeners = $state<number[]>([]);
   uplink = $state<number[]>([]);
+  /** FernSDR's share of the CPU it may use, and the memory it holds. */
+  processor = $state<number[]>([]);
+  memory = $state<number[]>([]);
   bands = $state<Record<string, Series>>({});
   /** Per listener, their stream over the last minute. */
   streams = $state<Record<number, number[]>>({});
@@ -88,6 +92,10 @@ class Live {
       this.uplink,
       next.listeners.reduce((total, one) => total + one.audio_bitrate + one.waterfall_bitrate, 0),
     );
+    if (next.machine) {
+      this.processor = push(this.processor, processorShare(next.machine));
+      this.memory = push(this.memory, next.machine.process_memory);
+    }
     const bands: Record<string, Series> = {};
     for (const band of next.bands) {
       const before = this.bands[band.id] ?? { listeners: [], floor: [], uplink: [] };

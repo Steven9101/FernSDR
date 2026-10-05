@@ -9,15 +9,19 @@
 		width = 120,
 		height = 32,
 		class: className = 'text-foreground',
-		label
-	}: { values: number[]; width?: number; height?: number; class?: string; label: string } = $props();
+		label,
+		floor,
+		ceiling
+	}: { values: number[]; width?: number; height?: number; class?: string; label: string; floor?: number; ceiling?: number } = $props();
 
 	const id = `spark-${Math.random().toString(36).slice(2)}`;
 
 	const shape = $derived.by(() => {
 		if (values.length < 2) return null;
-		const low = Math.min(...values);
-		const high = Math.max(...values);
+		// A share of something has a scale of its own: a CPU wandering between 1% and 2% is flat,
+		// not a mountain range, so the caller can pin the ends the line is drawn against.
+		const low = Math.min(...values, floor ?? Infinity);
+		const high = Math.max(...values, ceiling ?? -Infinity);
 		// A flat series sits in the middle rather than on the floor, so flat reads as flat.
 		const span = high - low || 1;
 		const pad = 3;

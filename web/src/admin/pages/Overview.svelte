@@ -16,7 +16,8 @@
 	import StatusBadge from '../components/StatusBadge.svelte';
 	import { Button } from '../components/ui/button/index';
 	import { Confirm } from '../components/ui/confirm/index';
-	import { ago, bitrate, dbfs, megahertz, share } from '../lib/format';
+	import { ago, bitrate, bytes, dbfs, megahertz, share } from '../lib/format';
+	import { coresLabel, memoryTight, processorShare, processorTight } from '../lib/machine';
 	import { bandCondition, conditionDetail, isTrouble, live } from '../lib/live.svelte';
 	import { parseLogLine, recentProblems, type LogEntry } from '../lib/log';
 	import { dismissSetup, setupDone } from '../lib/setup';
@@ -33,6 +34,7 @@
 	const troubled = $derived(bands.filter((band) => isTrouble(bandCondition(band))));
 	const receiving = $derived(bands.filter((band) => bandCondition(band) === 'receiving').length);
 	const uplink = $derived(live.uplink.at(-1) ?? 0);
+	const machine = $derived(live.state?.machine);
 
 	// Problems the log already knows about, so the reason for a quiet band is one glance away.
 	// The same failure every thirty seconds is one problem, not five.
@@ -181,6 +183,31 @@
 					<AnimatedNumber value={receiving} />
 					<span class="text-sm font-normal text-muted-foreground">of {bands.length}</span>
 				</FigureRow>
+				{#if machine}
+					<FigureRow
+						label="Processor"
+						series={live.processor}
+						seriesLabel="FernSDR's share of the processor, over the last few minutes"
+						tone={processorTight(machine) ? 'text-warning' : undefined}
+						floor={0}
+						ceiling={100}
+					>
+						<span class={processorTight(machine) ? 'text-warning' : ''}>
+							<AnimatedNumber value={processorShare(machine)} format={(value) => `${Math.round(value)}%`} />
+						</span>
+						<span class="text-sm font-normal text-muted-foreground">of {coresLabel(machine)}</span>
+					</FigureRow>
+					<FigureRow
+						label="Memory, {bytes(machine.memory_available)} {machine.memory_limited ? 'to its limit' : 'free'}"
+						series={live.memory}
+						seriesLabel="What FernSDR holds in memory, over the last few minutes"
+						tone={memoryTight(machine) ? 'text-warning' : undefined}
+					>
+						<span class={memoryTight(machine) ? 'text-warning' : ''}>
+							<AnimatedNumber value={machine.process_memory} format={(value) => bytes(value)} />
+						</span>
+					</FigureRow>
+				{/if}
 			</div>
 		</section>
 		<MutedList />

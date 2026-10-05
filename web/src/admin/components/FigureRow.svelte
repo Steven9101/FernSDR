@@ -8,8 +8,18 @@
 		series,
 		seriesLabel,
 		tone,
+		floor,
+		ceiling,
 		children
-	}: { label: string; series?: number[]; seriesLabel?: string; tone?: string; children: Snippet } = $props();
+	}: {
+		label: string;
+		series?: number[];
+		seriesLabel?: string;
+		tone?: string;
+		floor?: number;
+		ceiling?: number;
+		children: Snippet;
+	} = $props();
 </script>
 
 <div class="flex items-center gap-3 px-4 py-3">
@@ -18,6 +28,6 @@
 		<span class="truncate text-[1.375rem] leading-tight font-semibold tracking-[-0.02em] tabular">{@render children()}</span>
 	</span>
 	{#if series}
-		<Sparkline values={series} width={104} height={32} class={tone} label={seriesLabel ?? `${label} over the last few minutes`} />
+		<Sparkline values={series} width={104} height={32} class={tone} {floor} {ceiling} label={seriesLabel ?? `${label} over the last few minutes`} />
 	{/if}
 </div>
