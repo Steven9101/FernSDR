@@ -252,6 +252,12 @@ are none:
 A device another program holds is listed with `"usable":false` and an
 `error`. Both must finish within 10 seconds, and print at most 64 KiB.
 
+A device may carry a `tuning` of its own, in the manifest's form, where it
+differs from what the manifest says for every device the module drives: an
+Airspy R2 and a Mini share a USB id but not their sample rates. The setup
+suggests bands from it when it can tell which listed device is the radio
+chosen, by serial or as the only one.
+
 ## Packages
 
 A module is installed from a `.fernmod` file: one executable with its
@@ -365,8 +371,9 @@ up, like `tools/source-install.sh --service --usb`, widens the systemd sandbox
 for modules: the host's `/dev` becomes visible, with access limited to USB
 devices by `DevicePolicy=closed`; `/dev/shm` is shared with the host;
 netlink sockets of every protocol are allowed, because libusb needs one
-to see a dongle arrive; and USB devices other than RTL2832U dongles and the
-RX-888's Cypress FX3 are limited only by their own file permissions. The SHA-256 in a manifest
+to see a dongle arrive; and USB devices other than the radios `install.sh`
+writes device rules for (RTL2832U dongles, the RX-888's Cypress FX3 and the
+Airspys) are limited only by their own file permissions. The SHA-256 in a manifest
 proves the executable arrived intact; it does not prove who built it.
 Installing from the catalog trusts GitHub and the account that published the
 release. That is why the catalog is fixed in the configuration file and why
