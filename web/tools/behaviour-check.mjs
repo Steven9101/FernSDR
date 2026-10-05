@@ -278,10 +278,15 @@ async function desktop() {
   // the label follows the key, so wait for each rather than reading once.
   await page.waitForFunction((el) => el.getAttribute('aria-checked') === 'true', await agcOff.elementHandle());
   const gain = page.getByLabel('Gain', { exact: true });
-  await gain.focus();
-  await page.keyboard.press('End');
   const gainValue = page.locator('.field', { has: gain }).locator('.field__value');
-  await gainValue.filter({ hasText: /^60 dB$/ }).waitFor({ timeout: 5000 }).catch(() => {});
+  // The redraw can take the focus back after the key went to the slider, so
+  // a key that did not move it is pressed again with the focus put back.
+  for (let attempt = 0; attempt < 3; attempt++) {
+    await gain.focus();
+    await page.keyboard.press('End');
+    const moved = await gainValue.filter({ hasText: /^60 dB$/ }).waitFor({ timeout: 3000 }).then(() => true, () => false);
+    if (moved) break;
+  }
   seen.gain = await gainValue.textContent();
   assert.equal(seen.gain, '60 dB');
   await page.getByRole('radio', { name: 'Slow', exact: true }).click();
