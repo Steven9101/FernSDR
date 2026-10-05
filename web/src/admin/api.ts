@@ -204,6 +204,8 @@ export interface ModuleVersion {
   settings: ModuleSettingSpec[];
   /** What the operator installs first that the package cannot carry, such as a vendor's API. */
   requires?: string[];
+  /** For a decoder, the modes it decodes, such as ft8 and ft4. Absent: the one its id names. */
+  modes?: string[];
   /** For an input module: what its radio can be set to, for the band suggestions. */
   tuning?: Tuning;
 }

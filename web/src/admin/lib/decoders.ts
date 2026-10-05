@@ -68,6 +68,8 @@ export const validDecoderId = (id: string) => /^[a-z0-9-]{1,32}$/.test(id);
 
 export interface DecoderForm {
   module: string;
+  /** Written when given; left as the section had it otherwise. */
+  mode?: string;
   channels: Channel[];
   public: boolean;
 }
@@ -79,6 +81,7 @@ export interface DecoderForm {
 export function decoderSection(form: DecoderForm, previous: Map<string, string> | null): Map<string, string> {
   const values = new Map<string, string>();
   values.set('module', form.module);
+  if (form.mode) values.set('mode', form.mode);
   values.set('channels', form.channels.map(channelKey).join(' '));
   values.set('public', form.public ? 'yes' : 'no');
   for (const [key, value] of previous ?? []) {

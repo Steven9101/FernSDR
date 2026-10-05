@@ -34,6 +34,13 @@ describe('decoder channels', () => {
     expect([...section]).toEqual([['module', 'ft8'], ['channels', '40m:7047500'], ['public', 'no'], ['mode', 'ft4'], ['module.depth', '3']]);
   });
 
+  it('writes the mode it is given, for a module that decodes more than one', () => {
+    const section = decoderSection({ module: 'ft8', mode: 'ft4', channels: [{ band: '40m', dial: 7_047_500 }], public: false }, null);
+    expect([...section]).toEqual([['module', 'ft8'], ['mode', 'ft4'], ['channels', '40m:7047500'], ['public', 'no']]);
+    const kept = decoderSection({ module: 'ft8', mode: 'ft8', channels: [], public: true }, new Map([['mode', 'ft4']]));
+    expect(kept.get('mode')).toBe('ft8');
+  });
+
   it('names things plainly', () => {
     expect(formatDial(7_074_000)).toBe('7,074 kHz');
     expect(formatDial(7_047_500)).toBe('7,047.5 kHz');

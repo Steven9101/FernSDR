@@ -141,6 +141,33 @@
 	);
 	let enabling = $state('');
 
+	// The modes a module decodes, as its manifest lists them; one that lists none decodes the
+	// mode its id names.
+	function modesOf(id: string): string[] {
+		const module = modules.find((m) => m.id === id);
+		const active = module?.versions.find((v) => v.version === module.active);
+		return active?.modes?.length ? active.modes : [id];
+	}
+	// FT4 once FT8 runs: Fern-FT8 decodes both, and FT4 sits on its own frequencies.
+	const ft4Channels = $derived(suggestedChannels(bands, 'ft4'));
+	const ft4Offered = $derived(
+		!!ft8Installed && modesOf('ft8').includes('ft4') && ft4Channels.length > 0 &&
+			!configured.some((d) => (d.values.get('mode') ?? 'ft8') === 'ft4')
+	);
+
+	async function turnOnFt4() {
+		enabling = 'Turning on FT4…';
+		try {
+			const channels = ft4Channels;
+			await save(freeName('ft4'), () => decoderSection({ module: 'ft8', mode: 'ft4', channels, public: false }, null),
+				`FT4 decoding on ${channels.length} ${channels.length === 1 ? 'channel' : 'channels'}`);
+		} catch (problem) {
+			toast.error((problem as ApiError).message);
+		} finally {
+			enabling = '';
+		}
+	}
+
 	async function waitForJobs() {
 		for (let i = 0; i < 600; i++) {
 			view = await api.modules();
@@ -240,7 +267,19 @@
 		return null;
 	}
 
-	const formMode = $derived((editing ? configured.find((d) => d.id === editing)?.values.get('mode') : undefined) ?? 'ft8');
+	// A new decoder of a module with several modes takes the one chosen; a decoder being changed
+	// keeps its own.
+	let formModeChoice = $state('');
+	const formModes = $derived(modesOf(formModule));
+	const formMode = $derived(
+		(editing ? configured.find((d) => d.id === editing)?.values.get('mode') : formModeChoice || formModes[0]) ?? 'ft8'
+	);
+	function chooseMode(mode: string) {
+		// The suggested name follows the mode, unless the operator typed one of their own.
+		if (!editing && formId === freeName(formMode)) formId = freeName(mode);
+		formModeChoice = mode;
+		formChannels = suggestedChannels(bands, mode).map(channelKey);
+	}
 	const offered = $derived.by(() => {
 		const suggested = suggestedChannels(bands, formMode);
 		const current = editing ? (configured.find((d) => d.id === editing)?.channels ?? []) : [];
@@ -254,7 +293,8 @@
 		formId = decoder?.id ?? freeName();
 		formModule = decoder?.values.get('module') ?? decoderModules[0]?.id ?? '';
 		formPublic = decoder ? decoder.values.get('public') === 'yes' : false;
-		formChannels = decoder ? decoder.channels.map(channelKey) : suggestedChannels(bands, 'ft8').map(channelKey);
+		formModeChoice = decoder ? '' : modesOf(formModule)[0];
+		formChannels = decoder ? decoder.channels.map(channelKey) : suggestedChannels(bands, formModeChoice).map(channelKey);
 		formOther = '';
 		formError = '';
 		formSettings = {};
@@ -265,9 +305,9 @@
 	}
 
 	// ft8, then ft8-2, ft8-3: a name that is free, which the operator may keep.
-	function freeName(): string {
+	function freeName(mode = 'ft8'): string {
 		for (let n = 1; ; n++) {
-			const name = n === 1 ? 'ft8' : `ft8-${n}`;
+			const name = n === 1 ? mode : `${mode}-${n}`;
 			if (!configured.some((d) => d.id === name)) return name;
 		}
 	}
@@ -294,7 +334,7 @@
 				formError = 'Choose at least one channel.';
 			} else {
 				formError = '';
-				const form = { module: formModule, channels, public: formPublic };
+				const form = { module: formModule, mode: editing ? undefined : formMode, channels, public: formPublic };
 				const keepOthers = editing !== null;
 				const specs = formSpecs;
 				const chosen = { ...formSettings };
@@ -393,6 +433,19 @@
 							{#if enabling}<LoaderCircle class="animate-spin" />{enabling}
 							{:else if ft8Installed}Turn on FT8
 							{:else}Install Fern-FT8 and turn on FT8{/if}
+						</Button>
+					</div>
+				</SettingsGroup>
+			{/if}
+
+			{#if ft4Offered}
+				<SettingsGroup title="FT4" footer="Fern-FT8 decodes FT4 too, on the FT4 frequencies of your bands, as a decoder of its own.">
+					<div class="flex flex-col gap-3 px-4 py-4">
+						<p class="text-[15px] leading-relaxed">
+							Decode FT4 on {ft4Channels.map((c) => `${bandName(c.band)} ${formatDial(c.dial)}`).join(', ')}.
+						</p>
+						<Button size="lg" class="h-11 self-start rounded-full px-5" disabled={!!enabling || saving} onclick={turnOnFt4}>
+							{#if enabling}<LoaderCircle class="animate-spin" />{enabling}{:else}Turn on FT4{/if}
 						</Button>
 					</div>
 				</SettingsGroup>
@@ -513,6 +566,17 @@
 					{/each}
 				{:else}
 					<SettingsRow label="Module" value={formModule ? formModuleName : 'None installed'} />
+				{/if}
+				{#if !editing && formModes.length > 1}
+					<div class="flex flex-col gap-2 px-4 py-3">
+						<span class="text-[15px]">Mode</span>
+						<Segmented
+							label="Mode"
+							options={formModes.map((mode) => ({ value: mode, label: mode.toUpperCase() }))}
+							value={formMode}
+							onChange={chooseMode}
+						/>
+					</div>
 				{/if}
 				<SettingsRow label="Shown to listeners">
 					{#snippet control()}<Switch bind:checked={formPublic} aria-label="Shown to listeners" />{/snippet}
