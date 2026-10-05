@@ -1061,11 +1061,16 @@ a {
   flex-shrink: 0;
 }
 
-/* Equal columns, as the admin's segmented control has: five with the
-   operator's chat still fit the column at this size. */
+/* Columns share the row as the admin's segmented control does, but each
+   is at least as wide as its own label: with History, Decodes and the
+   operator's tab beside the usual three, equal columns cut "Decodes" short
+   on a desktop's side column. The ::after keeps the bold label's width, so
+   the row does not shift when a tab becomes the active one. */
 .sidebar__tab,
 .sheet__tab {
-  flex: 1 1 0;
+  display: inline-grid;
+  place-items: center;
+  flex: 1 1 auto;
   min-width: 0;
   padding: 0 2px;
   white-space: nowrap;
@@ -1077,6 +1082,15 @@ a {
   font-size: var(--text-xs);
   font-weight: 500;
   transition: color var(--duration-hover) linear, background var(--duration-hover) linear;
+}
+
+.sidebar__tab::after,
+.sheet__tab::after {
+  content: attr(data-label);
+  font-weight: 600;
+  height: 0;
+  visibility: hidden;
+  overflow: hidden;
 }
 
 .sidebar__tab:hover,

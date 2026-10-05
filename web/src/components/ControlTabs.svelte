@@ -31,6 +31,7 @@
       tabindex={active === tab.id ? 0 : -1}
       class="{variant}__tab{active === tab.id ? ' is-active' : ''}"
       title={tab.label}
+      data-label={tab.label}
       onclick={() => onChange(tab.id)}
       onkeydown={(event) => onKeyDown(event, index)}
     >{tab.label}</button>
