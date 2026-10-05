@@ -93,6 +93,11 @@ Json device_entry(const Json& device) {
         if (device[key].is_string()) out.set(key, printable(device[key].string(), 200));
     }
     out.set("usable", device["usable"].boolean(false));
+    // What this one device tunes and at which rates, where it differs from
+    // what the module's manifest says for all its devices: an Airspy R2 and
+    // a Mini share a USB id and a module but not their rates.
+    ModuleManifest::Tuning tuning;
+    if (device.has("tuning") && parse_module_tuning(device["tuning"], tuning)) out.set("tuning", module_tuning_json(tuning));
     return out;
 }
 

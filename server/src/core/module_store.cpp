@@ -364,23 +364,52 @@ Json ModuleManifest::to_json() const {
         for (const std::string& need : requires_) needs.push_back(need);
         out.set("requires", needs);
     }
-    if (!tuning.signal.empty()) {
-        Json entry = Json::make_object();
-        Json ranges = Json::make_array();
-        for (const auto& [low, high] : tuning.ranges) {
-            Json range = Json::make_array();
-            range.push_back(low);
-            range.push_back(high);
-            ranges.push_back(range);
-        }
-        entry.set("ranges", ranges);
-        Json rates = Json::make_array();
-        for (const double rate : tuning.rates) rates.push_back(rate);
-        entry.set("rates", rates);
-        entry.set("signal", tuning.signal);
-        out.set("tuning", entry);
-    }
+    if (!tuning.signal.empty()) out.set("tuning", module_tuning_json(tuning));
     return out;
+}
+
+bool parse_module_tuning(const Json& tuning, ModuleManifest::Tuning& out) {
+    const auto whole_hz = [](const Json& value, double most) {
+        return value.is_number() && value.number() >= 0 && value.number() <= most &&
+               std::floor(value.number()) == value.number();
+    };
+    const Json& ranges = tuning["ranges"];
+    const Json& rates = tuning["rates"];
+    const std::string signal = tuning["signal"].string();
+    ModuleManifest::Tuning parsed;
+    bool good = tuning.is_object() && ranges.is_array() && ranges.size() >= 1 && ranges.size() <= 8 &&
+                rates.is_array() && rates.size() >= 1 && rates.size() <= 8 && (signal == "iq" || signal == "real");
+    for (size_t i = 0; good && i < ranges.size(); i++) {
+        const Json& range = ranges[i];
+        good = range.is_array() && range.size() == 2 && whole_hz(range[0], 1e11) && whole_hz(range[1], 1e11) &&
+               range[0].number() < range[1].number();
+        if (good) parsed.ranges.emplace_back(range[0].number(), range[1].number());
+    }
+    for (size_t i = 0; good && i < rates.size(); i++) {
+        good = whole_hz(rates[i], 1e10) && rates[i].number() >= 1000;
+        if (good) parsed.rates.push_back(rates[i].number());
+    }
+    if (!good) return false;
+    parsed.signal = signal;
+    out = std::move(parsed);
+    return true;
+}
+
+Json module_tuning_json(const ModuleManifest::Tuning& tuning) {
+    Json entry = Json::make_object();
+    Json ranges = Json::make_array();
+    for (const auto& [low, high] : tuning.ranges) {
+        Json range = Json::make_array();
+        range.push_back(low);
+        range.push_back(high);
+        ranges.push_back(range);
+    }
+    entry.set("ranges", ranges);
+    Json rates = Json::make_array();
+    for (const double rate : tuning.rates) rates.push_back(rate);
+    entry.set("rates", rates);
+    entry.set("signal", tuning.signal);
+    return entry;
 }
 
 bool parse_module_manifest(const std::string& text, ModuleManifest& out, std::string& error) {
@@ -486,33 +515,10 @@ bool parse_module_manifest(const std::string& text, ModuleManifest& out, std::st
             out.modes.push_back(name);
         }
     }
-    if (json.has("tuning")) {
-        const Json& tuning = json["tuning"];
-        const auto whole_hz = [](const Json& value, double most) {
-            return value.is_number() && value.number() >= 0 && value.number() <= most &&
-                   std::floor(value.number()) == value.number();
-        };
-        const Json& ranges = tuning["ranges"];
-        const Json& rates = tuning["rates"];
-        const std::string signal = tuning["signal"].string();
-        bool good = tuning.is_object() && ranges.is_array() && ranges.size() >= 1 && ranges.size() <= 8 &&
-                    rates.is_array() && rates.size() >= 1 && rates.size() <= 8 && (signal == "iq" || signal == "real");
-        for (size_t i = 0; good && i < ranges.size(); i++) {
-            const Json& range = ranges[i];
-            good = range.is_array() && range.size() == 2 && whole_hz(range[0], 1e11) && whole_hz(range[1], 1e11) &&
-                   range[0].number() < range[1].number();
-            if (good) out.tuning.ranges.emplace_back(range[0].number(), range[1].number());
-        }
-        for (size_t i = 0; good && i < rates.size(); i++) {
-            good = whole_hz(rates[i], 1e10) && rates[i].number() >= 1000;
-            if (good) out.tuning.rates.push_back(rates[i].number());
-        }
-        if (!good) {
-            error = "the manifest's tuning is not up to 8 frequency ranges and 8 sample rates in whole Hz with a "
-                    "signal of iq or real";
-            return false;
-        }
-        out.tuning.signal = signal;
+    if (json.has("tuning") && !parse_module_tuning(json["tuning"], out.tuning)) {
+        error = "the manifest's tuning is not up to 8 frequency ranges and 8 sample rates in whole Hz with a signal "
+                "of iq or real";
+        return false;
     }
     const Json& settings = json["settings"];
     if (!settings.is_array()) {

@@ -790,6 +790,10 @@ TEST_CASE(module_manager_runs_jobs_and_publishes_what_the_panel_shows) {
     // Only the documented fields reach the panel.
     CHECK(!devices[0].has("secret"));
     CHECK(!devices[1]["usable"].boolean(true));
+    // A device's own tuning is kept where it is one, dropped where it is not.
+    CHECK_EQ(devices[0]["tuning"]["rates"][0].number(), 768000.0);
+    CHECK_EQ_STR(devices[0]["tuning"]["signal"].string(), "iq");
+    CHECK(!devices[1].has("tuning"));
     CHECK_EQ(view["jobs"].size(), 2);
     CHECK_EQ_STR(view["jobs"][0]["state"].string(), "done");
 

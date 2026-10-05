@@ -131,8 +131,9 @@ int main(int argc, char** argv) {
     }
     if (mode == "--list-devices") {
         std::printf("{\"devices\":[{\"index\":0,\"name\":\"Fake radio\",\"serial\":\"F00D\",\"usable\":true,"
-                    "\"secret\":{\"nested\":1}},{\"index\":1,\"name\":\"Busy radio\",\"usable\":false,"
-                    "\"error\":\"in use\"}]}\n");
+                    "\"secret\":{\"nested\":1},\"tuning\":{\"ranges\":[[9000,31000000]],\"rates\":[768000],"
+                    "\"signal\":\"iq\"}},{\"index\":1,\"name\":\"Busy radio\",\"usable\":false,"
+                    "\"error\":\"in use\",\"tuning\":{\"ranges\":[[5,1]],\"rates\":[768000],\"signal\":\"iq\"}}]}\n");
         return 0;
     }
     if (mode == "--describe") {

@@ -83,6 +83,11 @@ int compare_module_versions(const std::string& a, const std::string& b);
 const char* module_platform();
 
 bool parse_module_manifest(const std::string& text, ModuleManifest& out, std::string& error);
+// A `tuning` object, as a manifest or one device of --list-devices carries
+// it: up to 8 ranges and 8 rates in whole Hz and a signal. False, leaving
+// `out` alone, when it is not one.
+bool parse_module_tuning(const Json& tuning, ModuleManifest::Tuning& out);
+Json module_tuning_json(const ModuleManifest::Tuning& tuning);
 // Splits a .fernmod file. `executable` is where the program starts in it.
 bool parse_module_package(const std::string& package, ModuleManifest& manifest, size_t& executable,
                           std::string& error);
