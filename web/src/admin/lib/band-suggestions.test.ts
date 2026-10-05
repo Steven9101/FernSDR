@@ -46,6 +46,18 @@ describe('band suggestions', () => {
     expect(suggestionsFor(rx888, [{ name: '40 m', group: 'amateur', low: 7000000, high: 7200000 }])).toHaveLength(2);
   });
 
+  it('offers a wide IQ radio shortwave from 0 Hz in one band', () => {
+    const all = everything(sdrplay);
+    expect(all.map((s) => s.name)).toEqual(['Shortwave, 0 to 5.8 MHz', 'Shortwave, 0 to 9.7 MHz']);
+    // The centre misses WWV on 5 MHz, and the band starts where the input does.
+    expect(all[1]).toMatchObject({ rate: 10000000, center: 5025000, signal: 'iq', low: 25000, high: 9700000 });
+    const section = bandSection(all[1], 'sdrplay', '');
+    expect(section.get('low')).toBe('25000');
+    expect(section.get('high')).toBe('9700000');
+    // An RTL-SDR does not tune that low, and 2.4 Msps is no shortwave band.
+    expect(everything(rtl)).toEqual([]);
+  });
+
   it('takes amateur bands and the services worth listening to from the plan', () => {
     const targets = targetsFrom(
       [{ name: '40 m', low: 7000000, high: 7200000 }],

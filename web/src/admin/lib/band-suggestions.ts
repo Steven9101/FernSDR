@@ -97,13 +97,37 @@ export function fit(tuning: Tuning, target: Target): Suggestion | null {
  * each rate, because there is nothing to centre.
  */
 export function everything(tuning: Tuning): Suggestion[] {
-  if (tuning.signal !== 'real') return [];
+  if (tuning.signal !== 'real') return shortwave(tuning);
   return [...tuning.rates].sort((a, b) => a - b).map((rate) => {
     // Kept a little inside half the rate, where the converter's filter still is flat.
     const top = Math.floor((rate / 2) * 0.93 / MHZ) * MHZ;
     const name = top <= 32 * MHZ ? `Shortwave, 0 to ${top / MHZ} MHz` : `0 to ${top / MHZ} MHz, with 6 m`;
     return { id: bandId(name), name, group: 'everything' as const, center: 0, rate, signal: 'real' as const, low: 0, high: top, whole: true };
   });
+}
+
+/**
+ * What an IQ radio that tunes to the bottom of the dial and takes a wide rate
+ * offers besides single bands: shortwave from 0 Hz up in one band, as an
+ * SDRplay shows 0 to 10 MHz at 10 Msps. The centre sits just above half the
+ * rate, so that the radio's spike at its centre misses the time signals on
+ * 5 and 10 MHz and the band starts a few kHz above 0 Hz, below which an IQ
+ * input shows only a mirror. The top end keeps clear of the last few percent,
+ * where the radio's own filter takes the signal away.
+ */
+function shortwave(tuning: Tuning): Suggestion[] {
+  const bottom = Math.min(...tuning.ranges.map(([low]) => low));
+  if (!(bottom <= 100_000)) return [];
+  return [...tuning.rates]
+    .filter((rate) => rate >= 6 * MHZ)
+    .sort((a, b) => a - b)
+    .flatMap((rate) => {
+      const center = rate / 2 + 25_000;
+      if (!tuning.ranges.some(([low, high]) => center >= low && center <= high)) return [];
+      const high = Math.floor((center + (rate * 0.95) / 2) / 100_000) * 100_000;
+      const name = `Shortwave, 0 to ${high / MHZ} MHz`;
+      return [{ id: bandId(name), name, group: 'everything' as const, center, rate, signal: 'iq' as const, low: center - rate / 2, high, whole: true }];
+    });
 }
 
 /** The service allocations worth offering, by the plan's labels. */
@@ -173,8 +197,8 @@ export function bandSection(
     ['center', String(suggestion.center)],
     ['signal', suggestion.signal],
   ]);
-  if (suggestion.signal === 'real') {
-    values.set('low', '0');
+  if (suggestion.group === 'everything') {
+    values.set('low', String(suggestion.low));
     values.set('high', String(suggestion.high));
   }
   if (device) values.set('module.device', device);
