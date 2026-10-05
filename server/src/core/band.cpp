@@ -50,6 +50,15 @@ Coverage coverage_of(const ConfigSection& section, double sample_rate, SignalKin
         c.last = centre + rate / 2.0;
         c.low = centre - rate * usable / 2.0;
         c.high = centre + rate * usable / 2.0;
+        // Below 0 Hz on the dial an IQ input shows only the mirror of what
+        // lies just above it, as when an SDRplay sits at 4 MHz with 10 Msps.
+        // The floor is the input's own 0 Hz with a transverter's offset
+        // added, and 0 Hz behind an upconverter, whose offset is negative.
+        const double floor = std::max(0.0, offset);
+        if (centre > floor) {
+            c.first = std::max(c.first, floor);
+            c.low = std::max(c.low, floor);
+        }
     }
     // An edge written as the nominal one, before the crystal correction
     // moved it, still counts as inside.

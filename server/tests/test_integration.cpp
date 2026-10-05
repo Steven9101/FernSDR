@@ -875,6 +875,66 @@ TEST_CASE(integration_real_band_covers_dc_to_nyquist) {
     CHECK(band->info().signal == "real");
 }
 
+namespace {
+
+std::unique_ptr<Band> make_iq_band(const std::string& extra, fernsdr::Config& config) {
+    std::string error;
+    config.parse("[band:hf]\nsource = test\nsample_rate = 10M\nrealtime = false\n" + extra, error);
+    const auto& section = config.section("band:hf");
+    if (!fernsdr::check_band_settings(section, *fernsdr::make_source(section, error), error)) return nullptr;
+    auto source = fernsdr::make_source(section, error);
+    if (!source) return nullptr;
+    return std::make_unique<Band>("hf", "HF", std::move(source), section);
+}
+
+}  // namespace
+
+// Below 0 Hz an IQ input shows nothing but the mirror of what lies just
+// above it: an SDRplay at 4 MHz with 10 Msps covers -1 to 9 MHz on paper.
+TEST_CASE(integration_an_iq_band_stops_at_zero_hertz) {
+    {
+        fernsdr::Config config;
+        auto band = make_iq_band("center = 4M\nusable_fraction = 1\n", config);
+        CHECK(band != nullptr);
+        if (band) {
+            CHECK_NEAR(band->low_hz(), 0.0, 1.0);
+            CHECK_NEAR(band->high_hz(), 9e6, 1.0);
+        }
+    }
+    {
+        // What the panel writes for shortwave on a 10 Msps radio.
+        fernsdr::Config config;
+        auto band = make_iq_band("center = 5025k\nlow = 25000\nhigh = 9700k\n", config);
+        CHECK(band != nullptr);
+        if (band) {
+            CHECK_NEAR(band->low_hz(), 25000.0, 1.0);
+            CHECK_NEAR(band->high_hz(), 9.7e6, 1.0);
+        }
+    }
+    {
+        // A negative low is not.
+        fernsdr::Config config;
+        CHECK(make_iq_band("center = 4M\nlow = -500k\nhigh = 8M\n", config) == nullptr);
+    }
+    {
+        // Behind an upconverter, 0 Hz on the dial is still the floor.
+        fernsdr::Config config;
+        auto band = make_iq_band("center = 128M\nfrequency_offset = -125M\nusable_fraction = 1\n", config);
+        CHECK(band != nullptr);
+        if (band) {
+            CHECK_NEAR(band->low_hz(), 0.0, 1.0);
+            CHECK_NEAR(band->high_hz(), 8e6, 1.0);
+        }
+    }
+    {
+        // Well above 0 Hz nothing changes.
+        fernsdr::Config config;
+        auto band = make_iq_band("center = 14200k\n", config);
+        CHECK(band != nullptr);
+        if (band) CHECK_NEAR(band->low_hz(), 14.2e6 - 4e6, 1.0);
+    }
+}
+
 TEST_CASE(integration_real_band_demodulates_a_signal) {
     auto config = make_real_config();
     auto band = make_real_band(config);
