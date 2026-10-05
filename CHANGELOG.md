@@ -14,6 +14,8 @@
 - The RX-888 module 0.1.1 finds the board when it comes back on the USB 3
   bus after its firmware loads; with 0.1.0 it waited on the USB 2 bus and
   gave up every time. Update it on the Modules page.
+- FT4 is decoded by Fern-FT8 0.2.0, as sensitive as WSJT-X; the Decoders
+  page offers it once FT8 runs. Update the module on the Modules page.
 - The admin overview shows how much processor and memory FernSDR uses, and
   inside a container or a service with limits, those limits.
 - The decodes open by themselves when a listener settles on a decoded
