@@ -5,6 +5,6 @@
 
 namespace fernsdr {
 
-constexpr const char* kVersion = "0.1.1";
+constexpr const char* kVersion = "0.1.2";
 
 }  // namespace fernsdr

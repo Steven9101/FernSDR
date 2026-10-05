@@ -1,5 +1,31 @@
 # Changelog
 
+## 0.1.2 (2026-10-05)
+
+- An IQ band shows its whole sample rate and stops at 0 Hz. An SDRplay at
+  10 Msps around 5 MHz showed 1 to 9 MHz, and lowering the centre showed
+  negative frequencies; it now shows 0 to 10 MHz, the edges a few dB darker
+  where the radio's filter rolls off. `usable_fraction`, `low` and `high`
+  still narrow a band. The setup offers shortwave from 0 Hz in one band for
+  an SDRplay and other wide IQ radios.
+- Airspy R2, Mini, HF+ and HF+ Discovery run through the new Fern-Airspy
+  module, installed from the admin panel; the setup suggests bands from each
+  radio's own ranges and rates.
+- The RX-888 module 0.1.1 finds the board when it comes back on the USB 3
+  bus after its firmware loads; with 0.1.0 it waited on the USB 2 bus and
+  gave up every time. Update it on the Modules page.
+- The admin overview shows how much processor and memory FernSDR uses, and
+  inside a container or a service with limits, those limits.
+- The decodes open by themselves when a listener settles on a decoded
+  frequency, and the tab they had comes back when they leave. In the side
+  column each decode reads in two lines, without a scroll bar across it.
+- The receiver's tab bar keeps four tabs and puts the rest behind a More
+  button, so History, Decodes and the operator's tab no longer squeeze it.
+- The band preview in the admin panel is drawn at the screen's own
+  resolution and fills its card.
+- The admin navigation no longer reruns its indicator in a loop on the setup
+  page.
+
 ## 0.1.1 (2026-10-05)
 
 - The waterfall is drawn smoothly again. 0.1.0 drew each cell of a wide
