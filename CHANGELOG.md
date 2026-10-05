@@ -1,5 +1,12 @@
 # Changelog
 
+## 0.1.1 (2026-10-05)
+
+- The waterfall is drawn smoothly again. 0.1.0 drew each cell of a wide
+  view on its own, so that a carrier one cell wide kept its full strength,
+  but on a real band that made the whole picture harsher and blockier; this
+  goes back to blending neighbouring cells, as before 0.1.0.
+
 ## 0.1.0 (2026-09-30)
 
 The first release.
