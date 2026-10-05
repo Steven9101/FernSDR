@@ -1326,9 +1326,8 @@ want_docker() {
     [ -z "${FERNSDR_SETUP:-}" ] && (exec < /dev/tty) 2> /dev/null || return 1
     {
         printf '\nDocker runs on this machine. How should FernSDR run?\n\n'
-        printf '  1  As a service of this machine: updates from the admin panel\n'
-        printf '  2  In a Docker container: updates by running this installer again;\n'
-        printf '     not for SDRplay radios\n\n'
+        printf '  1  As a service of this machine: works with every radio\n'
+        printf '  2  In a Docker container: not for SDRplay radios\n\n'
         printf 'Answer [1]: '
     } > /dev/tty
     IFS= read -r answer < /dev/tty || answer=1
@@ -1486,7 +1485,7 @@ docker_summary() {
     printf '\n'
     note "Settings:      the volume fernsdr, kept when the container is made again"
     note "Log:           docker logs $CONTAINER"
-    note "Updates:       this installer again, which fetches the newest image"
+    note "Updates:       the admin panel's Updates page, or this installer again"
     note "Lost password: this installer again, answer 2"
     printf '\n'
 }

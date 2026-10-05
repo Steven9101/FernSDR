@@ -217,14 +217,16 @@ release: release-binary $(BUILD)/fernsdr-release
 	@echo "$(RELEASE_TAR): $$(wc -c < $(RELEASE_TAR)) bytes"
 
 # A container image from the release's tree: docker/Dockerfile on Alpine,
-# tagged fernsdr:VERSION. Local builds are for this machine's processor;
-# docker buildx makes the others from their trees the same way.
+# tagged fernsdr:VERSION, or DOCKER_TAG. Local builds are for this
+# machine's processor; docker buildx makes the others from their trees the
+# same way.
+DOCKER_TAG ?= fernsdr:$(VERSION)
 docker: release
 	@rm -rf $(RELEASE_BUILD)/docker
 	@mkdir -p $(RELEASE_BUILD)/docker
 	cp -R $(RELEASE_BUILD)/tree $(RELEASE_BUILD)/docker/tree
 	cp docker/Dockerfile docker/entrypoint.sh $(RELEASE_BUILD)/docker/
-	docker build -t fernsdr:$(VERSION) $(RELEASE_BUILD)/docker
+	docker build -t $(DOCKER_TAG) $(RELEASE_BUILD)/docker
 
 # dist/install.sh, published beside the archives: tools/install.sh with the
 # keys this build's receivers check releases with, so that the first install

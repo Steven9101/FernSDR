@@ -55,9 +55,10 @@ void print_usage(const char* program) {
             "  -c, --check          validate the config and exit\n"
             "  --update-run         as root: act on an update the receiver asked for\n"
             "  --update-boot        as root: end an update trial a restart interrupted\n"
-            "  --supervise [--daemon] [--pidfile <file>]\n"
+            "  --supervise [--daemon] [--pidfile <file>] [-- <options for the receiver>]\n"
             "                       as root, where there is no systemd: run the receiver\n"
             "                       and its updates the way the systemd units do\n"
+            "  --prepare-container  as root, in the container image: set up the release to run\n"
             "  -V, --version        print the version and exit\n"
             "      --allow-root     serve as root, for a container that has no other user\n"
             "      --set-password   set the admin panel's password in the config\n"
@@ -260,18 +261,25 @@ int main(int argc, char** argv) {
         } else if (argument == "--supervise") {
             bool daemon = false;
             std::string pidfile;
+            std::vector<std::string> receiver_arguments;
             for (int j = i + 1; j < argc; ++j) {
                 const std::string option = argv[j];
-                if (option == "--daemon") {
+                if (option == "--") {
+                    receiver_arguments.assign(argv + j + 1, argv + argc);
+                    break;
+                } else if (option == "--daemon") {
                     daemon = true;
                 } else if (option == "--pidfile" && j + 1 < argc) {
                     pidfile = argv[++j];
                 } else {
-                    fprintf(stderr, "--supervise takes --daemon and --pidfile <file>, not %s\n", option.c_str());
+                    fprintf(stderr, "--supervise takes --daemon, --pidfile <file> and -- <receiver options>, not %s\n",
+                            option.c_str());
                     return 2;
                 }
             }
-            return fernsdr::supervise_command(daemon, pidfile);
+            return fernsdr::supervise_command(daemon, pidfile, receiver_arguments);
+        } else if (argument == "--prepare-container") {
+            return fernsdr::prepare_container_command();
         } else if (argument == "--install-module") {
             install_module = next("--install-module");
         } else if (argument == "--set-password") {

@@ -1,7 +1,10 @@
 #!/bin/sh
-# Starts FernSDR in its image. It begins as root only to make the volume and
-# any USB devices the container was given the receiver's; the receiver runs
-# as `fernsdr`, and the configuration of a first start is written as it too.
+# Starts FernSDR in its image. It begins as root to make the volume and any
+# USB devices the container was given the receiver's, and to start
+# `fernsdr --supervise`, which runs the receiver as `fernsdr` and carries out
+# the admin panel's updates inside the container, as it does on a machine
+# without systemd. The configuration of a first start is written as the
+# receiver.
 #
 # FERNSDR_SETUP=internet leaves the admin panel to HTTPS through a web
 # server in front, as install.sh does for a server on the internet; http
@@ -16,17 +19,27 @@ set -eu
 
 STATE=/var/lib/fernsdr
 CONFIG=$STATE/fernsdr.conf
-PROGRAM=/opt/fernsdr/fernsdr
+# The image's own program: it checks what the volume keeps with the release
+# keys built into it, and it supervises.
+PROGRAM=/opt/fernsdr/image/fernsdr
+WEB=/opt/fernsdr/image/web
 
 if [ "$(id -u)" != 0 ]; then
     # Started with --user: nothing here can change owners, so the volume has
     # to be that user's already, with a configuration in it.
     [ -f "$CONFIG" ] || { echo "fernsdr: no $CONFIG; start the container once without --user to make one" >&2; exit 1; }
-    exec "$PROGRAM" "$CONFIG" --root /opt/fernsdr/web "$@"
+    # Without root there is no updater either: the Updates page says to pull
+    # the new image.
+    exec "$PROGRAM" "$CONFIG" --root "$WEB" "$@"
 fi
 
-# A bind mount arrives owned by whoever made it on the host.
-if [ "$(stat -c %U "$STATE")" != fernsdr ]; then chown -R fernsdr:fernsdr "$STATE"; fi
+# A bind mount arrives owned by whoever made it on the host. The updater's
+# directory stays root's: the receiver must not be able to change it.
+if [ "$(stat -c %U "$STATE")" != fernsdr ]; then
+    find "$STATE" -path "$STATE/update" -prune -o -exec chown -h fernsdr:fernsdr {} +
+fi
+# The top directory's group is the receiver's group, whatever the host left.
+chown fernsdr:fernsdr "$STATE"
 chmod 0700 "$STATE"
 
 # Devices given with --device /dev/bus/usb/... keep the host's owner inside
@@ -70,7 +83,7 @@ if [ ! -f "$CONFIG" ]; then
             section == "server" && /^[ \t]*trusted_proxies[ \t]*=/ { print "trusted_proxies = " proxies; next }
             section == "server" && /^[ \t]*bind[ \t]*=/ { print "bind = 0.0.0.0"; next }
             section == "server" && /^[ \t]*root[ \t]*=/ { print "root = /opt/fernsdr/web"; next }
-            { print }' /opt/fernsdr/fernsdr.example.conf
+            { print }' /opt/fernsdr/image/fernsdr.example.conf
         printf '\n[admin]\n'
         printf '# The password is in admin-password beside this file. Change it on the\n'
         printf "# admin panel's Station page, or with install.sh run again.\n"
@@ -94,4 +107,12 @@ if [ ! -f "$CONFIG" ]; then
     echo "FernSDR: admin password: $password (also in the volume as admin-password)"
 fi
 
-exec su-exec fernsdr "$PROGRAM" "$CONFIG" --root /opt/fernsdr/web "$@"
+# The release to run, the image's or a newer one the volume keeps, checked
+# against its signature, in /opt/fernsdr; then the supervisor. Where that
+# cannot be set up, as in a container started with --read-only, the
+# receiver runs as before, without updates from the admin panel.
+if "$PROGRAM" --prepare-container; then
+    exec "$PROGRAM" --supervise -- "$@"
+fi
+echo "FernSDR: the receiver runs without updates from the admin panel; pull a new image to update it." >&2
+exec su-exec fernsdr "$PROGRAM" "$CONFIG" --root "$WEB" "$@"

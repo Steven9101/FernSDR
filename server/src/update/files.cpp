@@ -126,6 +126,12 @@ int open_directory_at(int dir, const std::string& name) {
     return ::openat(dir, name.c_str(), O_RDONLY | O_DIRECTORY | O_NOFOLLOW | O_CLOEXEC);
 }
 
+bool held_by_this_user(int dir) {
+    struct stat info {};
+    return dir >= 0 && ::fstat(dir, &info) == 0 && S_ISDIR(info.st_mode) && info.st_uid == ::geteuid() &&
+           (info.st_mode & 022) == 0;
+}
+
 bool read_file_at(int dir, const std::string& name, size_t limit, uid_t owner, std::string& contents, bool& missing,
                   std::string& error) {
     contents.clear();

@@ -18,6 +18,12 @@ namespace fernsdr {
 int open_directory(const std::string& path);
 int open_directory_at(int dir, const std::string& name);
 
+// Whether the open directory `dir` belongs to this process's user and no
+// other user can change what is in it. A directory reached through one that
+// someone else owns could have been put there by them; this says whether
+// the one actually opened is still this user's alone.
+bool held_by_this_user(int dir);
+
 // Reads `name` in `dir`: a regular file with one name, of at most `limit`
 // bytes, owned by `owner` unless that is -1. `missing` is set, and false
 // returned, when there is no such entry at all.

@@ -7,12 +7,14 @@
 
 #include <algorithm>
 #include <cerrno>
+#include <cstdlib>
 #include <cstring>
 #include <dirent.h>
 
 #include "../util/json.h"
 #include "../util/password.h"
 #include "autostart.h"
+#include "container.h"
 #include "extract.h"
 #include "files.h"
 #include "ustar.h"
@@ -21,7 +23,11 @@ namespace fernsdr {
 
 const char* const kUpdateSnapshotFiles[3] = {"fernsdr.conf", "fernsdr-settings.json", "fernsdr-theme.json"};
 
-UpdateLayout UpdateLayout::standard() { return {"/opt/fernsdr", "/var/lib/fernsdr", "/var/lib/fernsdr-update"}; }
+UpdateLayout UpdateLayout::standard() {
+    const char* container = std::getenv("FERNSDR_CONTAINER");
+    if (container && *container) return container_layout();
+    return {"/opt/fernsdr", "/var/lib/fernsdr", "/var/lib/fernsdr-update"};
+}
 
 namespace {
 
@@ -156,10 +162,13 @@ private:
                    std::string& note, std::string& error);
     bool commit(const Trial& trial, std::string& error);
     void prune(const std::string& keep_a, const std::string& keep_b);
-    bool install(const std::string& version, const std::string& archive, std::string& error);
     bool take_snapshot(std::vector<std::string>& present, std::string& error);
     UpdateOutcome supervise(const Trial& trial);
     UpdateOutcome switch_autostart(bool on);
+    bool release_present(const std::string& version) const {
+        struct stat info {};
+        return ::fstatat(releases_.get(), version.c_str(), &info, AT_SYMLINK_NOFOLLOW) == 0 && S_ISDIR(info.st_mode);
+    }
     UpdateOutcome done(UpdateOutcome::Result result, const std::string& state, const std::string& version,
                        const std::string& message) {
         status(state, version, message);
@@ -172,6 +181,8 @@ private:
     uid_t uid_ = 0;
     gid_t gid_ = 0;
     uid_t me_ = 0;
+    // Set by commit() when the volume could not record the new version.
+    std::string keep_note_;
 };
 
 bool Updater::open(std::string& error) {
@@ -185,6 +196,16 @@ bool Updater::open(std::string& error) {
                 " and " + layout_.update + " have to exist";
         return false;
     }
+    // Root works in these by name. One that another user could change, or
+    // put in place of the real one through a directory of theirs on the
+    // way, as the receiver could with the update directory in a container's
+    // volume, would let that user choose what root does there.
+    if (!held_by_this_user(install_.get()) || !held_by_this_user(releases_.get()) ||
+        !held_by_this_user(update_.get())) {
+        error = layout_.install + ", its releases and " + layout_.update + " have to be root's alone";
+        return false;
+    }
+    if (layout_.keep_releases && !update_directory_recorded(install_.get(), update_.get(), error)) return false;
     // The receiver's user is whoever owns its state directory: no user
     // database to ask, which a static program could not do reliably anyway.
     struct stat info {};
@@ -239,8 +260,12 @@ bool Updater::recover(bool restart, UpdateOutcome& outcome) {
     if (!readable) trial = Trial{trusted, trusted, 0, {}};
     std::string confirmation;
     bool no_confirmation = false;
+    // A new version whose directory is gone, as when a container is made
+    // again during its trial and the volume could not vouch for it, cannot
+    // be kept, whatever it said.
     const bool confirmed =
-        readable && read_file_at(state_.get(), kUpdateCommitFile, 64, uid_, confirmation, no_confirmation, error) &&
+        readable && release_present(trial.new_version) &&
+        read_file_at(state_.get(), kUpdateCommitFile, 64, uid_, confirmation, no_confirmation, error) &&
         trimmed(confirmation) == trial.new_version;
     if ((trial.new_version == trusted && trial.old_version != trusted) || confirmed) {
         // Committed and interrupted before the record was removed, or said to
@@ -250,7 +275,7 @@ bool Updater::recover(bool restart, UpdateOutcome& outcome) {
             return false;
         }
         outcome = done(UpdateOutcome::Result::Updated, "updated", trial.new_version,
-                       "Updated to " + trial.new_version + ".");
+                       "Updated to " + trial.new_version + "." + keep_note_);
         return true;
     }
     const std::string why = "The update to " + trial.new_version +
@@ -311,11 +336,23 @@ bool Updater::roll_back(const Trial& trial, const std::string& trusted_version, 
         error = "the old version is back in place, but its service did not restart: " + why;
         return false;
     }
-    if (trial.new_version != trusted_version) remove_tree_at(releases_.get(), trial.new_version, ignored);
+    if (trial.new_version != trusted_version) {
+        remove_tree_at(releases_.get(), trial.new_version, ignored);
+        if (layout_.keep_releases) forget_release(update_.get(), trial.new_version);
+    }
     return true;
 }
 
 bool Updater::commit(const Trial& trial, std::string& error) {
+    // The volume first: a container made again between the two starts the
+    // version that said it works either way. One the volume cannot record
+    // is still kept here; only a new container would not know it.
+    keep_note_.clear();
+    std::string why;
+    if (layout_.keep_releases && !keep_trusted(update_.get(), trial.new_version, why)) {
+        keep_note_ = " The volume could not record it (" + why +
+                     "), so a container made again starts the release it kept before, or the image's.";
+    }
     if (!replace_link_at(install_.get(), "trusted", std::string(kReleases) + "/" + trial.new_version, error)) {
         return false;
     }
@@ -343,59 +380,6 @@ void Updater::prune(const std::string& keep_a, const std::string& keep_b) {
         if (name == "." || name == ".." || name == keep_a || name == keep_b) continue;
         if (valid_version(name) || name.rfind(kStagingPrefix, 0) == 0) remove_tree_at(releases_.get(), name, error);
     }
-}
-
-bool Updater::install(const std::string& version, const std::string& archive, std::string& error) {
-    std::vector<UstarEntry> entries;
-    if (!read_ustar(archive, entries, error)) {
-        error = "the release archive cannot be unpacked: " + error;
-        return false;
-    }
-    const auto has = [&](const std::string& path, bool executable) {
-        return std::any_of(entries.begin(), entries.end(), [&](const UstarEntry& e) {
-            return e.path == path && !e.directory && (!executable || e.executable);
-        });
-    };
-    if (!has("fernsdr", true) || !has("web/index.html", false)) {
-        error = "the release archive does not hold the receiver and its pages";
-        return false;
-    }
-    uint64_t free = 0;
-    if (!free_bytes(releases_.get(), free) || free < archive.size() + kSpareBytes) {
-        error = "there is not enough room on the disk to unpack the new version";
-        return false;
-    }
-    std::string staging;
-    for (int attempt = 0; attempt < 8; attempt++) {
-        staging = std::string(kStagingPrefix) + random_hex(6);
-        if (::mkdirat(releases_.get(), staging.c_str(), 0700) == 0) break;
-        if (errno != EEXIST) {
-            error = std::string("cannot make a directory to unpack into: ") + std::strerror(errno);
-            return false;
-        }
-        staging.clear();
-    }
-    Fd into(staging.empty() ? -1 : open_directory_at(releases_.get(), staging));
-    if (into.get() < 0) {
-        error = "cannot open the directory to unpack into";
-        return false;
-    }
-    std::string ignored;
-    if (!extract_ustar(archive, entries, into.get(), error) || ::fchmod(into.get(), 0755) != 0) {
-        error = "cannot unpack the new version: " + error;
-        remove_tree_at(releases_.get(), staging, ignored);
-        return false;
-    }
-    // A directory of this version from an attempt that did not finish; it
-    // is neither current nor trusted, which the request's check made sure of.
-    remove_tree_at(releases_.get(), version, ignored);
-    if (::renameat(releases_.get(), staging.c_str(), releases_.get(), version.c_str()) != 0 ||
-        !sync_directory(releases_.get())) {
-        error = std::string("cannot put the new version in place: ") + std::strerror(errno);
-        remove_tree_at(releases_.get(), staging, ignored);
-        return false;
-    }
-    return true;
 }
 
 bool Updater::take_snapshot(std::vector<std::string>& present, std::string& error) {
@@ -447,7 +431,7 @@ UpdateOutcome Updater::supervise(const Trial& trial) {
             trimmed(confirmation) == trial.new_version) {
             if (!commit(trial, error)) return done(UpdateOutcome::Result::Failed, "failed", trial.new_version, error);
             return done(UpdateOutcome::Result::Updated, "updated", trial.new_version,
-                        "Updated to " + trial.new_version + ".");
+                        "Updated to " + trial.new_version + "." + keep_note_);
         }
         int restarts = 0;
         std::string why;
@@ -552,13 +536,24 @@ UpdateOutcome Updater::update() {
     }
 
     status("installing", version, "Unpacking " + version + ".");
-    if (!install(version, archive, error)) return done(UpdateOutcome::Result::Failed, "failed", version, error);
+    if (!install_release(releases_.get(), version, archive, error)) {
+        return done(UpdateOutcome::Result::Failed, "failed", version, error);
+    }
     const std::string directory = layout_.install + "/" + kReleases + "/" + version;
     std::string output;
     if (!env_.check(directory + "/fernsdr", layout_.state + "/fernsdr.conf", directory + "/web", uid_, gid_, output)) {
         remove_tree_at(releases_.get(), version, ignored);
         return done(UpdateOutcome::Result::Refused, "refused", version,
                     "The new version refuses this receiver's configuration: " + output);
+    }
+    // In a container, the release goes into the volume as it was published
+    // before anything switches: a container made again during the trial,
+    // or after it, finds it there to check and unpack.
+    if (layout_.keep_releases &&
+        !keep_release(update_.get(), version, manifest_text, signature, asset->file, archive, error)) {
+        remove_tree_at(releases_.get(), version, ignored);
+        return done(UpdateOutcome::Result::Failed, "failed", version,
+                    "The new version could not be kept in the volume: " + error);
     }
 
     Trial trial{trusted, version, env_.now_ms(), {}};
@@ -617,6 +612,72 @@ UpdateOutcome Updater::boot() {
 }
 
 }  // namespace
+
+bool install_release(int releases, const std::string& version, const std::string& archive, std::string& error) {
+    std::vector<UstarEntry> entries;
+    if (!read_ustar(archive, entries, error)) {
+        error = "the release archive cannot be unpacked: " + error;
+        return false;
+    }
+    const auto has = [&](const std::string& path, bool executable) {
+        return std::any_of(entries.begin(), entries.end(), [&](const UstarEntry& e) {
+            return e.path == path && !e.directory && (!executable || e.executable);
+        });
+    };
+    if (!has("fernsdr", true) || !has("web/index.html", false)) {
+        error = "the release archive does not hold the receiver and its pages";
+        return false;
+    }
+    uint64_t free = 0;
+    if (!free_bytes(releases, free) || free < archive.size() + kSpareBytes) {
+        error = "there is not enough room on the disk to unpack the new version";
+        return false;
+    }
+    std::string staging;
+    for (int attempt = 0; attempt < 8; attempt++) {
+        staging = std::string(kStagingPrefix) + random_hex(6);
+        if (::mkdirat(releases, staging.c_str(), 0700) == 0) break;
+        if (errno != EEXIST) {
+            error = std::string("cannot make a directory to unpack into: ") + std::strerror(errno);
+            return false;
+        }
+        staging.clear();
+    }
+    Fd into(staging.empty() ? -1 : open_directory_at(releases, staging));
+    if (into.get() < 0) {
+        error = "cannot open the directory to unpack into";
+        return false;
+    }
+    std::string ignored;
+    if (!extract_ustar(archive, entries, into.get(), error) || ::fchmod(into.get(), 0755) != 0) {
+        error = "cannot unpack the new version: " + error;
+        remove_tree_at(releases, staging, ignored);
+        return false;
+    }
+    // A directory of this version from an attempt that did not finish; it
+    // is neither current nor trusted, which the caller made sure of.
+    remove_tree_at(releases, version, ignored);
+    if (::renameat(releases, staging.c_str(), releases, version.c_str()) != 0 ||
+        !sync_directory(releases)) {
+        error = std::string("cannot put the new version in place: ") + std::strerror(errno);
+        remove_tree_at(releases, staging, ignored);
+        return false;
+    }
+    return true;
+}
+
+bool read_trial_versions(int update, std::string& old_version, std::string& new_version) {
+    std::string text, error;
+    bool missing = false;
+    Trial trial;
+    if (!read_file_at(update, kUpdateTrialFile, kTrialBytes, ::geteuid(), text, missing, error) ||
+        !parse_trial(text, trial)) {
+        return false;
+    }
+    old_version = trial.old_version;
+    new_version = trial.new_version;
+    return true;
+}
 
 UpdateOutcome run_update(const UpdateLayout& layout, const UpdateEnvironment& environment) {
     Updater updater(layout, environment);

@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "../src/update/container.h"
 #include "../src/update/files.h"
 #include "../src/update/release.h"
 #include "../src/update/updater.h"
@@ -176,6 +177,16 @@ struct Install {
     }
 
     UpdateOutcome run() { return fernsdr::run_update(layout, env); }
+
+    // What a container's start records: this is its update directory.
+    void record_update_directory() {
+        const int top = fernsdr::open_directory(layout.install);
+        const int update = fernsdr::open_directory(layout.update);
+        std::string error;
+        CHECK(fernsdr::record_update_directory(top, update, error));
+        ::close(update);
+        ::close(top);
+    }
 
     std::string current() const { return link_of(layout.install + "/current"); }
     std::string trusted() const { return link_of(layout.install + "/trusted"); }
@@ -606,4 +617,136 @@ TEST_CASE(updater_takes_only_the_two_exact_autostart_requests) {
     install.request("0.1.1");
     CHECK(install.run().result == Result::Updated);
     CHECK_EQ(asked, 0);
+}
+
+TEST_CASE(updater_will_not_work_in_directories_another_user_could_change) {
+    for (const char* which : {"install", "releases", "update"}) {
+        Install install;
+        install.publish("0.1.1");
+        install.request("0.1.1");
+        const std::string path = std::string(which) == "install"    ? install.layout.install
+                                 : std::string(which) == "releases" ? install.layout.install + "/releases"
+                                                                    : install.layout.update;
+        ::chmod(path.c_str(), 0777);
+        const UpdateOutcome outcome = install.run();
+        CHECK(outcome.result == Result::Failed);
+        CHECK(outcome.message.find("root's alone") != std::string::npos);
+        CHECK_EQ_STR(install.current(), "releases/0.1.0");
+    }
+}
+
+TEST_CASE(updater_does_not_keep_a_new_version_whose_directory_is_gone) {
+    // Said to work, but its directory is not there, as in a container made
+    // again whose volume could not vouch for it: the trusted one comes back.
+    Install install;
+    std::string error;
+    const int update = fernsdr::open_directory(install.layout.update);
+    CHECK(fernsdr::write_file_at(update, "trial", "old 0.1.0\nnew 0.1.1\nstarted 5\npresent fernsdr.conf\n", 0644,
+                                 static_cast<uid_t>(-1), static_cast<gid_t>(-1), error));
+    ::close(update);
+    put(install.layout.state + "/update-commit", "0.1.1\n");
+    const UpdateOutcome outcome = fernsdr::run_boot_check(install.layout, install.env);
+    CHECK(outcome.result == Result::RolledBack);
+    CHECK_EQ_STR(install.trusted(), "releases/0.1.0");
+    CHECK_EQ_STR(install.current(), "releases/0.1.0");
+    CHECK(!exists(install.layout.update + "/trial"));
+}
+
+TEST_CASE(updater_in_a_container_keeps_the_release_in_the_volume) {
+    Install install;
+    install.layout.keep_releases = true;
+    install.record_update_directory();
+    install.publish("0.1.1");
+    install.request("0.1.1");
+    CHECK(install.run().result == Result::Updated);
+    const std::string kept = install.layout.update + "/release/";
+    CHECK_EQ_STR(link_of(kept + "trusted"), "0.1.1");
+    CHECK_EQ_STR(contents_of(kept + "0.1.1/fernsdr-release-v1.txt"),
+                 install.server[install.env.base_url + "fernsdr-release-v1.txt"]);
+    CHECK_EQ_STR(contents_of(kept + "0.1.1/fernsdr-0.1.1-linux-x86_64.tar"),
+                 install.server[install.env.base_url + "fernsdr-0.1.1-linux-x86_64.tar"]);
+
+    // A container made again from an image of 0.1.0 checks it and runs it.
+    fernsdr::ContainerSetup setup;
+    setup.layout = install.layout;
+    setup.image = install.root + "/image";
+    setup.image_version = "0.1.0";
+    setup.keys = install.env.keys;
+    setup.platform = "linux-x86_64";
+    setup.state_may_be_this_users = true;
+    ::mkdir(setup.image.c_str(), 0755);
+    std::string error;
+    const int top = fernsdr::open_directory(install.layout.install);
+    CHECK(fernsdr::remove_tree_at(top, "releases", error));
+    ::close(top);
+    ::unlink((install.layout.install + "/current").c_str());
+    ::unlink((install.layout.install + "/trusted").c_str());
+    std::vector<std::string> report;
+    CHECK(fernsdr::prepare_container(setup, report, error));
+    CHECK_EQ_STR(install.current(), "releases/0.1.1");
+    CHECK_EQ_STR(contents_of(install.layout.install + "/releases/0.1.1/fernsdr"), "program 0.1.1");
+
+    // A version rolled back is not kept, and the trusted one stays kept.
+    install.env.running_version = "0.1.1";
+    install.publish("0.1.2");
+    install.behaviour = Install::Behaviour::Crashes;
+    install.request("0.1.2");
+    CHECK(install.run().result == Result::RolledBack);
+    CHECK(!exists(kept + "0.1.2"));
+    CHECK_EQ_STR(link_of(kept + "trusted"), "0.1.1");
+    CHECK(exists(kept + "0.1.1"));
+}
+
+TEST_CASE(updater_in_a_container_keeps_the_newer_version_once_it_works_and_drops_the_older) {
+    Install install;
+    install.layout.keep_releases = true;
+    install.record_update_directory();
+    install.publish("0.1.1");
+    install.request("0.1.1");
+    CHECK(install.run().result == Result::Updated);
+    install.env.running_version = "0.1.1";
+    install.publish("0.1.2");
+    install.request("0.1.2");
+    CHECK(install.run().result == Result::Updated);
+    const std::string kept = install.layout.update + "/release/";
+    CHECK_EQ_STR(link_of(kept + "trusted"), "0.1.2");
+    CHECK(!exists(kept + "0.1.1"));
+}
+
+TEST_CASE(updater_in_a_container_works_only_in_the_update_directory_its_start_set_up) {
+    Install install;
+    install.layout.keep_releases = true;
+    install.publish("0.1.1");
+    install.request("0.1.1");
+    // Never recorded: refused.
+    UpdateOutcome outcome = install.run();
+    CHECK(outcome.result == Result::Failed);
+    CHECK(outcome.message.find("recorded no update directory") != std::string::npos);
+    // Recorded, then another one of root's put in its place, as the
+    // receiver could while the container runs: one never recorded, and one
+    // recorded by an earlier start.
+    install.record_update_directory();
+    CHECK(::rename(install.layout.update.c_str(), (install.root + "/update.away").c_str()) == 0);
+    ::mkdir(install.layout.update.c_str(), 0755);
+    install.request("0.1.1");
+    outcome = install.run();
+    CHECK(outcome.result == Result::Failed);
+    CHECK(outcome.message.find("not the one this container's start set up") != std::string::npos);
+    install.record_update_directory();
+    ::rmdir((install.root + "/older").c_str());
+    CHECK(::rename(install.layout.update.c_str(), (install.root + "/older").c_str()) == 0);
+    CHECK(::rename((install.root + "/update.away").c_str(), install.layout.update.c_str()) == 0);
+    install.record_update_directory();
+    CHECK(::rename(install.layout.update.c_str(), (install.root + "/update.away").c_str()) == 0);
+    CHECK(::rename((install.root + "/older").c_str(), install.layout.update.c_str()) == 0);
+    install.request("0.1.1");
+    outcome = install.run();
+    CHECK(outcome.result == Result::Failed);
+    CHECK(outcome.message.find("not the one this container's start set up") != std::string::npos);
+    CHECK_EQ_STR(install.current(), "releases/0.1.0");
+    // The one it set up, back in place, is worked in.
+    CHECK(::rename(install.layout.update.c_str(), (install.root + "/older").c_str()) == 0);
+    CHECK(::rename((install.root + "/update.away").c_str(), install.layout.update.c_str()) == 0);
+    install.request("0.1.1");
+    CHECK(install.run().result == Result::Updated);
 }

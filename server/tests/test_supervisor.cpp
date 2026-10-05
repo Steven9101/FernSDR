@@ -378,3 +378,75 @@ TEST_CASE(supervisor_runs_the_receiver_restarts_it_and_answers_the_updater) {
     fernsdr::remove_tree_at(parent, root.substr(5), error);
     ::close(parent);
 }
+
+TEST_CASE(supervisor_in_a_container_hands_the_receiver_its_environment_and_group) {
+    if (::geteuid() != 0) return;
+    char name[] = "/tmp/fernsdr-supervise-container-XXXXXX";
+    CHECK(::mkdtemp(name) != nullptr);
+    const std::string root = name;
+    ::chmod(name, 0755);
+    const std::string install = root + "/install", state = root + "/state", update = root + "/state/update",
+                      logs = root + "/log";
+    for (const std::string& d : {install, install + "/releases", install + "/releases/1", state, update})
+        ::mkdir(d.c_str(), 0755);
+    CHECK(::symlink("releases/1", (install + "/current").c_str()) == 0);
+    CHECK(::symlink("releases/1", (install + "/trusted").c_str()) == 0);
+    write_text(install + "/releases/1/fernsdr", R"SH(#!/bin/sh
+if [ "$1" = --update-boot ]; then
+    echo "boot check sees container=$FERNSDR_CONTAINER url=$FERNSDR_UPDATE_URL"
+    exit 0
+fi
+echo "$(id -G) TZ=$TZ HOME=$HOME FD=$FERNSDR_SUPERVISOR_FD SUPERVISED=$FERNSDR_SUPERVISED" > "$HOME/seen"
+trap 'exit 0' TERM
+while :; do sleep 0.05; done
+)SH", 0755);
+    CHECK(::chown(state.c_str(), 65534, 65534) == 0);
+
+    fernsdr::SupervisorOptions options;
+    options.install = install;
+    options.state = state;
+    options.update = update;
+    options.log_directory = logs;
+    options.poll_ms = 50;
+    options.stop_ms = 2000;
+    options.updater_environment = {"FERNSDR_UPDATE_URL=https://releases.test/", "FERNSDR_CONTAINER=1"};
+    options.receiver_groups = {4242};
+    options.receiver_environment = {"TZ=Europe/Vienna", "HOME=/somewhere/else", "FERNSDR_SUPERVISOR_FD=9"};
+
+    const pid_t supervisor = ::fork();
+    if (supervisor == 0) {
+        std::string error;
+        _exit(fernsdr::run_supervisor(options, error));
+    }
+    CHECK(wait_for([&] { return !read_all(state + "/seen").empty(); }, 3000));
+    // Its own HOME and none of the supervisor's descriptors win over what
+    // the container gave; the container's time zone and the radio group
+    // reach it.
+    CHECK_EQ_STR(read_all(state + "/seen"),
+                 "65534 4242 TZ=Europe/Vienna HOME=" + state + " FD= SUPERVISED=1\n");
+    const std::string log = read_all(logs + "/fernsdr.log");
+    CHECK(log.find("boot check sees container=1 url=\n") != std::string::npos);
+    ::kill(supervisor, SIGTERM);
+    int status = -1;
+    CHECK(::waitpid(supervisor, &status, 0) == supervisor);
+    CHECK(WIFEXITED(status) && WEXITSTATUS(status) == 0);
+
+    // An update directory others could write to is not one to take a lock
+    // in, or to have the updater work in.
+    ::chmod(update.c_str(), 0777);
+    std::string error;
+    CHECK(fernsdr::run_supervisor(options, error) == 1);
+    CHECK(error.find("root's alone") != std::string::npos);
+    ::chmod(update.c_str(), 0755);
+
+    // A volume left in root's group: the receiver would be in it.
+    CHECK(::chown(state.c_str(), 65534, 0) == 0);
+    options.refuse_root_group = true;
+    error.clear();
+    CHECK(fernsdr::run_supervisor(options, error) == 1);
+    CHECK(error.find("root's group") != std::string::npos);
+
+    const int parent = fernsdr::open_directory("/tmp");
+    fernsdr::remove_tree_at(parent, root.substr(5), error);
+    ::close(parent);
+}

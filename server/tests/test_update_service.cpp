@@ -134,6 +134,9 @@ TEST_CASE(update_service_says_why_a_receiver_cannot_update_itself) {
     ::setenv("FERNSDR_CONTAINER", "1", 1);
     CHECK(reason([](fernsdr::UpdateServiceOptions& o) { o.executable = "/opt/fernsdr/fernsdr"; })
               .find("pulling the new image") != std::string::npos);
+    // Started by the image's supervisor, the receiver runs a release and
+    // updates as anywhere else.
+    CHECK_EQ_STR(reason([](fernsdr::UpdateServiceOptions&) {}), "");
     ::unsetenv("FERNSDR_CONTAINER");
     CHECK(reason([](fernsdr::UpdateServiceOptions& o) { o.update += "/missing"; }).find("not set up") !=
           std::string::npos);

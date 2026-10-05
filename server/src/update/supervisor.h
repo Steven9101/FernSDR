@@ -86,6 +86,7 @@ struct SupervisorOptions {
     std::string install = "/opt/fernsdr";         // current/, trusted/
     std::string state = "/var/lib/fernsdr";       // the receiver's; update-request
     std::string update = "/var/lib/fernsdr-update";  // root's; the lock
+    // Empty: standard error, which is the log a container has.
     std::string log_directory = "/var/log/fernsdr";
     // Past this a log file becomes <name>.1, so at most twice it is kept.
     size_t log_limit = 1 << 20;
@@ -104,6 +105,18 @@ struct SupervisorOptions {
     // FERNSDR_UPDATE_URL and FERNSDR_UPDATE_TRIAL_SECONDS. The URL goes to
     // the receiver too, whose Updates page looks for releases there.
     std::vector<std::string> updater_environment;
+    // In a container, where the volume's group is the receiver's group: one
+    // of root's would give the receiver root's group.
+    bool refuse_root_group = false;
+    // Supplementary groups for the receiver, which otherwise has none but
+    // its own: in a container, the host's group for radios.
+    std::vector<gid_t> receiver_groups;
+    // Passed to the receiver beside its own few variables: in a container,
+    // the container's environment, as the receiver had it before.
+    std::vector<std::string> receiver_environment;
+    // After the configuration and --root: what a container was started
+    // with, as the receiver had it before.
+    std::vector<std::string> receiver_arguments;
     // Called once the boot check has run and the receiver was started.
     std::function<void()> ready;
 };
@@ -114,7 +127,17 @@ struct SupervisorOptions {
 // wrong).
 int run_supervisor(const SupervisorOptions& options, std::string& error);
 
-// `fernsdr --supervise [--daemon] [--pidfile PATH]`, as root.
-int supervise_command(bool daemon, const std::string& pidfile);
+// `fernsdr --supervise [--daemon] [--pidfile PATH] [-- ARGUMENTS]`, as
+// root; ARGUMENTS go to the receiver after its own. With
+// FERNSDR_CONTAINER set, inside the container image: the update directory
+// is the one in the volume, the log is standard error, and the receiver gets
+// the container's environment and FERNSDR_USB_GID as a group.
+int supervise_command(bool daemon, const std::string& pidfile, const std::vector<std::string>& receiver_arguments = {});
+
+// `fernsdr --prepare-container`, as root, by the image's entrypoint before
+// it starts the supervisor: prepare_container() for this image. Non-zero
+// when updates cannot be set up, and the entrypoint then runs the receiver
+// without them.
+int prepare_container_command();
 
 }  // namespace fernsdr

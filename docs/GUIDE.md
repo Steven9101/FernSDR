@@ -132,9 +132,8 @@ runs:
 
 On a computer where Docker already runs and FernSDR is not installed yet, it
 first asks whether to run FernSDR as a service or in a Docker container. The
-service is the simpler choice, updates from the admin panel and works with
-every radio; a container is updated by running the install line again, and
-cannot use an SDRplay. Then it downloads FernSDR, checks the download, sets it up to start
+service is the simpler choice and works with every radio; a container
+cannot use an SDRplay. Both update from the admin panel. Then it downloads FernSDR, checks the download, sets it up to start
 whenever the computer starts, and prints two things. **Write both down:**
 the address to open and a password for the admin panel.
 
@@ -245,8 +244,8 @@ what it changes, and *Update now* installs it; the *Updates* page does the
 same at any time. Listeners drop out for a few seconds. If the new version
 does not work within five minutes, the one before comes back by itself.
 Nothing updates without you pressing the button. Running the install line
-again and answering `1` does the same, and is how a receiver in a Docker
-container is updated.
+again and answering `1` does the same; for a receiver in a Docker container
+it fetches the newest image.
 
 The same page has *Start with the computer*. On, FernSDR starts by itself
 whenever the computer does, after a power cut too. Off, it keeps running

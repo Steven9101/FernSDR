@@ -25,7 +25,15 @@ struct UpdateLayout {
     std::string install;  // /opt/fernsdr: releases/, current, trusted; root's
     std::string state;    // /var/lib/fernsdr: the receiver's user's
     std::string update;   // /var/lib/fernsdr-update: root's, readable by all
+    // In a container, where /opt/fernsdr is lost when the container is made
+    // again: the signed release `trusted` names is kept here as it was
+    // published, in the volume, for the next container to check and unpack
+    // (see container.h). Empty elsewhere.
+    bool keep_releases = false;
 
+    // install.sh's layout, or the container's when FERNSDR_CONTAINER is
+    // set: /opt/fernsdr in the container, and the update directory in the
+    // volume, as /var/lib/fernsdr/update.
     static UpdateLayout standard();
 };
 
@@ -88,6 +96,16 @@ UpdateOutcome run_update(const UpdateLayout& layout, const UpdateEnvironment& en
 
 // Before the receiver starts: ends a trial that was interrupted.
 UpdateOutcome run_boot_check(const UpdateLayout& layout, const UpdateEnvironment& environment);
+
+// Unpacks a release's archive, already checked against its signed manifest,
+// into releases/<version> below `releases`, by way of a directory of its own
+// that is renamed into place once complete. The archive has to hold the
+// receiver and its pages.
+bool install_release(int releases, const std::string& version, const std::string& archive, std::string& error);
+
+// The versions a trial record in the update directory `update` names; false
+// when there is none or it does not read.
+bool read_trial_versions(int update, std::string& old_version, std::string& new_version);
 
 // The receiver's side. At start, whether this program is the new version of
 // a trial; later, once it has served for `settle_ms` with every band that ran

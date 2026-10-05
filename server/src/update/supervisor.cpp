@@ -24,7 +24,10 @@
 #include <memory>
 #include <set>
 
+#include "../version.h"
+#include "container.h"
 #include "files.h"
+#include "release_keys.h"
 #include "updater.h"
 
 namespace fernsdr {
@@ -226,6 +229,7 @@ class Log {
 public:
     void open(const std::string& directory, size_t limit) {
         limit_ = limit;
+        if (directory.empty()) return;
         ::mkdir(directory.c_str(), 0755);
         directory_ = open_directory(directory);
         struct stat info {};
@@ -350,6 +354,11 @@ bool Supervisor::setup(std::string& error) {
         error = options_.update + " is missing: install.sh sets it up";
         return false;
     }
+    if (!held_by_this_user(update)) {
+        ::close(update);
+        error = options_.update + " has to be root's alone";
+        return false;
+    }
     lock_ = ::openat(update, "supervise.lock", O_RDWR | O_CREAT | O_NOFOLLOW | O_CLOEXEC, 0600);
     ::close(update);
     if (lock_ < 0 || ::flock(lock_, LOCK_EX | LOCK_NB) != 0) {
@@ -370,6 +379,10 @@ bool Supervisor::setup(std::string& error) {
     gid_ = info.st_gid;
     if (uid_ == 0 && !options_.state_may_be_roots) {
         error = options_.state + " belongs to root; the receiver has to run as a user of its own";
+        return false;
+    }
+    if (gid_ == 0 && options_.refuse_root_group) {
+        error = options_.state + " belongs to root's group; the receiver has to run in a group of its own";
         return false;
     }
     if (::pipe2(signals_, O_CLOEXEC | O_NONBLOCK) != 0) {
@@ -425,6 +438,7 @@ bool Supervisor::spawn(const std::string& program, const std::vector<std::string
     const std::string directory = as_receiver ? options_.state : "/";
     const uid_t uid = uid_;
     const gid_t gid = gid_;
+    const std::vector<gid_t>& groups = options_.receiver_groups;
     const pid_t parent = ::getpid();
 
     const pid_t pid = ::fork();
@@ -457,7 +471,8 @@ bool Supervisor::spawn(const std::string& program, const std::vector<std::string
         if (as_receiver && uid != 0) {
             // Root goes for good: groups, then group, then user, in that
             // order, since each needs the privilege the next one drops.
-            if (::setgroups(0, nullptr) != 0 || ::setresgid(gid, gid, gid) != 0 || ::setresuid(uid, uid, uid) != 0)
+            if (::setgroups(groups.size(), groups.empty() ? nullptr : groups.data()) != 0 ||
+                ::setresgid(gid, gid, gid) != 0 || ::setresuid(uid, uid, uid) != 0)
                 fail(errno);
             if (::setuid(0) == 0) fail(EPERM);
         }
@@ -501,8 +516,13 @@ void Supervisor::boot_check() {
     if (::access(program.c_str(), X_OK) != 0) return;
     Spawned child;
     std::string error;
-    if (!spawn(program, {"--update-boot"}, {"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8"}, false, false,
-               child, error)) {
+    // In a container, the boot check finds the update directory in the
+    // volume by FERNSDR_CONTAINER; the URL and trial length are the
+    // updater's alone.
+    std::vector<std::string> environment = {"PATH=/usr/sbin:/usr/bin:/sbin:/bin", "LANG=C.UTF-8"};
+    for (const std::string& entry : options_.updater_environment)
+        if (entry.rfind("FERNSDR_CONTAINER=", 0) == 0) environment.push_back(entry);
+    if (!spawn(program, {"--update-boot"}, environment, false, false, child, error)) {
         log_.note("the update boot check did not run: " + error);
         return;
     }
@@ -535,9 +555,17 @@ bool Supervisor::start_receiver(bool automatic, std::string& error) {
                                             "LANG=C.UTF-8", "HOME=" + options_.state, "FERNSDR_SUPERVISED=1"};
     for (const std::string& entry : options_.updater_environment)
         if (entry.rfind("FERNSDR_UPDATE_URL=", 0) == 0) environment.push_back(entry);
+    for (const std::string& entry : options_.receiver_environment) {
+        const std::string name = entry.substr(0, entry.find('='));
+        const bool set_here = std::any_of(environment.begin(), environment.end(), [&](const std::string& own) {
+            return own.compare(0, name.size() + 1, name + "=") == 0;
+        });
+        if (!set_here && name != kSupervisorFdVariable) environment.push_back(entry);
+    }
     Spawned child;
-    const bool started = spawn(current + "/fernsdr", {options_.state + "/fernsdr.conf", "--root", current + "/web"},
-                               environment, true, false, child, error);
+    std::vector<std::string> arguments = {options_.state + "/fernsdr.conf", "--root", current + "/web"};
+    arguments.insert(arguments.end(), options_.receiver_arguments.begin(), options_.receiver_arguments.end());
+    const bool started = spawn(current + "/fernsdr", arguments, environment, true, false, child, error);
     const int64_t now = now_ms();
     policy_.started(now, automatic);
     next_start_ = -1;
@@ -914,7 +942,36 @@ void limit_capabilities() {
 
 }  // namespace
 
-int supervise_command(bool daemon, const std::string& pidfile) {
+int prepare_container_command() {
+    // Only in the image: on a machine it would point `trusted` at this
+    // program's version and remove the other releases.
+    const char* container = std::getenv("FERNSDR_CONTAINER");
+    struct stat image {};
+    if (::geteuid() != 0 || !container || !*container || ::lstat(kContainerImageDirectory, &image) != 0 ||
+        !S_ISDIR(image.st_mode)) {
+        std::fprintf(stderr, "fernsdr: --prepare-container runs as root in the container image, from its entrypoint\n");
+        return 2;
+    }
+    ::umask(022);
+    ContainerSetup setup;
+    setup.layout = container_layout();
+    setup.image = kContainerImageDirectory;
+    setup.image_version = kVersion;
+    setup.keys = release_keys();
+    setup.platform = release_platform();
+    std::vector<std::string> report;
+    std::string error;
+    const bool prepared = prepare_container(setup, report, error);
+    for (const std::string& line : report) std::printf("FernSDR: %s\n", line.c_str());
+    std::fflush(stdout);
+    if (!prepared) {
+        std::fprintf(stderr, "fernsdr: updates from the admin panel cannot be set up: %s\n", error.c_str());
+        return 1;
+    }
+    return 0;
+}
+
+int supervise_command(bool daemon, const std::string& pidfile, const std::vector<std::string>& receiver_arguments) {
     ::signal(SIGPIPE, SIG_IGN);
     if (::geteuid() != 0) {
         std::fprintf(stderr, "fernsdr: --supervise runs as root, started by the machine's init at boot\n");
@@ -925,8 +982,26 @@ int supervise_command(bool daemon, const std::string& pidfile) {
     limit_capabilities();
 
     SupervisorOptions options;
+    options.receiver_arguments = receiver_arguments;
     for (const char* name : {"FERNSDR_UPDATE_URL", "FERNSDR_UPDATE_TRIAL_SECONDS"})
         if (const char* value = std::getenv(name)) options.updater_environment.push_back(std::string(name) + "=" + value);
+    if (const char* container = std::getenv("FERNSDR_CONTAINER"); container && *container) {
+        // The entrypoint ran --prepare-container; the layout is the
+        // container's, and so is everything around the receiver.
+        const UpdateLayout layout = container_layout();
+        options.install = layout.install;
+        options.state = layout.state;
+        options.update = layout.update;
+        options.log_directory.clear();
+        options.refuse_root_group = true;
+        options.updater_environment.push_back(std::string("FERNSDR_CONTAINER=") + container);
+        for (char** entry = environ; entry && *entry; ++entry) options.receiver_environment.push_back(*entry);
+        if (const char* usb = std::getenv("FERNSDR_USB_GID"); usb && *usb) {
+            char* end = nullptr;
+            const unsigned long gid = std::strtoul(usb, &end, 10);
+            if (*end == '\0' && gid > 0 && gid < 4294967295UL) options.receiver_groups.push_back(static_cast<gid_t>(gid));
+        }
+    }
 
     // With --daemon the program the init started returns once the
     // supervisor runs, or with its reason when it cannot: an init that looks

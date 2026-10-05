@@ -145,9 +145,13 @@ docker logs fernsdr        # the admin password, on the first start
 On the first start with an empty volume it writes `fernsdr.conf` there,
 with the synthetic band and a password for the admin panel, which the log
 shows once and `admin-password` in the volume keeps. The receiver runs as
-`fernsdr`, under tini, which collects whatever a module leaves behind. A
-host directory works as the volume too, whoever owns it: the container
-gives it to `fernsdr` when it starts.
+`fernsdr`, started by `fernsdr --supervise`, which runs as root under tini
+and does in the container what it does on a machine without systemd (see
+[Without systemd](#without-systemd)): it starts the receiver again when it
+stops and carries out updates from the admin panel. Its log, the
+receiver's and the updater's are `docker logs`. A host directory works as
+the volume too, whoever owns it: the container gives it to `fernsdr` when
+it starts, all but `update/`, which stays root's.
 
 - `-e FERNSDR_SETUP=internet` on the first start leaves the admin panel to
   HTTPS through a web server on the host, which reaches the container
@@ -170,12 +174,32 @@ gives it to `fernsdr` when it starts.
   `/dev/bus/usb` and allows USB devices by number
   (`--device-cgroup-rule 'c 189:* rmw'`), so a radio plugged in again later
   is found, and passes the host's group for radios as `FERNSDR_USB_GID`.
-- Updates are a new image. Run the installer again: it pulls the image,
+- Updates work from the admin panel's Updates page, as on any machine (see
+  [Updates](#updates)), without the Docker socket: the updater runs inside
+  the container and restarts the receiver, not the container. The release
+  it installs is kept in the volume in `update/release/`, as it was
+  published: manifest, signature and archive. Every start of the container
+  checks it against its signature, with the keys in the image's own
+  program, and unpacks it into `/opt/fernsdr/releases`; it runs the image's
+  own release instead when the kept one does not check out or is not newer,
+  and the log says which. A newer image therefore always wins.
+- A new image works as before. Run the installer again: it pulls the image,
   keeps the one before as `:previous`, starts the container from the new one
   and goes back to the old one if the new does not answer. By hand,
-  `docker pull` and start the container again from it. The Updates page
-  says so; the volume keeps everything. Modules install from the admin panel
-  as elsewhere and live in the volume.
+  `docker pull` and start the container again from it. The volume keeps
+  everything. Modules install from the admin panel as elsewhere and live in
+  the volume.
+- A container started with `--user`, or one whose file system is
+  read-only (`--read-only`), has no updater: the receiver runs as before,
+  and the Updates page says to pull a new image.
+- The receiver owns the volume, so it could put a directory of its own in
+  place of `update/`, or bring back an older one of root's. A start believes
+  nothing there that is not root's alone, never runs a program from the
+  volume, and unpacks only a release whose signature holds. What a receiver
+  someone took over can still do is have the next start run the image's
+  release, or an older signed release that is still newer than the image's.
+- Whether it starts with the computer is Docker's restart policy, such as
+  `--restart unless-stopped`, which the installer sets.
 - A module that loads a vendor's library, such as the SDRplay module, does
   not run in this image: the library needs glibc, which Alpine does not
   have, and a vendor service beside it. For an SDRplay RSP, install FernSDR
@@ -215,7 +239,9 @@ Every step is recorded before it is taken. A machine that goes down during an
 update ends it at the next start, with one version or the other, before the
 receiver starts: that is `fernsdr-update-boot.service`, or the supervisor's
 first step. Nothing updates by
-itself, and a receiver never moves to an older version.
+itself, and a receiver never moves to an older version. In a container the
+same happens inside it, with the updater's records in the volume (see
+[In a container](#in-a-container)).
 
 Running `install.sh` again and answering `1` does the same from the command
 line, and prints how it goes. It also brings the new version's systemd units, which an update
@@ -226,6 +252,7 @@ one without a password for the admin panel gets one.
 journalctl -u fernsdr-update -u fernsdr-update-boot   # what the updater did
 cat /var/log/fernsdr/fernsdr.log                       # the same, without systemd
 cat /var/lib/fernsdr-update/status.json                # how the last update ended
+docker exec fernsdr cat /var/lib/fernsdr/update/status.json   # in a container
 ```
 
 To go back to the version before by hand, while no update is under way:
@@ -257,9 +284,10 @@ file in runit's `/etc/sv/fernsdr`, or `update-rc.d fernsdr enable` or
 It then reads the init's files again, and `autostart.json` in the update
 directory says how it went. The switch is not offered while an update is
 under way or on trial. On Slackware, where a line in `/etc/rc.d/rc.local`
-starts FernSDR, and on a machine without an init the installer knows, the
-page says so in place of the switch. An updater older than 0.1.2 refuses
-the request as one that names no version.
+starts FernSDR, on a machine without an init the installer knows, and in a
+container, where Docker's restart policy decides, the page says so in place
+of the switch. An updater older than 0.1.2 refuses the request as one
+that names no version.
 
 ## Moving to another machine
 
