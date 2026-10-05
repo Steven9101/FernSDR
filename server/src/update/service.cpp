@@ -26,6 +26,15 @@ bool busy_state(const std::string& state) {
     return state == "checking" || state == "downloading" || state == "installing" || state == "trial";
 }
 
+// Where the panel cannot switch it, how it is switched by hand.
+std::string switched_by_hand(const std::string& init) {
+    const std::string start = "The admin panel switches this on a receiver installed by install.sh. Here: ";
+    if (init == "systemd") return start + "sudo systemctl enable fernsdr, or disable.";
+    if (init == "openrc") return start + "sudo rc-update add fernsdr default, or del.";
+    if (init == "runit") return start + "a file named down in the service's directory keeps it from starting.";
+    return start + "sudo update-rc.d fernsdr enable, or disable.";
+}
+
 }  // namespace
 
 UpdateServiceOptions UpdateService::system(const std::string& state_directory) {
@@ -46,10 +55,12 @@ UpdateServiceOptions UpdateService::system(const std::string& state_directory) {
     // which reads it too, refuses to run with it and says so.
     if (!release_base_url(options.base_url, error)) options.base_url = kReleaseBaseUrl;
     options.fetch = fetch_release_file;
+    options.autostart = [] { return read_autostart(); };
     return options;
 }
 
 UpdateService::UpdateService(UpdateServiceOptions options) : options_(std::move(options)) {
+    if (!options_.autostart) options_.autostart = [] { return read_autostart(); };
     const std::string releases = options_.install + "/releases/";
     const int update = open_directory(options_.update);
     if (options_.keys.empty()) {
@@ -158,7 +169,107 @@ bool UpdateService::start(const std::string& version, const std::vector<std::str
         error = "An update is already under way.";
         return false;
     }
+    if (!waiting_request().empty()) {
+        error = "A request is already waiting for the updater.";
+        return false;
+    }
     return request_update(options_.state, version, running_bands, error);
+}
+
+std::string UpdateService::waiting_request() const {
+    const int dir = open_directory(options_.state);
+    if (dir < 0) return "";
+    std::string text, error;
+    bool missing = false;
+    const bool read = read_file_at(dir, kUpdateRequestFile, 256, ::geteuid(), text, missing, error);
+    ::close(dir);
+    // Something there that is not a file of this user's still wakes the
+    // updater, which then refuses it.
+    if (!read) return missing ? "" : "?";
+    return text.empty() ? "?" : text;
+}
+
+std::string UpdateService::autostart_blocked() const {
+    if (updating()) return "An update is under way; this can be switched once it is done.";
+    const std::string waiting = waiting_request();
+    if (!waiting.empty() && waiting != std::string(kAutostartOn) + "\n" &&
+        waiting != std::string(kAutostartOff) + "\n") {
+        return "An update has been asked for; this can be switched once it is done.";
+    }
+    // The trusted version's program is the updater. While a new version is
+    // on trial that is the version before, which may not know this request.
+    char target[256];
+    const ssize_t n = ::readlink((options_.install + "/trusted").c_str(), target, sizeof(target) - 1);
+    if (n <= 0 || std::string(target, static_cast<size_t>(n)) != "releases/" + options_.running_version) {
+        return "This version is still on trial; this can be switched once it is kept.";
+    }
+    return "";
+}
+
+bool UpdateService::request_autostart(bool on, std::string& error) {
+    if (!unavailable_.empty()) {
+        error = unavailable_;
+        return false;
+    }
+    const AutostartState state = options_.autostart();
+    if (!state.changeable) {
+        error = state.note.empty() ? "This machine's init cannot be switched from the admin panel." : state.note;
+        return false;
+    }
+    if (const std::string blocked = autostart_blocked(); !blocked.empty()) {
+        error = blocked;
+        return false;
+    }
+    if (!waiting_request().empty()) {
+        error = "A request is already waiting for the updater.";
+        return false;
+    }
+    const int dir = open_directory(options_.state);
+    if (dir < 0) {
+        error = "cannot open " + options_.state;
+        return false;
+    }
+    const bool written = write_file_at(dir, kUpdateRequestFile, std::string(on ? kAutostartOn : kAutostartOff) + "\n",
+                                       0600, static_cast<uid_t>(-1), static_cast<gid_t>(-1), error);
+    ::close(dir);
+    return written;
+}
+
+Json UpdateService::autostart_view() const {
+    const AutostartState state = options_.autostart();
+    Json out = Json::make_object();
+    out.set("init", state.init);
+    out.set("enabled", state.enabled);
+    const bool changeable = state.changeable && unavailable_.empty();
+    out.set("changeable", changeable);
+    if (state.changeable && !unavailable_.empty()) {
+        out.set("note", switched_by_hand(state.init));
+    } else if (!state.note.empty()) {
+        out.set("note", state.note);
+    }
+    if (changeable) {
+        const std::string waiting = waiting_request();
+        if (waiting == std::string(kAutostartOn) + "\n") out.set("pending", "on");
+        if (waiting == std::string(kAutostartOff) + "\n") out.set("pending", "off");
+        if (const std::string blocked = autostart_blocked(); !blocked.empty()) out.set("blocked", blocked);
+    }
+    // The updater's account of the last switch, written as root; shown,
+    // never acted on.
+    const int dir = open_directory(options_.update);
+    std::string text, error;
+    bool missing = false;
+    Json result;
+    if (dir >= 0 && read_file_at(dir, kAutostartResultFile, 64 * 1024, static_cast<uid_t>(-1), text, missing, error) &&
+        Json::parse(text, result) && result.is_object() && result["time"].is_number() && result["ok"].is_bool() &&
+        result["message"].is_string()) {
+        Json shown = Json::make_object();
+        shown.set("time", result["time"].number());
+        shown.set("ok", result["ok"].boolean());
+        shown.set("message", result["message"].string());
+        out.set("result", shown);
+    }
+    if (dir >= 0) ::close(dir);
+    return out;
 }
 
 Json UpdateService::snapshot() const {
@@ -196,6 +307,7 @@ Json UpdateService::snapshot() const {
         out.set("status", shown);
     }
     if (dir >= 0) ::close(dir);
+    out.set("autostart", autostart_view());
     return out;
 }
 

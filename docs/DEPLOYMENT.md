@@ -243,6 +243,24 @@ page and the updater somewhere else: an
 `https://` address ending in `/` that serves the same files. The signature
 decides what is taken, wherever it came from.
 
+### Starting with the computer
+
+The Updates page's *Start with the computer* says whether FernSDR starts
+when the machine does, and switches it without starting or stopping the
+receiver now. The receiver asks the updater the way it asks for an update,
+with `autostart on` or `autostart off` in the request file, and the
+updater, as root, uses the init's own tool: `systemctl enable` or `disable
+fernsdr.service` (the updater's units stay enabled, so a receiver started
+by hand still updates), `rc-update add` or `del fernsdr default`, a `down`
+file in runit's `/etc/sv/fernsdr`, or `update-rc.d fernsdr enable` or
+`disable` (`chkconfig` or `insserv` where that is what the machine has).
+It then reads the init's files again, and `autostart.json` in the update
+directory says how it went. The switch is not offered while an update is
+under way or on trial. On Slackware, where a line in `/etc/rc.d/rc.local`
+starts FernSDR, and on a machine without an init the installer knows, the
+page says so in place of the switch. An updater older than 0.1.2 refuses
+the request as one that names no version.
+
 ## Moving to another machine
 
 The Updates page's *Download* makes a backup: one JSON file with the

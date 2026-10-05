@@ -248,6 +248,10 @@ Nothing updates without you pressing the button. Running the install line
 again and answering `1` does the same, and is how a receiver in a Docker
 container is updated.
 
+The same page has *Start with the computer*. On, FernSDR starts by itself
+whenever the computer does, after a power cut too. Off, it keeps running
+now, but after a restart stays off until you start it.
+
 *Technical detail:* what an update does, step by step: [Updates](DEPLOYMENT.md#updates).
 
 ### Moving to a new computer

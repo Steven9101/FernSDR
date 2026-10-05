@@ -11,12 +11,21 @@
 	import SettingsRow from '../components/SettingsRow.svelte';
 	import { Button } from '../components/ui/button/index';
 	import { Confirm } from '../components/ui/confirm/index';
+	import { Switch } from '../components/ui/switch/index';
 	import RestoreBackup from '../components/RestoreBackup.svelte';
 	import ReleaseNotes from '../components/ReleaseNotes.svelte';
 	import { backupFileName } from '../lib/backup';
 	import { saveFile } from '../../util/save-file';
 	import { ago } from '../lib/format';
-	import { machineName, releaseDate, stepLabel, updating } from '../lib/updates';
+	import {
+		autostartChecked,
+		autostartDetail,
+		autostartFooter,
+		machineName,
+		releaseDate,
+		stepLabel,
+		updating
+	} from '../lib/updates';
 
 	/*
 	Updates: which FernSDR runs here, whether a newer release is published and what it changes,
@@ -30,12 +39,19 @@
 	let away = $state(false);
 	let confirmOpen = $state(false);
 	let notesOpen = $state(false);
+	// Starting with the computer: a switch on its way to the receiver, and the question before off.
+	let asking = $state(false);
+	let offOpen = $state(false);
 
 	const checking = $derived(view?.check.state === 'checking');
 	const underWay = $derived(updating(view?.status));
 	const found = $derived(view?.check.state === 'done' && view.check.newer ? view.check : null);
 	// About what fits in the folded height; shorter notes show whole, with nothing to open.
 	const folded = $derived(!notesOpen && (found?.notes?.length ?? 0) > 700);
+	const starting = $derived(view?.autostart);
+	const startingFooter = $derived(starting ? autostartFooter(starting) : null);
+	// Until the updater has taken the switch, the page looks again quickly.
+	const switching = $derived(asking || !!starting?.pending);
 
 	async function load() {
 		try {
@@ -45,6 +61,10 @@
 			away = false;
 			if (previous?.check.state === 'checking' && view.check.state === 'failed') {
 				toast.error(view.check.error ?? 'The look for updates failed.');
+			}
+			const result = view.autostart?.result;
+			if (previous?.autostart?.pending && !view.autostart?.pending && result && !result.ok) {
+				toast.error(result.message);
 			}
 		} catch (problem) {
 			if (problem instanceof ApiError) {
@@ -62,7 +82,7 @@
 	// Quickly while something runs, slowly otherwise. Only derived state is read here: load()
 	// assigns `view`, and reading it in this effect would make every answer ask again.
 	$effect(() => {
-		const timer = window.setInterval(load, checking || underWay || away ? 1500 : 15000);
+		const timer = window.setInterval(load, checking || underWay || away || switching ? 1500 : 15000);
 		return () => window.clearInterval(timer);
 	});
 
@@ -87,6 +107,17 @@
 			toast.error((problem as ApiError).message);
 		} finally {
 			saving = false;
+		}
+	}
+
+	async function switchStarting(on: boolean) {
+		asking = true;
+		try {
+			view = await api.setAutostart(on);
+		} catch (problem) {
+			toast.error((problem as ApiError).message);
+		} finally {
+			asking = false;
 		}
 	}
 
@@ -202,7 +233,42 @@
 				No release newer than {view.running} is published.
 			</EmptyState>
 		{/if}
+
+		{#if starting}
+			<SettingsGroup title="Starting" footer={startingFooter ? startingNote : undefined}>
+				{#if starting.changeable}
+					<SettingsRow label="Start with the computer" detail={autostartDetail(starting)}>
+						{#snippet control()}
+							{#if starting.pending}
+								<LoaderCircle size={18} class="shrink-0 animate-spin text-muted-foreground" aria-hidden="true" />
+							{/if}
+							<!-- Shows what the receiver says, not the last tap: off asks first, and a switch
+							the updater could not make must not be left looking made. -->
+							<Switch
+								bind:checked={() => autostartChecked(starting), (checked) => (checked ? switchStarting(true) : (offOpen = true))}
+								disabled={switching || !!starting.blocked || underWay || away}
+								aria-label="Start with the computer"
+							/>
+						{/snippet}
+					</SettingsRow>
+				{:else}
+					<SettingsRow label="Start with the computer" detail={autostartDetail(starting)} />
+				{/if}
+			</SettingsGroup>
+		{/if}
 	</div>
+
+	{#snippet startingNote()}
+		<span class={startingFooter?.warning ? 'text-warning' : ''}>{startingFooter?.text}</span>
+	{/snippet}
+
+	<Confirm
+		bind:open={offOpen}
+		title="Not start with the computer?"
+		description="It keeps running now. After the computer restarts, or the power comes back, FernSDR stays off until someone starts it."
+		action="Switch off"
+		onConfirm={() => switchStarting(false)}
+	/>
 
 	{#if found?.version}
 		<Confirm

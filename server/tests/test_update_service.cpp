@@ -22,19 +22,26 @@ struct Setup {
     uint8_t seed[32];
     std::map<std::string, std::string> server;
     fernsdr::UpdateServiceOptions options;
+    fernsdr::AutostartState autostart;
 
     Setup() {
         char name[] = "/tmp/fernsdr-update-service-XXXXXX";
         root = ::mkdtemp(name) ? name : "";
         ::mkdir((root + "/state").c_str(), 0700);
         ::mkdir((root + "/update").c_str(), 0755);
+        ::mkdir((root + "/opt").c_str(), 0755);
+        ::mkdir((root + "/opt/releases").c_str(), 0755);
+        CHECK(::symlink("releases/0.1.0", (root + "/opt/trusted").c_str()) == 0);
         for (int i = 0; i < 32; i++) seed[i] = static_cast<uint8_t>(90 + i);
         fernsdr::ReleaseKey key;
         fernsdr::ed25519_public_key(seed, key.data());
         options.state = root + "/state";
         options.update = root + "/update";
-        options.install = "/opt/fernsdr";
-        options.executable = "/opt/fernsdr/releases/0.1.0/fernsdr";
+        options.install = root + "/opt";
+        options.executable = root + "/opt/releases/0.1.0/fernsdr";
+        options.autostart = [this] { return autostart; };
+        autostart.init = "systemd";
+        autostart.changeable = true;
         options.running_version = "0.1.0";
         options.platform = "linux-x86_64";
         options.keys = {key};
@@ -84,6 +91,22 @@ struct Setup {
     }
 
     bool exists(const std::string& name) const { return ::access((root + "/state/" + name).c_str(), F_OK) == 0; }
+
+    std::string request() const {
+        std::string text, error;
+        bool missing = false;
+        const int dir = fernsdr::open_directory(root + "/state");
+        fernsdr::read_file_at(dir, "update-request", 256, static_cast<uid_t>(-1), text, missing, error);
+        ::close(dir);
+        return text;
+    }
+
+    void put(const std::string& directory, const std::string& name, const std::string& text) {
+        const int dir = fernsdr::open_directory(root + "/" + directory);
+        std::string error;
+        CHECK(fernsdr::write_file_at(dir, name, text, 0644, static_cast<uid_t>(-1), static_cast<gid_t>(-1), error));
+        ::close(dir);
+    }
 };
 
 fernsdr::Json looked(fernsdr::UpdateService& service) {
@@ -172,4 +195,91 @@ TEST_CASE(update_service_reports_what_it_cannot_use) {
     CHECK(!view["check"]["newer"].boolean(true));
     std::string error;
     CHECK(!service.start("0.1.0", {}, error));
+}
+
+TEST_CASE(update_service_asks_the_updater_to_switch_starting_with_the_computer) {
+    Setup setup;
+    fernsdr::UpdateService service(setup.options);
+    fernsdr::Json view = service.snapshot()["autostart"];
+    CHECK_EQ_STR(view["init"].string(), "systemd");
+    CHECK(view["changeable"].boolean());
+    CHECK(!view["enabled"].boolean(true));
+    CHECK(!view["pending"].is_string());
+    CHECK(!view["blocked"].is_string());
+    std::string error;
+    CHECK(service.request_autostart(true, error));
+    CHECK_EQ_STR(setup.request(), "autostart on\n");
+    view = service.snapshot()["autostart"];
+    CHECK_EQ_STR(view["pending"].string(), "on");
+    // One request at a time: neither another switch nor an update.
+    CHECK(!service.request_autostart(false, error));
+    CHECK(error.find("waiting") != std::string::npos);
+    setup.publish("0.1.1");
+    looked(service);
+    CHECK(!service.start("0.1.1", {}, error));
+    CHECK(error.find("waiting") != std::string::npos);
+    CHECK_EQ_STR(setup.request(), "autostart on\n");
+
+    // The updater took it and said how it went; shown as it said.
+    ::unlink((setup.root + "/state/update-request").c_str());
+    setup.autostart.enabled = true;
+    setup.put("update", "autostart.json", "{\"time\":7,\"ok\":true,\"enabled\":true,\"message\":\"on now\"}");
+    view = service.snapshot()["autostart"];
+    CHECK(view["enabled"].boolean());
+    CHECK(!view["pending"].is_string());
+    CHECK(view["result"]["ok"].boolean());
+    CHECK_EQ_STR(view["result"]["message"].string(), "on now");
+    CHECK(service.request_autostart(false, error));
+    CHECK_EQ_STR(setup.request(), "autostart off\n");
+}
+
+TEST_CASE(update_service_does_not_switch_starting_while_an_update_is_busy) {
+    const auto refused = [](const std::function<void(Setup&)>& busy, const std::string& reason) {
+        Setup setup;
+        busy(setup);
+        fernsdr::UpdateService service(setup.options);
+        std::string error;
+        const bool asked = service.request_autostart(true, error);
+        const fernsdr::Json view = service.snapshot()["autostart"];
+        const bool ok = !asked && error.find(reason) != std::string::npos && setup.request() != "autostart on\n" &&
+                        view["blocked"].string().find(reason) != std::string::npos;
+        if (!ok) fprintf(stderr, "    got \"%s\"\n", error.c_str());
+        return ok;
+    };
+    for (const char* state : {"checking", "downloading", "installing", "trial"}) {
+        CHECK(refused([&](Setup& s) {
+            s.status(std::string("{\"state\":\"") + state + "\",\"version\":\"0.1.1\",\"message\":\"x\",\"time\":5}");
+        }, "under way"));
+    }
+    // A version on trial: the updater is still the version before.
+    CHECK(refused([](Setup& s) {
+        ::unlink((s.root + "/opt/trusted").c_str());
+        CHECK(::symlink("releases/0.0.9", (s.root + "/opt/trusted").c_str()) == 0);
+    }, "on trial"));
+    // An update asked for and not yet taken.
+    CHECK(refused([](Setup& s) { s.put("state", "update-request", "0.1.1\n"); }, "asked for"));
+}
+
+TEST_CASE(update_service_leaves_starting_to_whoever_decides_it) {
+    // A container, or an init the panel cannot switch: its sentence, no switch.
+    Setup setup;
+    setup.autostart = fernsdr::AutostartState{"container", false, false, "Docker decides."};
+    fernsdr::UpdateService service(setup.options);
+    std::string error;
+    CHECK(!service.request_autostart(true, error));
+    CHECK_EQ_STR(error, "Docker decides.");
+    fernsdr::Json view = service.snapshot()["autostart"];
+    CHECK(!view["changeable"].boolean(true));
+    CHECK_EQ_STR(view["note"].string(), "Docker decides.");
+    CHECK(!setup.exists("update-request"));
+
+    // An init the panel could switch, on a receiver without the updater: how
+    // to do it by hand.
+    Setup source;
+    source.options.executable = "/usr/local/bin/fernsdr";
+    fernsdr::UpdateService unsupervised(source.options);
+    CHECK(!unsupervised.request_autostart(true, error));
+    view = unsupervised.snapshot()["autostart"];
+    CHECK(!view["changeable"].boolean(true));
+    CHECK(view["note"].string().find("systemctl enable fernsdr") != std::string::npos);
 }

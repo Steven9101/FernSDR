@@ -3,7 +3,7 @@ How the Updates page words the updater's progress. The updater writes a state an
 these are the short labels and the one question the page has to answer on every poll: is an
 update under way, so the page should keep looking and offer nothing else.
 */
-import type { UpdateStatus } from '../api';
+import type { AutostartView, UpdateStatus } from '../api';
 
 const underWay: ReadonlySet<UpdateStatus['state']> = new Set(['checking', 'downloading', 'installing', 'trial']);
 
@@ -30,6 +30,34 @@ export function stepLabel(status: UpdateStatus): string {
     case 'failed':
       return 'The update failed';
   }
+}
+
+/**
+ * The switch shows what was asked for until the updater has taken it, and what the init says
+ * after; a switch that failed falls back by itself, since the init still says the old state.
+ */
+export function autostartChecked(autostart: AutostartView): boolean {
+  return autostart.pending ? autostart.pending === 'on' : autostart.enabled;
+}
+
+/** The line under "Start with the computer". */
+export function autostartDetail(autostart: AutostartView): string {
+  if (!autostart.changeable) return autostart.note ?? '';
+  if (autostart.pending) return autostart.pending === 'on' ? 'Switching on' : 'Switching off';
+  return autostart.enabled ? 'FernSDR starts when the computer does' : 'Start it by hand after the computer starts';
+}
+
+/**
+ * The group's footer: why it cannot be switched now, else how the last switch failed, else what
+ * the switch does and does not do. Nothing where there is no switch: the row says it all.
+ */
+export function autostartFooter(autostart: AutostartView): { text: string; warning: boolean } | null {
+  if (!autostart.changeable) return null;
+  if (autostart.blocked) return { text: autostart.blocked, warning: false };
+  if (!autostart.pending && autostart.result && !autostart.result.ok) {
+    return { text: autostart.result.message, warning: true };
+  }
+  return { text: 'It only decides what happens when the computer starts: the receiver keeps running now either way.', warning: false };
 }
 
 /** linux-aarch64 as an operator knows it. */

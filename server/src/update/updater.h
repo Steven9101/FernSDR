@@ -36,6 +36,9 @@ constexpr const char* kUpdateCommitFile = "update-commit";    // written by a ne
 // In the update directory, written by the updater.
 constexpr const char* kUpdateStatusFile = "status.json";
 constexpr const char* kUpdateTrialFile = "trial";
+// How the last switch of starting with the computer went: time, ok, enabled
+// (what was asked for) and message. Shown, never acted on.
+constexpr const char* kAutostartResultFile = "autostart.json";
 
 // Configuration files the receiver writes beside its config, copied before a
 // switch and put back when the new version is rolled back: it may have
@@ -58,6 +61,8 @@ struct UpdateEnvironment {
     bool state_may_be_roots = false;
 
     std::function<bool(const std::string& url, size_t limit, std::string& body, std::string& error)> fetch;
+    // Makes the receiver start with the computer, or not (set_autostart).
+    std::function<bool(bool on, std::string& error)> autostart;
     // Runs `program --check config --root web` as uid:gid; false with its
     // output when it refuses.
     std::function<bool(const std::string& program, const std::string& config, const std::string& web, uid_t uid,
@@ -77,7 +82,8 @@ struct UpdateOutcome {
     std::string message;
 };
 
-// Acts on a request the receiver left, if there is one.
+// Acts on a request the receiver left, if there is one: a version to update
+// to, or exactly kAutostartOn or kAutostartOff and a newline.
 UpdateOutcome run_update(const UpdateLayout& layout, const UpdateEnvironment& environment);
 
 // Before the receiver starts: ends a trial that was interrupted.

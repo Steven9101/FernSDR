@@ -311,6 +311,25 @@ export interface UpdateView {
   };
   /** The updater's own account of the last or current update. */
   status?: UpdateStatus;
+  /** Whether the receiver starts with the computer; absent from receivers before 0.1.2. */
+  autostart?: AutostartView;
+}
+
+/** Starting with the computer, as the init keeps it; switched by the updater as root. */
+export interface AutostartView {
+  /** `container`: Docker's restart policy decides; `other`: the operator does, as `note` says. */
+  init: 'systemd' | 'openrc' | 'runit' | 'sysv' | 'container' | 'other';
+  enabled: boolean;
+  /** Whether the panel can switch it on this receiver at all. */
+  changeable: boolean;
+  /** Who decides, or how to switch it by hand, where the panel cannot. */
+  note?: string;
+  /** Why it cannot be switched just now, such as an update under way. */
+  blocked?: string;
+  /** A switch asked for that the updater has not taken yet. */
+  pending?: 'on' | 'off';
+  /** How the updater's last switch went. */
+  result?: { time: number; ok: boolean; message: string };
 }
 
 export interface UpdateStatus {
@@ -734,6 +753,9 @@ export const api = {
   checkUpdates: () => call<UpdateView>('/api/admin/update/check', { method: 'POST', body: '{}' }),
   startUpdate: (version: string) =>
     call<UpdateView>('/api/admin/update/start', { method: 'POST', body: JSON.stringify({ version }) }),
+  /** Asks the updater to make the receiver start with the computer, or not; it does not start or stop it now. */
+  setAutostart: (enabled: boolean) =>
+    call<UpdateView>('/api/admin/update/autostart', { method: 'POST', body: JSON.stringify({ enabled }) }),
 
   // Modules. Every change is a job the server runs on its own thread; the
   // answer is the view with the job queued, and the panel polls for the rest.

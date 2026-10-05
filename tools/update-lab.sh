@@ -19,6 +19,10 @@
 # trusting the run's key) in a copy under WORKDIR, and three releases
 # that fail on purpose: one whose check refuses the configuration, one that
 # crashes as it starts, one that never says it works. Then, in order:
+#   0. starting with the computer is switched off and on again from the
+#      admin API, by the updater in its unit's sandbox (or under the
+#      supervisor), without the receiver stopping; a request that is
+#      neither is refused;
 #   1. 0.1.1 is installed and kept once it says it works, a minute later;
 #   2. the release whose check refuses the configuration is not switched to;
 #   3. the crashing one is rolled back within seconds;
@@ -35,7 +39,8 @@ REPO=$(cd "$(dirname "$0")/.." && pwd)
 WORK=${1:-$(mktemp -d /tmp/fernsdr-update-lab.XXXXXX)}
 mkdir -p "$WORK"
 WORK=$(cd "$WORK" && pwd)
-NAME=fernsdr-update-lab
+NAME=${LAB_NAME:-fernsdr-update-lab}
+PORT=${LAB_PORT:-18199}
 IMAGE=fernsdr-update-lab
 FAILURES=0
 
@@ -147,7 +152,7 @@ docker rm -f "$NAME" > /dev/null 2>&1 || true
 PASSWORD="update lab $(date +%s)"
 HASH=$(printf '%s\n' "$PASSWORD" | "$WORK/fernsdr-0.1.0" --hash-password 2>/dev/null | sed -n 's/^password_hash *= *//p')
 printf '%s\n' "$HASH" > "$WORK/share/admin-hash"
-docker run -d --name "$NAME" --privileged --cgroupns=private -p 127.0.0.1:18199:8073 \
+docker run -d --name "$NAME" --privileged --cgroupns=private -p "127.0.0.1:$PORT:8073" \
     --tmpfs /run --tmpfs /run/lock -v "$WORK/share:/lab:ro" "$IMAGE" > /dev/null
 # Until the init has started what it starts at boot.
 booted() {
@@ -246,10 +251,68 @@ done
 
 if [ -n "${LAB_KEEP:-}" ]; then
     publish 0.1.1
-    say "0.1.1 is published. The admin panel: http://127.0.0.1:18199/admin#/updates"
+    say "0.1.1 is published. The admin panel: http://127.0.0.1:$PORT/admin#/updates"
     say "password: $PASSWORD"
     exit 0
 fi
+
+# 0. Starting with the computer, as the panel switches it.
+admin() { python3 "$REPO/tools/admin-api.py" "http://127.0.0.1:$PORT" "$PASSWORD" "$@"; }
+# Whether the init starts FernSDR at boot, by its own account.
+starts() {
+    if [ "$INIT" = sysv ]; then
+        if in_lab sh -c 'ls /etc/rc2.d/S??fernsdr' > /dev/null 2>&1; then echo yes; else echo no; fi
+    else
+        if [ "$(in_lab systemctl is-enabled fernsdr.service 2>/dev/null)" = enabled ]; then echo yes; else echo no; fi
+    fi
+}
+# What the Updates page shows: enabled, init, whether it offers the switch.
+panel_says() {
+    admin GET /api/admin/update | python3 -c 'import json, sys
+a = json.load(sys.stdin).get("autostart", {})
+print("yes" if a.get("enabled") else "no", a.get("init", "?"), "switch" if a.get("changeable") else "no-switch")'
+}
+receiver_pid() {
+    if [ "$INIT" = sysv ]; then in_lab pgrep -o -u fernsdr -x fernsdr; else in_lab systemctl show -p MainPID --value fernsdr.service; fi
+}
+result_of() { in_lab cat /var/lib/fernsdr-update/autostart.json 2>/dev/null || true; }
+# ON: asked for from the admin API; waits for the updater's account.
+switch_starting() {
+    in_lab rm -f /var/lib/fernsdr-update/autostart.json
+    admin POST /api/admin/update/autostart "{\"enabled\":$1}" > /dev/null || return 1
+    for i in $(seq 1 30); do
+        in_lab test -e /var/lib/fernsdr-update/autostart.json && return 0
+        sleep 1
+    done
+    return 1
+}
+[ "$(starts)" = yes ] && [ "$(panel_says)" = "yes $INIT switch" ] &&
+    pass "the panel reads that FernSDR starts with the computer, and offers the switch" ||
+    fail "at first: init says $(starts), panel says $(panel_says)"
+pid=$(receiver_pid)
+if switch_starting false && [ "$(starts)" = no ] && [ "$(panel_says)" = "no $INIT switch" ] &&
+    result_of | grep -q '"ok":true'; then
+    pass "switched off from the panel: $(result_of)"
+else
+    fail "switching off: init says $(starts), panel says $(panel_says), $(result_of)"
+fi
+[ "$(receiver_pid)" = "$pid" ] && pass "the receiver kept running" || fail "the receiver restarted: $pid, now $(receiver_pid)"
+if [ "$INIT" != sysv ]; then
+    [ "$(in_lab systemctl is-enabled fernsdr-update.path 2>/dev/null)" = enabled ] &&
+        pass "the updater's units stay enabled" || fail "fernsdr-update.path: $(in_lab systemctl is-enabled fernsdr-update.path)"
+fi
+if switch_starting true && [ "$(starts)" = yes ] && [ "$(panel_says)" = "yes $INIT switch" ]; then
+    pass "switched on again: $(result_of)"
+else
+    fail "switching on: init says $(starts), panel says $(panel_says), $(result_of)"
+fi
+in_lab rm -f /var/lib/fernsdr-update/autostart.json
+request 'autostart maybe'
+for i in $(seq 1 30); do [ "$(state_of)" = refused ] && break; sleep 1; done
+[ "$(state_of)" = refused ] && [ "$(starts)" = yes ] && [ -z "$(result_of)" ] &&
+    pass "a request that is neither is refused as a version: $(status)" ||
+    fail "autostart maybe: $(status), init says $(starts)"
+in_lab rm -f /var/lib/fernsdr-update/status.json
 
 # 1. An update that works.
 publish 0.1.1

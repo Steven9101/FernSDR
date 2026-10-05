@@ -1050,7 +1050,7 @@ bool Application::handle_admin(Connection& connection, const HttpRequest& reques
     }
 
     if (request.path == "/api/admin/update" || request.path == "/api/admin/update/check" ||
-        request.path == "/api/admin/update/start") {
+        request.path == "/api/admin/update/start" || request.path == "/api/admin/update/autostart") {
         if (!updates_) {
             response = json_response(404, json_error("this receiver's configuration has no directory to update from"),
                                      request.keep_alive());
@@ -1072,8 +1072,21 @@ bool Application::handle_admin(Connection& connection, const HttpRequest& reques
             }
             ok = updates_->start(body["version"].string(), running, error);
             if (ok) LOG_INFO("admin", "update to %s asked for", body["version"].string().c_str());
+        } else if (request.path == "/api/admin/update/autostart" && request.method == "POST") {
+            Json body;
+            if (!Json::parse(request.body, body) || !body.is_object() || !body["enabled"].is_bool()) {
+                response = json_response(
+                    400, json_error("say whether it starts with the computer: {\"enabled\": true}"),
+                    request.keep_alive());
+                return true;
+            }
+            const bool enabled = body["enabled"].boolean();
+            ok = updates_->request_autostart(enabled, error);
+            if (ok) LOG_INFO("admin", "starting with the computer switched %s", enabled ? "on" : "off");
         } else if (request.method != "GET" || request.path != "/api/admin/update") {
-            response = json_response(405, json_error("GET the state, POST to check or start"), request.keep_alive());
+            response = json_response(
+                405, json_error("GET the state, POST to check, start or switch starting with the computer"),
+                request.keep_alive());
             return true;
         }
         response = ok ? json_response(request.method == "GET" ? 200 : 202, updates_->snapshot().serialize(),

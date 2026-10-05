@@ -12,6 +12,7 @@
 
 #include "../util/json.h"
 #include "../util/password.h"
+#include "autostart.h"
 #include "extract.h"
 #include "files.h"
 #include "ustar.h"
@@ -158,6 +159,7 @@ private:
     bool install(const std::string& version, const std::string& archive, std::string& error);
     bool take_snapshot(std::vector<std::string>& present, std::string& error);
     UpdateOutcome supervise(const Trial& trial);
+    UpdateOutcome switch_autostart(bool on);
     UpdateOutcome done(UpdateOutcome::Result result, const std::string& state, const std::string& version,
                        const std::string& message) {
         status(state, version, message);
@@ -484,6 +486,11 @@ UpdateOutcome Updater::update() {
         if (missing) return recovered;
         return done(UpdateOutcome::Result::Refused, "refused", "", "The update request was refused: " + error);
     }
+    // Exactly one of the two lines and nothing else; anything near them is
+    // a version request, which it then fails to be.
+    if (request == std::string(kAutostartOn) + "\n" || request == std::string(kAutostartOff) + "\n") {
+        return switch_autostart(request == std::string(kAutostartOn) + "\n");
+    }
     const std::string version = trimmed(request);
     if (!valid_version(version)) {
         return done(UpdateOutcome::Result::Refused, "refused", "", "The update request does not name a version.");
@@ -575,6 +582,30 @@ UpdateOutcome Updater::update() {
                     "Went back to " + trial.old_version + ": the service did not restart (" + why + ").");
     }
     return supervise(trial);
+}
+
+UpdateOutcome Updater::switch_autostart(bool on) {
+    std::string why;
+    bool ok = false;
+    if (env_.autostart) {
+        ok = env_.autostart(on, why);
+    } else {
+        why = "this updater cannot switch it";
+    }
+    const std::string message =
+        ok ? (on ? "FernSDR starts with the computer from now on."
+                 : "FernSDR no longer starts with the computer. It keeps running until it is stopped.")
+           : std::string("Starting with the computer could not be switched ") + (on ? "on" : "off") + ": " + why + ".";
+    Json out = Json::make_object();
+    out.set("time", static_cast<double>(env_.now_ms() / 1000));
+    out.set("ok", ok);
+    out.set("enabled", on);
+    out.set("message", message);
+    std::string error;
+    // Like status.json: read by the panel, and only shown.
+    write_file_at(update_.get(), kAutostartResultFile, out.serialize() + "\n", 0644, static_cast<uid_t>(-1),
+                  static_cast<gid_t>(-1), error);
+    return {ok ? UpdateOutcome::Result::Nothing : UpdateOutcome::Result::Refused, message};
 }
 
 UpdateOutcome Updater::boot() {

@@ -18,6 +18,7 @@
 #include "../util/programs.h"
 #include "../util/subprocess.h"
 #include "../version.h"
+#include "autostart.h"
 #include "release_keys.h"
 
 namespace fernsdr {
@@ -190,6 +191,7 @@ bool system_update_environment(UpdateEnvironment& environment, std::string& erro
     }
     environment.fetch = fetch_release_file;
     environment.check = check_configuration_as;
+    environment.autostart = set_autostart;
     // Started by `fernsdr --supervise` rather than by systemd: the
     // supervisor runs the receiver and answers for it.
     if (const int supervisor = take_supervisor_fd(); supervisor >= 0) {

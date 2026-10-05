@@ -528,3 +528,82 @@ TEST_CASE(update_trial_commits_once_the_new_version_has_served_with_its_bands) {
     CHECK_EQ_STR(contents_of(install.layout.state + "/update-commit"), "0.1.1\n");
     CHECK(trial.tick(63'000, {}));
 }
+
+TEST_CASE(updater_switches_starting_with_the_computer_on_request) {
+    for (const bool on : {true, false}) {
+        Install install;
+        std::vector<bool> asked;
+        install.env.autostart = [&](bool want, std::string&) {
+            asked.push_back(want);
+            return true;
+        };
+        put(install.layout.state + "/update-request", on ? "autostart on\n" : "autostart off\n");
+        const UpdateOutcome outcome = install.run();
+        CHECK(outcome.result == Result::Nothing);
+        CHECK_EQ(asked.size(), 1u);
+        CHECK(asked.size() == 1 && asked[0] == on);
+        CHECK(!exists(install.layout.state + "/update-request"));
+        // Its own record, beside the update's, which it leaves alone.
+        fernsdr::Json result;
+        CHECK(fernsdr::Json::parse(contents_of(install.layout.update + "/autostart.json"), result));
+        CHECK(result["ok"].boolean(false));
+        CHECK(result["enabled"].boolean(!on) == on);
+        CHECK(result["time"].number() > 0);
+        CHECK(!exists(install.layout.update + "/status.json"));
+        // Nothing about the install changes.
+        CHECK_EQ_STR(install.current(), "releases/0.1.0");
+        CHECK_EQ(install.restarts_asked, 0);
+    }
+}
+
+TEST_CASE(updater_says_when_starting_with_the_computer_could_not_be_switched) {
+    Install install;
+    install.env.autostart = [](bool, std::string& error) {
+        error = "update-rc.d exited with status 1";
+        return false;
+    };
+    put(install.layout.state + "/update-request", "autostart off\n");
+    const UpdateOutcome outcome = install.run();
+    CHECK(outcome.result == Result::Refused);
+    fernsdr::Json result;
+    CHECK(fernsdr::Json::parse(contents_of(install.layout.update + "/autostart.json"), result));
+    CHECK(!result["ok"].boolean(true));
+    CHECK(result["message"].string().find("update-rc.d exited with status 1") != std::string::npos);
+
+    // An updater given no way to switch it says so.
+    Install bare;
+    put(bare.layout.state + "/update-request", "autostart on\n");
+    CHECK(bare.run().result == Result::Refused);
+    CHECK(contents_of(bare.layout.update + "/autostart.json").find("\"ok\":false") != std::string::npos);
+}
+
+TEST_CASE(updater_takes_only_the_two_exact_autostart_requests) {
+    // Anything near them is a version request, and not a version.
+    for (const char* request : {"autostart maybe\n", "autostart on", "autostart on\n\n", " autostart on\n",
+                                "autostart on\nautostart off\n", "AUTOSTART ON\n", "autostart\n"}) {
+        Install install;
+        int asked = 0;
+        install.env.autostart = [&](bool, std::string&) {
+            asked++;
+            return true;
+        };
+        put(install.layout.state + "/update-request", request);
+        const UpdateOutcome outcome = install.run();
+        CHECK(outcome.result == Result::Refused);
+        CHECK(outcome.message.find("does not name a version") != std::string::npos);
+        CHECK_EQ(asked, 0);
+        CHECK(!exists(install.layout.update + "/autostart.json"));
+        CHECK(!exists(install.layout.state + "/update-request"));
+    }
+    // A version request still updates, and does not touch starting.
+    Install install;
+    int asked = 0;
+    install.env.autostart = [&](bool, std::string&) {
+        asked++;
+        return true;
+    };
+    install.publish("0.1.1");
+    install.request("0.1.1");
+    CHECK(install.run().result == Result::Updated);
+    CHECK_EQ(asked, 0);
+}

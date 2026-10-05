@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest';
-import type { UpdateStatus } from '../api';
-import { lookDue, machineName, releaseDate, stepLabel, updating } from './updates';
+import type { AutostartView, UpdateStatus } from '../api';
+import {
+  autostartChecked,
+  autostartDetail,
+  autostartFooter,
+  lookDue,
+  machineName,
+  releaseDate,
+  stepLabel,
+  updating
+} from './updates';
 
 const status = (state: UpdateStatus['state']): UpdateStatus => ({ state, version: '0.1.1', message: '', time: 1 });
 
@@ -42,5 +51,43 @@ describe('the update offer', () => {
   it('writes the release date out', () => {
     expect(releaseDate('2026-10-01')).toBe('1 October 2026');
     expect(releaseDate('soon')).toBe('soon');
+  });
+});
+
+describe('starting with the computer', () => {
+  const view = (change: Partial<AutostartView> = {}): AutostartView => ({
+    init: 'systemd',
+    enabled: false,
+    changeable: true,
+    ...change
+  });
+
+  it('shows what was asked for until the updater takes it, then what the init says', () => {
+    expect(autostartChecked(view())).toBe(false);
+    expect(autostartChecked(view({ pending: 'on' }))).toBe(true);
+    expect(autostartDetail(view({ pending: 'on' }))).toBe('Switching on');
+    // Taken and failed: the init still says off, and so does the switch.
+    const failed = view({ result: { time: 5, ok: false, message: 'update-rc.d exited with status 1' } });
+    expect(autostartChecked(failed)).toBe(false);
+    expect(autostartFooter(failed)).toEqual({ text: 'update-rc.d exited with status 1', warning: true });
+    // Not while the next one waits.
+    expect(autostartFooter({ ...failed, pending: 'on' })?.warning).toBe(false);
+  });
+
+  it('says why it cannot be switched just now before anything else', () => {
+    const busy = view({ blocked: 'An update is under way.', result: { time: 5, ok: false, message: 'x' } });
+    expect(autostartFooter(busy)).toEqual({ text: 'An update is under way.', warning: false });
+  });
+
+  it('gives the sentence instead of a switch where the panel cannot switch it', () => {
+    const docker = view({ init: 'container', changeable: false, note: 'Docker decides.' });
+    expect(autostartDetail(docker)).toBe('Docker decides.');
+    expect(autostartFooter(docker)).toBeNull();
+  });
+
+  it('says what each state means', () => {
+    expect(autostartDetail(view({ enabled: true }))).toBe('FernSDR starts when the computer does');
+    expect(autostartDetail(view())).toBe('Start it by hand after the computer starts');
+    expect(autostartFooter(view())?.text).toContain('keeps running now');
   });
 });

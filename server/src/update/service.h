@@ -11,6 +11,7 @@
 #include <vector>
 
 #include "../util/json.h"
+#include "autostart.h"
 #include "release.h"
 
 namespace fernsdr {
@@ -25,6 +26,8 @@ struct UpdateServiceOptions {
     std::vector<ReleaseKey> keys;
     std::string base_url;
     std::function<bool(const std::string& url, size_t limit, std::string& body, std::string& error)> fetch;
+    // Whether the receiver starts with the computer; read_autostart().
+    std::function<AutostartState()> autostart;
 };
 
 class UpdateService {
@@ -47,6 +50,10 @@ public:
     // Asks the updater for `version`, which the last look has to have found,
     // signed and newer.
     bool start(const std::string& version, const std::vector<std::string>& running_bands, std::string& error);
+    // Asks the updater to make the receiver start with the computer, or
+    // not. Refused where the init cannot be switched from here, while an
+    // update is under way or on trial, and while a request is waiting.
+    bool request_autostart(bool on, std::string& error);
     Json snapshot() const;
 
     // For tests: waits for a look to finish.
@@ -55,6 +62,11 @@ public:
 private:
     void look();
     bool updating() const;
+    // The request waiting for the updater, as the receiver wrote it, or "".
+    std::string waiting_request() const;
+    // Why starting with the computer cannot be switched just now, or "".
+    std::string autostart_blocked() const;
+    Json autostart_view() const;
 
     UpdateServiceOptions options_;
     std::string unavailable_;
