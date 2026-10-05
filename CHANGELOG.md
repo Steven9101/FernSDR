@@ -16,6 +16,15 @@
   gave up every time. Update it on the Modules page.
 - FT4 is decoded by Fern-FT8 0.2.0, as sensitive as WSJT-X; the Decoders
   page offers it once FT8 runs. Update the module on the Modules page.
+- A receiver in Docker updates from the admin panel as an installed one
+  does: the signed release, a trial of a minute and the way back, without
+  restarting the container and without the Docker socket. It keeps the
+  release in its volume and checks it on every start; a newer image wins.
+  Started with `--user` or `--read-only`, it is still updated by pulling the
+  new image.
+- "Start with the computer" can be switched on the Updates page, for
+  systemd, OpenRC, runit and SysV init. It takes effect at the next start of
+  the machine and does not stop the receiver.
 - The admin overview shows how much processor and memory FernSDR uses, and
   inside a container or a service with limits, those limits.
 - The decodes open by themselves when a listener settles on a decoded
