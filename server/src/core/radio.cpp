@@ -208,7 +208,7 @@ bool Radio::configure(const Config& config, std::string& error, bool strict) {
     module_catalog_.clear();
     {
         std::string current;
-        for (char c : modules.get("catalog", "Steven9101/Fern-RTLSDR Steven9101/Fern-RX888 Steven9101/Fern-SDRPlay Steven9101/Fern-FT8") + " ") {
+        for (char c : modules.get("catalog", "Steven9101/Fern-RTLSDR Steven9101/Fern-RX888 Steven9101/Fern-SDRPlay Steven9101/Fern-Airspy Steven9101/Fern-FT8") + " ") {
             if (c == ' ' || c == ',' || c == '\t') {
                 if (!current.empty()) module_catalog_.push_back(current);
                 current.clear();

@@ -723,6 +723,7 @@ install_usb_rules() {
     # The RX-888's FX3 controller, before its firmware is loaded (00f3) and
     # after (00f1): Cypress's own ids, which other FX3 boards share, so the
     # module loads firmware only into the device a band selects.
+    # Then the Airspy R2 and Mini (1d50:60a1) and the Airspy HF+ (03eb:800c).
     cat > "$WORK/usb.rules" << RULES
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2838", MODE:="0660", GROUP:="$SERVICE_USER"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="0bda", ATTRS{idProduct}=="2832", MODE:="0660", GROUP:="$SERVICE_USER"
@@ -746,6 +747,8 @@ SUBSYSTEM=="usb", ATTRS{idVendor}=="1f4d", ATTRS{idProduct}=="d286", MODE:="0660
 SUBSYSTEM=="usb", ATTRS{idVendor}=="1f4d", ATTRS{idProduct}=="d803", MODE:="0660", GROUP:="$SERVICE_USER"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="00f3", MODE:="0660", GROUP:="$SERVICE_USER"
 SUBSYSTEM=="usb", ATTRS{idVendor}=="04b4", ATTRS{idProduct}=="00f1", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="1d50", ATTRS{idProduct}=="60a1", MODE:="0660", GROUP:="$SERVICE_USER"
+SUBSYSTEM=="usb", ATTRS{idVendor}=="03eb", ATTRS{idProduct}=="800c", MODE:="0660", GROUP:="$SERVICE_USER"
 RULES
     if [ -d /etc/udev ] || have udevadm || [ ! -f /etc/mdev.conf ]; then
         mkdir -p /etc/udev/rules.d
@@ -970,6 +973,8 @@ install_mdev_rules() {
 \$PRODUCT=1f4d/d286/[0-9a-f]+ root:$SERVICE_USER 0660
 \$PRODUCT=1f4d/d803/[0-9a-f]+ root:$SERVICE_USER 0660
 \$PRODUCT=4b4/f[13]/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=1d50/60a1/[0-9a-f]+ root:$SERVICE_USER 0660
+\$PRODUCT=3eb/800c/[0-9a-f]+ root:$SERVICE_USER 0660
 # FernSDR end"
     awk -v rules="$rules" '
         /^# FernSDR begin/ { skip = 1 }

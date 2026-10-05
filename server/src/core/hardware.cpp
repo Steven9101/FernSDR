@@ -56,8 +56,8 @@ constexpr KnownRadio kRadios[] = {
     // The newer RSPs (3050, 3060) are in no public list by name; the
     // module says which model it is once installed.
     {0x1df7, 0, "SDRplay RSP", "sdrplay"},
-    {0x1d50, 0x60a1, "Airspy", ""},
-    {0x03eb, 0x800c, "Airspy HF+", ""},
+    {0x1d50, 0x60a1, "Airspy", "airspy"},
+    {0x03eb, 0x800c, "Airspy HF+", "airspy"},
     {0x1d50, 0x6089, "HackRF One", ""},
     {0x1d50, 0xcc15, "HackRF One (rad1o)", ""},
     {0x04d8, 0xfb56, "FUNcube Dongle Pro", ""},

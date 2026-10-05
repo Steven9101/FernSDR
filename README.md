@@ -102,11 +102,13 @@ what goes where, Docker, HTTPS, every setting.
 | RTL-SDR dongles (RTL2832U: Blog V3 and V4, R820T, R828D, E4000, FC0012/13, FC2580) | the RTL-SDR module, installed by the setup |
 | RX-888 MkII, 0 to 30 MHz or 0 to 60 MHz at once | the RX-888 module, installed by the setup |
 | SDRplay RSP1, RSP1A, RSP1B, RSP2, RSPduo (one tuner), RSPdx | the SDRplay module, with SDRplay's own API installed first; x86_64 only |
-| anything else with a program that writes samples: Airspy, HackRF, LimeSDR, Pluto, FUNcube, SoapySDR devices | a pipe into the receiver's standard input |
+| Airspy R2, Airspy Mini, Airspy HF+ and HF+ Discovery | the Airspy module, installed by the setup |
+| anything else with a program that writes samples: HackRF, LimeSDR, Pluto, FUNcube, SoapySDR devices | a pipe into the receiver's standard input |
 | ka9q-radio, or any sender of IQ over the network | UDP or multicast |
 
-The RX-888 and SDRplay modules are new and have not been run with real radios
-yet; the RTL-SDR module is the tested one. A radio without a module is not a
+The RTL-SDR and SDRplay modules run at listeners' stations; the RX-888 module
+has had its first runs on real boards, and the Airspy module has not met a
+real radio yet. A radio without a module is not a
 dead end: [Radios without a module](docs/DEPLOYMENT.md#radios-without-a-module)
 has the commands for the common ones.
 

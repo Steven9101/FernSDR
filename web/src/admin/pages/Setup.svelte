@@ -357,7 +357,7 @@
 		{#if !hardware}
 			<div class="shimmer h-24 rounded-2xl bg-card"></div>
 		{:else if hardware.radios.length === 0}
-			<SettingsGroup title="No radio found" footer="FernSDR recognises RTL-SDR sticks, the RX-888 and SDRplay's RSPs by their USB ids.">
+			<SettingsGroup title="No radio found" footer="FernSDR recognises RTL-SDR sticks, the RX-888, SDRplay's RSPs and Airspys by their USB ids.">
 				<div class="flex flex-col gap-2 px-4 py-4 text-[15px] leading-relaxed">
 					<p>Is it plugged into this computer, and not into a USB hub without its own power? Try another USB port, then look again.</p>
 					<p class="text-muted-foreground">

@@ -148,7 +148,7 @@ export const SECTIONS: Section[] = [
     detail: 'Hardware modules. Set only in the file on the machine',
     settings: [
       { key: 'directory', detail: 'Where installed modules live, beside this file', example: 'fernsdr-modules' },
-      { key: 'catalog', detail: 'GitHub repositories the panel may install from, owner/name', example: 'Steven9101/Fern-RTLSDR Steven9101/Fern-RX888 Steven9101/Fern-SDRPlay Steven9101/Fern-FT8' },
+      { key: 'catalog', detail: 'GitHub repositories the panel may install from, owner/name', example: 'Steven9101/Fern-RTLSDR Steven9101/Fern-RX888 Steven9101/Fern-SDRPlay Steven9101/Fern-Airspy Steven9101/Fern-FT8' },
     ],
   },
   {

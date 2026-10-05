@@ -39,20 +39,23 @@ TEST_CASE(hardware_names_the_radios_on_usb_and_their_modules) {
     sysfs.device("1-1.3", "04b4", "00f3");
     sysfs.device("2-1", "1df7", "3000", "2305078C35");
     sysfs.device("2-2", "1df7", "3060");
-    sysfs.device("1-1.4", "1d50", "60a1");
+    sysfs.device("1-1.4", "1d50", "6089");
+    sysfs.device("1-1.5", "03eb", "800c");
     // Not radios: a keyboard, an interface of a radio, a root hub.
     sysfs.device("1-1.1", "046d", "c31c");
     sysfs.device("1-1.2:1.0", "0bda", "2838");
     sysfs.device("usb1", "1d6b", "0002");
     const auto radios = fernsdr::find_usb_radios(sysfs.root);
-    CHECK_EQ(radios.size(), 5u);
-    if (radios.size() != 5) return;
+    CHECK_EQ(radios.size(), 6u);
+    if (radios.size() != 6) return;
     CHECK(radios[0].port == "1-1.2" && radios[0].module == "rtlsdr" && radios[0].serial == "00000001");
     CHECK(radios[1].port == "1-1.3" && radios[1].module == "rx888" && radios[1].name.find("firmware") != std::string::npos);
-    CHECK(radios[2].port == "1-1.4" && radios[2].module.empty() && radios[2].name == "Airspy");
-    CHECK(radios[3].name == "SDRplay RSP1A" && radios[3].module == "sdrplay");
+    // Known, but with no module to run it.
+    CHECK(radios[2].port == "1-1.4" && radios[2].module.empty() && radios[2].name == "HackRF One");
+    CHECK(radios[3].port == "1-1.5" && radios[3].module == "airspy" && radios[3].name == "Airspy HF+");
+    CHECK(radios[4].name == "SDRplay RSP1A" && radios[4].module == "sdrplay");
     // A newer RSP no public list names yet is still an SDRplay.
-    CHECK(radios[4].name == "SDRplay RSP" && radios[4].module == "sdrplay");
+    CHECK(radios[5].name == "SDRplay RSP" && radios[5].module == "sdrplay");
     const fernsdr::Json json = fernsdr::usb_radios_json(radios);
     CHECK(json[0]["usb"].string() == "0bda:2838");
     CHECK(json[1].has("serial") == false);
@@ -78,7 +81,7 @@ TEST_CASE(hardware_every_recognised_radio_is_opened_by_the_receiver_after_instal
     std::string install, source;
     CHECK(fernsdr::read_text_file("../tools/install.sh", install));
     CHECK(fernsdr::read_text_file("../tools/source-install.sh", source));
-    for (const char* module : {"rtlsdr", "rx888"}) {
+    for (const char* module : {"rtlsdr", "rx888", "airspy"}) {
         for (const auto& [vendor, product] : fernsdr::usb_ids_of(module)) {
             char udev[96], mdev[40];
             std::snprintf(udev, sizeof udev, "ATTRS{idVendor}==\"%04x\", ATTRS{idProduct}==\"%04x\"", vendor, product);

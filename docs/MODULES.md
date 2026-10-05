@@ -11,9 +11,10 @@ what it decodes. These are the ones in the default catalog:
 | [Fern-RTLSDR](https://github.com/Steven9101/Fern-RTLSDR) | input | RTL2832U dongles, the RTL-SDR Blog V4 included | x86_64, aarch64, armhf |
 | [Fern-RX888](https://github.com/Steven9101/Fern-RX888) | input | the RX-888 MkII sampling HF directly, 0 to 30 or 0 to 60 MHz at once | x86_64, aarch64, armhf |
 | [Fern-SDRPlay](https://github.com/Steven9101/Fern-SDRPlay) | input | SDRplay RSPs, through SDRplay's own API | x86_64 |
+| [Fern-Airspy](https://github.com/Steven9101/Fern-Airspy) | input | Airspy R2, Mini, HF+ and HF+ Discovery | x86_64, aarch64, armhf |
 | [Fern-FT8](https://github.com/Steven9101/Fern-FT8) | decoder | FT8 | x86_64, aarch64, armhf |
 
-The RX-888 and SDRplay modules have not been run with real radios yet.
+The Airspy module has not been run with a real radio yet; the RX-888 module has had its first runs on real boards.
 
 In plain words: FernSDR never talks to radio hardware itself. A module does,
 a small program of its own for one kind of hardware, which FernSDR starts,
@@ -333,7 +334,7 @@ cannot be removed.
 
 `[modules] catalog` lists the GitHub repositories the admin panel may install
 from, `owner/name` separated by spaces; it defaults to
-`Steven9101/Fern-RTLSDR Steven9101/Fern-RX888 Steven9101/Fern-SDRPlay Steven9101/Fern-FT8`. FernSDR asks the GitHub API for their releases and
+`Steven9101/Fern-RTLSDR Steven9101/Fern-RX888 Steven9101/Fern-SDRPlay Steven9101/Fern-Airspy Steven9101/Fern-FT8`. FernSDR asks the GitHub API for their releases and
 downloads the package for its platform with `curl` over HTTPS, with fixed
 arguments and limits on time and size. The
 URL is put together from the configured repository and the release's
