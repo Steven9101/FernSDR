@@ -92,7 +92,23 @@
     {#if expanded}
       <DecodesMap decodes={shown} {station} />
     {/if}
-    {#if rows.length > 0}
+    {#if rows.length > 0 && !expanded}
+      <!-- The side column is a third of a desktop and all of a phone: one decode to a row, the
+           message first and whole, its time and audio frequency under it, so nothing is
+           cut and nothing scrolls sideways. The enlarged view has room for the table. -->
+      <ul class="decodes__scroll decodes__list">
+        {#each rows as decode (decode.seq)}
+          <li>
+            <button type="button" class="decodes__row{isCq(decode.message) ? ' is-cq' : ''}"
+              title="Listen to {channelLabel(decode)}" onclick={() => listen(decode)}>
+              <span class="decodes__text">{decode.message}</span>
+              <span class="decodes__snr">{decode.snr > 0 ? '+' : ''}{Math.round(decode.snr)} dB</span>
+              <span class="decodes__meta">{clock(decode.time)} · {Math.round(decode.freq)} Hz</span>
+            </button>
+          </li>
+        {/each}
+      </ul>
+    {:else if rows.length > 0}
       <div class="decodes__scroll">
         <table class="decodes__table">
           <thead>

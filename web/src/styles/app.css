@@ -1068,8 +1068,10 @@ a {
    the row does not shift when a tab becomes the active one. */
 .sidebar__tab,
 .sheet__tab {
-  display: inline-grid;
-  place-items: center;
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
   flex: 1 1 auto;
   min-width: 0;
   padding: 0 2px;
@@ -2403,6 +2405,57 @@ kbd {
   overflow: auto;
   border-radius: var(--radius-lg);
   background: var(--card);
+}
+
+/* The side column's list. Only up and down: a thin bar in the theme's
+   colours rather than the system's, which sat across the panel like a
+   form control. */
+.decodes__list {
+  list-style: none;
+  /* The rows' text lines up with the search field above; their hover
+     background reaches a little past it. */
+  margin: 0 calc(-1 * var(--space-2));
+  padding: 0;
+  overflow-x: hidden;
+  scrollbar-width: thin;
+  scrollbar-color: var(--border) transparent;
+}
+
+.decodes__list li + li { border-top: 1px solid var(--border); }
+
+.decodes__row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  column-gap: var(--space-2);
+  row-gap: 1px;
+  width: 100%;
+  padding: var(--space-1-5) var(--space-2);
+  border-radius: var(--radius);
+  text-align: left;
+  font-variant-numeric: tabular-nums;
+  transition: background var(--duration-hover) linear;
+}
+
+.decodes__row:hover { background: var(--well); }
+
+.decodes__text {
+  font-size: var(--text-sm);
+  color: var(--foreground);
+  overflow-wrap: anywhere;
+}
+
+.decodes__row.is-cq .decodes__text { font-weight: 600; }
+
+.decodes__snr {
+  align-self: baseline;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
+}
+
+.decodes__meta {
+  grid-column: 1 / -1;
+  font-size: var(--text-xs);
+  color: var(--muted-foreground);
 }
 
 .history--expanded .decodes__scroll {
