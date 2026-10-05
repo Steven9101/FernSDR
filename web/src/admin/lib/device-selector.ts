@@ -25,3 +25,22 @@ export function deviceSelector(radios: readonly RadioSeen[], chosen: RadioSeen):
   const serial = same[index].serial;
   return serial ? `serial:${serial}` : `index:${index}`;
 }
+
+/**
+ * The chosen radio's own tuning from its module's device list, where the
+ * module gives one: an Airspy R2 and a Mini share a USB id and a module but
+ * not their rates. Found by serial, which the kernel may wrap in text of its
+ * own ("AIRSPY SN:26D464DC2A8E7A2B"), or as the only device the module lists.
+ */
+export function deviceTuning<T>(
+  devices: readonly { serial?: string; tuning?: T }[],
+  chosen: RadioSeen,
+): T | undefined {
+  const listed = devices.filter((device) => device.tuning !== undefined);
+  const serial = chosen.serial?.toUpperCase();
+  if (serial) {
+    const match = listed.find((device) => device.serial && serial.includes(device.serial.toUpperCase()));
+    if (match) return match.tuning;
+  }
+  return devices.length === 1 ? listed[0]?.tuning : undefined;
+}

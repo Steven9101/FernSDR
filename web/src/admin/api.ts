@@ -266,6 +266,8 @@ export interface ModuleDevice {
   tuner?: string;
   usable: boolean;
   error?: string;
+  /** This device's own ranges and rates, where its module lists them. */
+  tuning?: { ranges: [number, number][]; rates: number[]; signal: 'iq' | 'real' };
 }
 
 export interface ModuleJob {

@@ -28,7 +28,7 @@
 	import { dismissSetup, finishSetup, setupDone, setupStep, SETUP_STEPS, type SetupStep } from '../lib/setup';
 	import RestoreBackup from '../components/RestoreBackup.svelte';
 	import { installFromCatalog, restartAndReload } from '../lib/receiver';
-	import { deviceSelector } from '../lib/device-selector';
+	import { deviceSelector, deviceTuning } from '../lib/device-selector';
 	import { live } from '../lib/live.svelte';
 
 	/*
@@ -177,12 +177,33 @@
 		aviation: 'Aviation and marine',
 		other: 'Other'
 	};
+	// The radio's own ranges and rates where its module lists them, else what the module's
+	// manifest says for every radio it drives.
+	let ownTuning = $state<Tuning | undefined>(undefined);
 	const tuning = $derived.by((): Tuning | undefined => {
 		const module = chosen ? installed(chosen.module) : undefined;
-		return module?.versions.find((version) => version.version === module.active)?.tuning;
+		return ownTuning ?? module?.versions.find((version) => version.version === module.active)?.tuning;
 	});
 
 	async function loadSuggestions() {
+		ownTuning = undefined;
+		if (chosen) {
+			// The module is asked in the background; its answer is in the modules view a moment
+			// later. Without one in a few seconds the manifest's tuning stands.
+			// The answer is told from the one before by the receiver's own clock, not the browser's.
+			const radio = chosen;
+			const before = (await api.modules().catch(() => null))?.devices[radio.module]?.fetched_ms ?? 0;
+			const queued = await api.findDevices(radio.module).catch(() => null);
+			for (let tries = 0; queued && tries < 16; tries++) {
+				const view = await api.modules().catch(() => null);
+				const listed = view?.devices[radio.module];
+				if (listed && listed.fetched_ms !== before) {
+					ownTuning = deviceTuning(listed.devices, radio);
+					break;
+				}
+				await new Promise((resolve) => window.setTimeout(resolve, 400));
+			}
+		}
 		if (!tuning) {
 			suggestions = [];
 			return;
