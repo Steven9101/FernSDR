@@ -28,7 +28,8 @@ constexpr size_t kRtpHeaderBytes = 12;
 class UdpSource : public Source {
 public:
     UdpSource(std::string bind_address, int port, std::string multicast_group, SourceFormat format,
-              double sample_rate, double center_hz, bool rtp, std::vector<std::string> senders)
+              double sample_rate, double center_hz, bool rtp, bool multicast_all,
+              std::vector<std::string> senders)
         : bind_address_(std::move(bind_address)),
           port_(port),
           multicast_group_(std::move(multicast_group)),
@@ -36,6 +37,7 @@ public:
           sample_rate_(sample_rate),
           center_hz_(center_hz),
           rtp_(rtp),
+          multicast_all_(multicast_all),
           senders_(std::move(senders)) {}
 
     ~UdpSource() override { stop(); }
@@ -94,6 +96,16 @@ public:
                 return false;
             }
             LOG_INFO("source", "joined multicast %s on %s", multicast_group_.c_str(), bind_address_.c_str());
+#ifdef IP_MULTICAST_ALL
+            // Several groups on one port would otherwise all arrive here.
+            if (!multicast_all_) {
+                int all = 0;
+                if (setsockopt(fd_, IPPROTO_IP, IP_MULTICAST_ALL, &all, sizeof(all)) != 0) {
+                    LOG_WARN("source", "cannot restrict multicast to joined groups: %s",
+                             std::strerror(errno));
+                }
+            }
+#endif
         }
 
         datagram_.resize(kMaxDatagram);
@@ -225,6 +237,8 @@ private:
     double sample_rate_;
     double center_hz_;
     bool rtp_;
+    // Take only the groups this source joined, not every group on the host.
+    bool multicast_all_;
     // CIDRs whose datagrams are taken; empty takes everyone's.
     std::vector<std::string> senders_;
     bool ignored_logged_ = false;
@@ -265,7 +279,8 @@ std::unique_ptr<Source> make_udp_source(const ConfigSection& section, std::strin
     return std::make_unique<UdpSource>(section.get("bind", "0.0.0.0"), port,
                                        section.get("multicast", ""), format, sample_rate,
                                        section.get_double("center", 0.0),
-                                       section.get_bool("rtp", false), std::move(senders));
+                                       section.get_bool("rtp", false),
+                                       section.get_bool("multicast_all", true), std::move(senders));
 }
 
 }  // namespace fernsdr

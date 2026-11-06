@@ -119,6 +119,11 @@ export const SECTIONS: Section[] = [
       { key: 'bind', detail: 'For source = udp: the local address to receive on. Set only in the file on the machine' },
       { key: 'multicast', detail: 'For source = udp: the group to join. Set only in the file on the machine' },
       {
+        key: 'multicast_all',
+        detail: 'For source = udp: take only the groups this band joined; false when several groups share one port. Set only in the file on the machine',
+        values: ['true', 'false'],
+      },
+      {
         key: 'senders',
         detail: 'For source = udp: addresses whose samples are taken, e.g. loopback, 192.168.1.20. Empty takes everyone. Set only in the file on the machine',
       },
