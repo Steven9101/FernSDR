@@ -699,6 +699,18 @@ sample_rate = 1536k
 center      = 3.7M
 ```
 
+When several multicast groups on the machine share one port, Linux delivers
+every group the machine has joined to every socket bound to that port, so the
+bands would mix. Take only the groups this band joined:
+
+```ini
+multicast_all = false
+```
+
+The default is `true`, which suits one device sending one stream, such as an
+RX-888. The setting is per band and needs Linux, where `IP_MULTICAST_ALL`
+exists; elsewhere it changes nothing.
+
 Lost or reordered datagrams are counted rather than silently absorbed:
 absorbing them makes an intermittent network look like an SDR fault.
 
